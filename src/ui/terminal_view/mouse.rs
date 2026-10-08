@@ -81,6 +81,7 @@ pub(super) struct MouseOutcome {
     pub(super) copy_selection: bool,
     pub(super) cursor_move: Option<i64>,
     pub(super) font_delta: f32,
+    pub(super) font_scale: Option<f32>,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -105,8 +106,9 @@ pub(super) fn handle_mouse(
     let (scroll, h_scroll, shift) = ui.input_mut(|i| {
         if response.hovered() && i.viewport().focused.unwrap_or(true) {
             outcome.font_delta = wheel_font_delta(&i.events);
-            if outcome.font_delta != 0.0 {
-                // The same wheel must not move the transcript or a scrollbar
+            outcome.font_scale = pinch_font_scale(&i.events);
+            if outcome.font_delta != 0.0 || outcome.font_scale.is_some() {
+                // A zoom gesture must not move the transcript or a scrollbar
                 // after it has changed the font size.
                 i.raw_scroll_delta = Vec2::ZERO;
                 i.smooth_scroll_delta = Vec2::ZERO;
@@ -276,9 +278,33 @@ fn wheel_font_delta(events: &[egui::Event]) -> f32 {
         .sum()
 }
 
+fn pinch_font_scale(events: &[egui::Event]) -> Option<f32> {
+    events
+        .iter()
+        .filter_map(|event| match event {
+            egui::Event::Zoom(scale) if scale.is_finite() && *scale > 0.0 => Some(*scale),
+            _ => None,
+        })
+        .reduce(|scale, next| scale * next)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pinch_scales_accumulate_and_ignore_invalid_factors() {
+        assert_eq!(pinch_font_scale(&[]), None);
+        assert_eq!(pinch_font_scale(&[egui::Event::Zoom(1.25)]), Some(1.25));
+        assert_eq!(pinch_font_scale(&[egui::Event::Zoom(0.8)]), Some(0.8));
+        assert_eq!(
+            pinch_font_scale(&[egui::Event::Zoom(1.25), egui::Event::Zoom(0.8)]),
+            Some(1.0)
+        );
+        for scale in [0.0, -1.0, f32::NAN, f32::INFINITY] {
+            assert_eq!(pinch_font_scale(&[egui::Event::Zoom(scale)]), None);
+        }
+    }
 
     #[test]
     fn ctrl_wheel_changes_the_font_in_both_directions() {

@@ -8,7 +8,7 @@ A terminal emulator for InterSystems IRIS — Windows, Linux and macOS.
 
 ## ✨ Highlights
 
-- **Terminal zoom:** Ctrl + mouse wheel over a terminal pane increases or decreases the font size, using the same 8–28 point range as Ctrl+Plus/Minus. Scrolling without Ctrl keeps navigating the transcript.
+- **Terminal zoom:** Ctrl + mouse wheel over a terminal pane increases or decreases the font size, using the same 8–28 point range as Ctrl+Plus/Minus. Trackpad pinch gestures also adjust the font proportionally when the platform delivers native pinch events (macOS), or through the same Ctrl + wheel path on drivers that emulate it. Scrolling without Ctrl keeps navigating the transcript.
 
 * **Tabs:** one IRIS session per tab, each with its own scrollback and log.
   Ctrl+T connects on the last-used server; right-click `+` for every profile,

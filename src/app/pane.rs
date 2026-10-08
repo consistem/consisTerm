@@ -139,8 +139,8 @@ impl App {
             }
         }
         self.pane_rects.push(result.response.rect);
-        if result.font_delta != 0.0 {
-            self.zoom_terminal_font(ctx, result.font_delta);
+        if result.font_delta != 0.0 || result.font_scale.is_some() {
+            self.zoom_terminal_font(ctx, result.font_delta, result.font_scale.unwrap_or(1.0));
         }
         let measure = PaneMeasure {
             grid: (result.cols, result.rows),

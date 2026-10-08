@@ -10,8 +10,8 @@
 use super::*;
 
 impl App {
-    pub(super) fn zoom_terminal_font(&mut self, ctx: &Context, delta: f32) {
-        let size = (self.settings.font_size + delta).clamp(8.0, 28.0);
+    pub(super) fn zoom_terminal_font(&mut self, ctx: &Context, delta: f32, scale: f32) {
+        let size = (self.settings.font_size * scale + delta).clamp(8.0, 28.0);
         if size != self.settings.font_size {
             self.settings.font_size = size;
             let _ = self.settings.save();
@@ -151,7 +151,7 @@ impl App {
         // reflows and resizes the PTY through the ordinary resize path.
         if zoom_in || zoom_out {
             let delta = if zoom_in { 1.0 } else { -1.0 };
-            self.zoom_terminal_font(ctx, delta);
+            self.zoom_terminal_font(ctx, delta, 1.0);
         }
 
         // Ctrl+Delete: reset the terminal and drop the history, the one
