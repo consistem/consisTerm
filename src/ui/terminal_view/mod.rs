@@ -1055,7 +1055,8 @@ mod tests {
             (true, false, 1.0),
         ] {
             let ctx = egui::Context::default();
-            let grid = Grid::new(20, 100, 100);
+            let mut grid = Grid::new(20, 100, 100);
+            grid.cursor.row = 99;
             let mut state = ViewState::default();
             let mut font_delta = 0.0;
             for frame in 0..2 {
