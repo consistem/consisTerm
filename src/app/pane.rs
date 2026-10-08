@@ -139,6 +139,9 @@ impl App {
             }
         }
         self.pane_rects.push(result.response.rect);
+        if result.font_delta != 0.0 {
+            self.zoom_terminal_font(ctx, result.font_delta);
+        }
         let measure = PaneMeasure {
             grid: (result.cols, result.rows),
             view: (result.view_cols, result.view_rows),

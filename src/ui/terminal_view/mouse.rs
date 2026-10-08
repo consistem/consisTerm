@@ -80,6 +80,7 @@ fn word_at(grid: &Grid, line: usize, col: usize) -> Option<Selection> {
 pub(super) struct MouseOutcome {
     pub(super) copy_selection: bool,
     pub(super) cursor_move: Option<i64>,
+    pub(super) font_delta: f32,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -101,7 +102,16 @@ pub(super) fn handle_mouse(
 ) -> MouseOutcome {
     let mut outcome = MouseOutcome::default();
     // Wheel scrolling through scrollback.
-    let (scroll, h_scroll, shift) = ui.input(|i| {
+    let (scroll, h_scroll, shift) = ui.input_mut(|i| {
+        if response.hovered() && i.viewport().focused.unwrap_or(true) {
+            outcome.font_delta = wheel_font_delta(&i.events);
+            if outcome.font_delta != 0.0 {
+                // The same wheel must not move the transcript or a scrollbar
+                // after it has changed the font size.
+                i.raw_scroll_delta = Vec2::ZERO;
+                i.smooth_scroll_delta = Vec2::ZERO;
+            }
+        }
         (
             i.raw_scroll_delta.y,
             i.raw_scroll_delta.x,
@@ -252,9 +262,44 @@ pub(super) fn handle_mouse(
     outcome
 }
 
+fn wheel_font_delta(events: &[egui::Event]) -> f32 {
+    events
+        .iter()
+        .filter_map(|event| match event {
+            egui::Event::MouseWheel {
+                delta, modifiers, ..
+            } if modifiers.ctrl && !modifiers.shift && !modifiers.alt && delta.y != 0.0 => {
+                Some(delta.y.signum())
+            }
+            _ => None,
+        })
+        .sum()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ctrl_wheel_changes_the_font_in_both_directions() {
+        let wheel = |y, modifiers| egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Line,
+            delta: egui::vec2(0.0, y),
+            modifiers,
+        };
+        assert_eq!(wheel_font_delta(&[wheel(1.0, egui::Modifiers::CTRL)]), 1.0);
+        assert_eq!(wheel_font_delta(&[wheel(-1.0, egui::Modifiers::CTRL)]), -1.0);
+        assert_eq!(wheel_font_delta(&[wheel(1.0, egui::Modifiers::NONE)]), 0.0);
+        assert_eq!(
+            wheel_font_delta(&[wheel(1.0, egui::Modifiers::CTRL | egui::Modifiers::SHIFT)]),
+            0.0
+        );
+        assert_eq!(
+            wheel_font_delta(&[wheel(1.0, egui::Modifiers::CTRL | egui::Modifiers::ALT)]),
+            0.0
+        );
+        assert_eq!(wheel_font_delta(&[wheel(0.0, egui::Modifiers::CTRL)]), 0.0);
+    }
 
     fn grid_with(lines: &[&str]) -> Grid {
         let mut grid = Grid::new(20, lines.len().max(1), 100);

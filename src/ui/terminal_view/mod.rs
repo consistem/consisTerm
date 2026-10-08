@@ -376,6 +376,8 @@ pub struct RenderResult {
     /// Columns to move IRIS's cursor by, after a click inside the line being
     /// typed. Negative is left.
     pub cursor_move: Option<i64>,
+    /// Font size change requested by Ctrl + mouse wheel over this pane.
+    pub font_delta: f32,
     /// Grid dimensions the caller should resize the PTY to.
     ///
     /// `cols` is the *grid* width - [`TERMINAL_COLS`], not the window - because
@@ -993,6 +995,7 @@ pub fn show(
         context_action,
         copy_selection: mouse.copy_selection,
         cursor_move: mouse.cursor_move,
+        font_delta: mouse.font_delta,
         cols: grid_cols,
         rows,
         view_cols,
@@ -1042,6 +1045,55 @@ fn phase_flip_after(time: f64) -> std::time::Duration {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ctrl_wheel_over_the_pane_zooms_without_scrolling_the_transcript() {
+        for (ctrl, inside) in [(true, true), (false, true), (true, false)] {
+            let ctx = egui::Context::default();
+            let grid = Grid::new(20, 100, 100);
+            let mut state = ViewState::default();
+            let mut font_delta = 0.0;
+            for frame in 0..2 {
+                let mut input = egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, egui::vec2(320.0, 200.0))),
+                    ..Default::default()
+                };
+                input.events.push(egui::Event::PointerMoved(if inside {
+                    egui::pos2(40.0, 40.0)
+                } else {
+                    egui::pos2(500.0, 500.0)
+                }));
+                if frame == 1 {
+                    input.events.push(egui::Event::MouseWheel {
+                        unit: egui::MouseWheelUnit::Point,
+                        delta: egui::vec2(0.0, 60.0),
+                        modifiers: if ctrl {
+                            egui::Modifiers::CTRL
+                        } else {
+                            egui::Modifiers::NONE
+                        },
+                    });
+                }
+                let _ = ctx.run(input, |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        font_delta = show(
+                            ui,
+                            &grid,
+                            &mut state,
+                            &Theme::default(),
+                            &RenderOpts::default(),
+                            1,
+                            PaneRole::default(),
+                            &[],
+                        )
+                        .font_delta;
+                    });
+                });
+            }
+            assert_eq!(font_delta, if ctrl && inside { 1.0 } else { 0.0 });
+            assert_eq!(state.anchor == ScrollAnchor::Bottom, ctrl || !inside);
+        }
+    }
 
     #[test]
     fn the_blink_asks_for_a_frame_at_each_half_and_not_before() {
