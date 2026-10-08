@@ -1048,7 +1048,12 @@ mod tests {
 
     #[test]
     fn ctrl_wheel_over_the_pane_zooms_without_scrolling_the_transcript() {
-        for (ctrl, inside) in [(true, true), (false, true), (true, false)] {
+        for (ctrl, inside, direction) in [
+            (true, true, 1.0),
+            (true, true, -1.0),
+            (false, true, 1.0),
+            (true, false, 1.0),
+        ] {
             let ctx = egui::Context::default();
             let grid = Grid::new(20, 100, 100);
             let mut state = ViewState::default();
@@ -1066,7 +1071,7 @@ mod tests {
                 if frame == 1 {
                     input.events.push(egui::Event::MouseWheel {
                         unit: egui::MouseWheelUnit::Point,
-                        delta: egui::vec2(0.0, 60.0),
+                        delta: egui::vec2(0.0, 60.0 * direction),
                         modifiers: if ctrl {
                             egui::Modifiers::CTRL
                         } else {
@@ -1090,7 +1095,7 @@ mod tests {
                     });
                 });
             }
-            assert_eq!(font_delta, if ctrl && inside { 1.0 } else { 0.0 });
+            assert_eq!(font_delta, if ctrl && inside { direction } else { 0.0 });
             assert_eq!(state.anchor == ScrollAnchor::Bottom, ctrl || !inside);
         }
     }

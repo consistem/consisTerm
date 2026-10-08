@@ -288,7 +288,10 @@ mod tests {
             modifiers,
         };
         assert_eq!(wheel_font_delta(&[wheel(1.0, egui::Modifiers::CTRL)]), 1.0);
-        assert_eq!(wheel_font_delta(&[wheel(-1.0, egui::Modifiers::CTRL)]), -1.0);
+        assert_eq!(
+            wheel_font_delta(&[wheel(-1.0, egui::Modifiers::CTRL)]),
+            -1.0
+        );
         assert_eq!(wheel_font_delta(&[wheel(1.0, egui::Modifiers::NONE)]), 0.0);
         assert_eq!(
             wheel_font_delta(&[wheel(1.0, egui::Modifiers::CTRL | egui::Modifiers::SHIFT)]),
