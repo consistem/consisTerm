@@ -1,10 +1,10 @@
 [package]
-name = "new-iris-terminal"
-version = "0.1.13"
+name = "consisterm"
+version = "0.1.0"
 edition = "2021"
 description = "Terminal emulator for InterSystems IRIS"
 license = "MIT"
-repository = "https://github.com/consistem/new-iris-terminal"
+repository = "https://github.com/consistem/consisTerm"
 build = "build.rs"
 
 [dependencies]
@@ -62,6 +62,7 @@ windows-sys = { version = "0.59", features = [
     "Win32_System_LibraryLoader",
     "Win32_UI_Accessibility",
     "Win32_UI_Controls_Dialogs",
+    "Win32_UI_Input_KeyboardAndMouse",
     "Win32_UI_Shell",
     "Win32_UI_WindowsAndMessaging",
 ] }
@@ -84,11 +85,11 @@ lto = "thin"
 strip = true
 
 [lib]
-name = "new_iris_terminal"
+name = "consisterm"
 path = "src/lib.rs"
 
 [[bin]]
-name = "new-iris-terminal"
+name = "consisterm"
 path = "src/main.rs"
 # The binary is one call to `lib::run` and has no tests: building a harness
 # for it was a link that tested nothing.

@@ -15,9 +15,9 @@
 
 use std::time::{Duration, Instant};
 
-use new_iris_terminal::pty::launcher::{launcher, LaunchSpec};
-use new_iris_terminal::pty::PtySession;
-use new_iris_terminal::term::{parser, Grid};
+use consisterm::pty::launcher::{launcher, LaunchSpec};
+use consisterm::pty::PtySession;
+use consisterm::term::{parser, Grid};
 
 /// Pumps the session until `predicate` accepts the rendered screen, or the
 /// timeout expires. Returns the final screen text either way.

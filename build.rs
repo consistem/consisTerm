@@ -1,6 +1,8 @@
 fn main() {
-    #[cfg(windows)]
-    {
+    // The target, not the host: `#[cfg(windows)]` here would describe the
+    // machine running the build script, and a check for Linux or macOS from a
+    // Windows machine then tried to embed a Windows icon and failed.
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
         let mut res = winres::WindowsResource::new();
         // Tem que ser o arquivo .ico aqui, o Windows não aceita .png no executável
         res.set_icon("assets/icon.ico");

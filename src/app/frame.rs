@@ -74,6 +74,7 @@ impl eframe::App for App {
         }
 
         let mut window_action = None;
+        let position = self.settings.bar_position;
         // Tabs in the bar run its whole height, as elementary's do: the
         // panel's own margin and the line under it would leave a band above
         // and below them that is neither tab nor terminal.
@@ -94,18 +95,47 @@ impl eframe::App for App {
             left: if flush_left { 0.0 } else { 8.0 },
             right: if flush_right { 0.0 } else { 8.0 },
         });
-        egui::TopBottomPanel::top("menu")
-            .frame(bar_frame)
-            .show_separator_line(!tabs_inline)
-            .show(ctx, |ui| {
-                crate::ui::prefs::scale_style(ui, self.settings.title_bar_scale.clamp(1.0, 2.0));
-                window_action = self.menu_bar(ui, &theme.window_buttons);
-            });
+        // Along the top or the bottom the bar is a row, the tabs in it or in
+        // a row of their own beside it; down a side it is a column holding
+        // both. Ids of their own per kind of panel, so a panel never reads
+        // back the size the other kind left behind.
+        let row_panel = |id: &str| match position {
+            crate::config::BarPosition::Bottom => egui::TopBottomPanel::bottom(id.to_owned()),
+            _ => egui::TopBottomPanel::top(id.to_owned()),
+        };
+        let title_scale = self.settings.title_bar_scale.clamp(1.0, 2.0);
+        if position.is_side() {
+            let panel = match position {
+                crate::config::BarPosition::Right => egui::SidePanel::right("menu-side"),
+                _ => egui::SidePanel::left("menu-side"),
+            };
+            panel
+                .frame(egui::Frame::side_top_panel(&ctx.style()).inner_margin(egui::Margin::ZERO))
+                .resizable(true)
+                // In step with the title bar scale: at 200% the row of
+                // buttons across its top is twice as wide, and a column held
+                // to its 100% width cut the outer ones off.
+                .default_width(220.0 * title_scale)
+                .width_range(160.0 * title_scale..=480.0 * title_scale)
+                .show_separator_line(false)
+                .show(ctx, |ui| {
+                    crate::ui::prefs::scale_style(ui, title_scale);
+                    window_action = self.side_bar(ui, &theme.window_buttons);
+                });
+        } else {
+            row_panel("menu")
+                .frame(bar_frame)
+                .show_separator_line(!tabs_inline)
+                .show(ctx, |ui| {
+                    crate::ui::prefs::scale_style(ui, title_scale);
+                    window_action = self.menu_bar(ui, &theme.window_buttons);
+                });
+        }
         // Not when the setting has moved them into the title bar, where
         // `menu_bar` has already drawn them - that is what was putting the same
-        // tabs on screen twice.
-        if !self.settings.tabs_in_title_bar || self.tabs.is_empty() {
-            egui::TopBottomPanel::top("tabs")
+        // tabs on screen twice - nor down a side, which has its own column.
+        if !position.is_side() && (!self.settings.tabs_in_title_bar || self.tabs.is_empty()) {
+            row_panel("tabs")
                 .frame(egui::Frame::side_top_panel(&ctx.style()).inner_margin(egui::Margin::ZERO))
                 .show_separator_line(false)
                 .show(ctx, |ui| {
@@ -390,6 +420,7 @@ impl eframe::App for App {
             self.persist_window_geometry();
         }
 
+        requests.append(&mut self.queued);
         for request in requests {
             self.handle_request(ctx, request);
         }

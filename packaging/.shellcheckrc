@@ -1,0 +1,3 @@
+# The scripts source ../env.sh by a path computed at run time.
+external-sources=true
+source-path=SCRIPTDIR

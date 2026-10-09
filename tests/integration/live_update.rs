@@ -33,7 +33,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
-use new_iris_terminal::features::update;
+use consisterm::features::update;
 
 /// Authenticates to the proxy as whatever the app is configured to use, so the
 /// tests exercise the path the app takes.

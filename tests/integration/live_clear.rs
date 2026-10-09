@@ -15,9 +15,9 @@
 
 use std::time::{Duration, Instant};
 
-use new_iris_terminal::pty::launcher::{launcher, LaunchSpec};
-use new_iris_terminal::pty::PtySession;
-use new_iris_terminal::term::{parser, Grid};
+use consisterm::pty::launcher::{launcher, LaunchSpec};
+use consisterm::pty::PtySession;
+use consisterm::term::{parser, Grid};
 
 /// Pumps for `window`, feeding everything into `grid` and keeping the raw
 /// bytes so the escape sequence itself can be reported.

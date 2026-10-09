@@ -1,0 +1,223 @@
+# Release pipeline. Pushing a tag vX.Y.Z builds every platform and creates or updates the DRAFT
+# GitHub Release vX.Y.Z; a person publishes it. A manual run (workflow_dispatch) builds and
+# uploads the same artifacts to the run as a dry run and drafts nothing. See docs/releasing.md.
+#
+# Every job only calls a script under packaging/, which runs unchanged on a laptop.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  # Never cancel a run mid-notarization or mid-upload; a newer push waits its turn.
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  CONSISTERM_BUILD_SHA: ${{ github.sha }}
+
+jobs:
+  version:
+    name: version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        name: Resolve and check the version
+        run: |
+          . packaging/env.sh
+          v="$VERSION"
+          if ! printf '%s' "$v" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'; then
+            echo "::error::Cargo.toml version '$v' is not a version like 1.2.3 or 1.2.3-rc.1"
+            exit 1
+          fi
+          # A tag that disagrees with Cargo.toml would publish binaries that report another
+          # version, and the in-app updater would offer them again forever.
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$v" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match Cargo.toml version $v (expected v$v)"
+            exit 1
+          fi
+          case "$v" in *-*) pre=true ;; *) pre=false ;; esac
+          {
+            echo "version=$v"
+            echo "prerelease=$pre"
+          } >>"$GITHUB_OUTPUT"
+          echo "### consisTerm v$v (\`${GITHUB_SHA::9}\`)" >>"$GITHUB_STEP_SUMMARY"
+
+  linux:
+    name: Linux x86_64
+    needs: version
+    # The oldest GitHub-hosted image, so the binary only needs glibc >= 2.35.
+    runs-on: ubuntu-22.04
+    env:
+      CONSISTERM_VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build and packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config libgtk-3-dev libxkbcommon-dev libwayland-dev \
+            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libxkbcommon-x11-dev libssl-dev libsecret-1-dev libdbus-1-dev \
+            desktop-file-utils file
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-linux-x86_64
+      - name: Build and package (AppImage, tar.gz)
+        run: packaging/linux/package.sh
+      - name: Check the packages
+        run: |
+          file target/release/consisterm
+          ldd target/release/consisterm
+          # The glibc floor actually linked against; it must not exceed the build host's 2.35.
+          objdump -T target/release/consisterm | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -1
+          tar -tzf dist/release/*.tar.gz
+          for appimage in dist/release/*.AppImage; do
+            (cd "$RUNNER_TEMP" && "$GITHUB_WORKSPACE/$appimage" --appimage-extract >/dev/null)
+            test -x "$RUNNER_TEMP/squashfs-root/usr/bin/consisterm"
+            test -f "$RUNNER_TEMP/squashfs-root/br.com.consistem.consisterm.desktop"
+            # Starts and exits before opening a window, so it runs headless.
+            APPIMAGE_EXTRACT_AND_RUN=1 "$GITHUB_WORKSPACE/$appimage" --version | grep -F "$CONSISTERM_VERSION"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: dist/release/*
+          if-no-files-found: error
+
+  macos:
+    name: macOS universal
+    needs: version
+    runs-on: macos-14
+    env:
+      CONSISTERM_VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-macos-universal
+      # Every secret is optional: without them the build is signed ad-hoc, with a warning.
+      - name: Import signing certificate
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: packaging/macos/import-cert.sh
+      - name: Build, sign, notarize
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: packaging/macos/package.sh --arch universal
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: dist/release/*
+          if-no-files-found: error
+      - name: Remove temporary keychain
+        if: always()
+        run: |
+          if [ -n "${MACOS_KEYCHAIN:-}" ]; then security delete-keychain "$MACOS_KEYCHAIN" || true; fi
+
+  windows:
+    name: Windows x64
+    needs: version
+    runs-on: windows-latest
+    env:
+      CONSISTERM_VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-windows-x64
+      - name: Build and package
+        shell: pwsh
+        run: ./packaging/windows/package.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: dist/release/*
+          if-no-files-found: error
+
+  release:
+    name: Draft GitHub Release
+    needs: [version, linux, macos, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      PRERELEASE: ${{ needs.version.outputs.prerelease }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: artifacts
+          merge-multiple: true
+      - name: Checksums
+        working-directory: artifacts
+        run: |
+          ls -l
+          # The in-app updater on Windows takes the first asset whose name contains ".exe".
+          exes="$(find . -maxdepth 1 -name '*.exe*' | wc -l)"
+          if [ "$exes" != 1 ]; then
+            echo "::error::expected exactly one asset containing '.exe', found $exes"
+            exit 1
+          fi
+          sha256sum -- * | tee SHA256SUMS.txt
+      - name: Keep the checksums of a dry run
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: checksums
+          path: artifacts/SHA256SUMS.txt
+      - name: Create or update the draft release
+        if: github.ref_type == 'tag'
+        working-directory: artifacts
+        run: |
+          tag="v$VERSION"
+          title="consisTerm v$VERSION"
+          # The in-app updater on Linux takes the asset whose name contains ".AppImage"; it goes
+          # up first and on its own all the same, so a hand-edited release still lists it first.
+          first=(*.AppImage)
+          rest=()
+          for f in *; do case "$f" in *.AppImage) ;; *) rest+=("$f") ;; esac; done
+          if draft="$(gh release view "$tag" --json isDraft --jq .isDraft 2>/dev/null)"; then
+            if [ "$draft" != "true" ]; then
+              echo "::error::release $tag is already published; bump the version in Cargo.toml and tag again"
+              exit 1
+            fi
+            echo "Updating draft $tag: replacing its assets"
+            gh release view "$tag" --json assets --jq '.assets[].name' | while read -r asset; do
+              gh release delete-asset "$tag" "$asset" --yes
+            done
+            gh release edit "$tag" --draft --title "$title" --prerelease="$PRERELEASE"
+          else
+            echo "Creating draft $tag"
+            gh release create "$tag" --draft --verify-tag --title "$title" --generate-notes \
+              --prerelease="$PRERELEASE"
+          fi
+          gh release upload "$tag" --clobber -- "${first[@]}"
+          gh release upload "$tag" --clobber -- "${rest[@]}"
+          {
+            echo "Draft release **$title** at \`${GITHUB_SHA::9}\`:"
+            echo
+            sed 's/^/    /' SHA256SUMS.txt
+          } >>"$GITHUB_STEP_SUMMARY"

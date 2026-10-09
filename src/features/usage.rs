@@ -60,9 +60,10 @@ pub struct Inventory {
 /// The report, as plain text: the body of the e-mail.
 pub fn report(settings: &Settings, inventory: &Inventory) -> String {
     let mut out = format!(
-        "newIrisTerminal {} - usage report\n\
+        "{} {} - usage report\n\
          Only what differs from a fresh install. Paths, names, addresses and \
          window positions are left out.\n\n",
+        crate::APP_NAME,
         crate::features::update::CURRENT
     );
 
@@ -310,17 +311,13 @@ mod tests {
     #[test]
     fn a_changed_setting_is_reported_with_its_default() {
         let settings = Settings {
-            autocomplete_mode: crate::config::AutocompleteMode::DataOnly,
+            autocomplete_names: false,
             font_size: 16.0,
             ..Settings::default()
         };
         let changed = changed(&settings);
         assert!(
-            changed.contains(&(
-                "autocomplete_mode".into(),
-                "\"data\"".into(),
-                "\"full\"".into()
-            )),
+            changed.contains(&("autocomplete_names".into(), "false".into(), "true".into())),
             "{changed:?}"
         );
         assert!(

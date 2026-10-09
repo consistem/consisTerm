@@ -14,10 +14,10 @@
 
 use std::time::{Duration, Instant};
 
-use new_iris_terminal::pty::launcher::{launcher, LaunchSpec};
-use new_iris_terminal::pty::PtySession;
-use new_iris_terminal::term::{parser, Grid};
-use new_iris_terminal::ui::terminal_view::TERMINAL_COLS;
+use consisterm::pty::launcher::{launcher, LaunchSpec};
+use consisterm::pty::PtySession;
+use consisterm::term::{parser, Grid};
+use consisterm::ui::terminal_view::TERMINAL_COLS;
 
 /// Characters to ask for on one line. Past any window, past the 512-column
 /// margin the app used to claim, and a length the ERP really does produce -

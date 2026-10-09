@@ -56,7 +56,7 @@ fn releases_url() -> Option<String> {
 }
 
 /// GitHub refuses a request without one.
-const USER_AGENT: &str = concat!("newIrisTerminal/", env!("CARGO_PKG_VERSION"));
+const USER_AGENT: &str = concat!("consisTerm/", env!("CARGO_PKG_VERSION"));
 
 /// How long to wait on the check before giving up. A failed check is a
 /// non-event — it must never be something the user waits for.
@@ -90,6 +90,8 @@ pub struct Release {
     pub size: u64,
     /// What the release says about itself, for the dialog.
     pub notes: String,
+    /// The release on GitHub, for a platform that is sent there to install it.
+    pub page: String,
 }
 
 /// What the background thread has to say.
@@ -331,15 +333,36 @@ fn build_agent(builder: ureq::AgentBuilder) -> ureq::Agent {
     builder.build()
 }
 
-/// The file name fragment that marks an asset as this platform's build.
+/// The file name fragment that marks an asset as this platform's build: the
+/// one file a release has of that kind, so a `.tar.gz` published beside the
+/// AppImage is never what gets swapped in for the program.
 fn asset_marker() -> &'static str {
     if cfg!(windows) {
         ".exe"
     } else if cfg!(target_os = "macos") {
-        "macos"
+        ".dmg"
     } else {
-        "linux"
+        ".AppImage"
     }
+}
+
+/// Whether this build can put a newer one in place of itself.
+///
+/// Not on macOS: what is published there is a disk image, and the program is a
+/// file inside a signed `.app` that replacing one file of would break. The
+/// dialog offers the release page instead.
+pub const SELF_INSTALL: bool = !cfg!(target_os = "macos");
+
+/// The file the user runs, and so the one an update replaces.
+///
+/// Inside an AppImage the running executable is in a read-only mount that is
+/// gone when the program exits; the AppImage itself is named by `$APPIMAGE`,
+/// which its runtime sets.
+pub fn running_file() -> Result<PathBuf> {
+    if let Some(image) = std::env::var_os("APPIMAGE").filter(|_| cfg!(target_os = "linux")) {
+        return Ok(PathBuf::from(image));
+    }
+    std::env::current_exe().context("finding the running executable")
 }
 
 /// Asks GitHub what the latest release is.
@@ -379,6 +402,12 @@ pub fn latest() -> Result<Release> {
         })
         .ok_or_else(|| anyhow!("release {version} has no build for this platform"))?;
 
+    let page = body
+        .get("html_url")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+
     let notes = body
         .get("body")
         .and_then(|v| v.as_str())
@@ -391,6 +420,7 @@ pub fn latest() -> Result<Release> {
         download,
         size,
         notes,
+        page,
     })
 }
 
@@ -432,7 +462,7 @@ pub fn download_in_background(release: Release, progress: Arc<AtomicU64>, tx: Se
 }
 
 fn download(release: &Release, progress: &AtomicU64) -> Result<PathBuf> {
-    let exe = std::env::current_exe().context("finding the running executable")?;
+    let exe = running_file()?;
     let staged = staged_path(&exe);
     fetch(release, &staged, progress)?;
     Ok(staged)
@@ -553,7 +583,15 @@ fn old_path(exe: &Path) -> PathBuf {
 /// The caller closes the app; this does not, because only the caller knows
 /// whether a session is still connected.
 pub fn install(staged: &Path) -> Result<()> {
-    let exe = std::env::current_exe().context("finding the running executable")?;
+    let exe = running_file()?;
+    // A download arrives without the permission to run, which the file it
+    // replaces had.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(staged, std::fs::Permissions::from_mode(0o755))
+            .with_context(|| format!("making {} executable", staged.display()))?;
+    }
     let old = old_path(&exe);
     let _ = std::fs::remove_file(&old);
 
@@ -574,7 +612,7 @@ pub fn install(staged: &Path) -> Result<()> {
 /// Deletes what the last update left behind. Called at startup, when the file
 /// is no longer running and can go.
 pub fn clean_up() {
-    let Ok(exe) = std::env::current_exe() else {
+    let Ok(exe) = running_file() else {
         return;
     };
     let _ = std::fs::remove_file(old_path(&exe));
@@ -693,7 +731,7 @@ mod tests {
     /// be beside the executable, or the rename that swaps them cannot work.
     #[test]
     fn the_swap_happens_in_one_directory() {
-        let exe = Path::new("C:/apps/new-iris-terminal.exe");
+        let exe = Path::new("C:/apps/consisterm.exe");
         assert_eq!(staged_path(exe).parent(), exe.parent());
         assert_eq!(old_path(exe).parent(), exe.parent());
         assert_ne!(staged_path(exe), old_path(exe));

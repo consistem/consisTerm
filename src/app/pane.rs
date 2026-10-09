@@ -139,8 +139,12 @@ impl App {
             }
         }
         self.pane_rects.push(result.response.rect);
-        if result.font_delta != 0.0 || result.font_scale.is_some() {
-            self.zoom_terminal_font(ctx, result.font_delta, result.font_scale.unwrap_or(1.0));
+        if result.font_delta != 0.0 {
+            self.queued
+                .push(UiRequest::ZoomFont(Zoom::Step(result.font_delta)));
+        }
+        if let Some(scale) = result.font_scale {
+            self.queued.push(UiRequest::ZoomFont(Zoom::Pinch(scale)));
         }
         let measure = PaneMeasure {
             grid: (result.cols, result.rows),
@@ -237,7 +241,7 @@ impl App {
         // Either of the two shortcut pickers - a macro's binding, or the macro
         // manager's own chord - is listening, and the keys belong to whichever
         // one it is.
-        let capturing = self.panels.macros.capture_shortcut || self.panels.capture_manager_shortcut;
+        let capturing = self.panels.capturing_shortcut();
         if !result.response.has_focus() || capturing || !window_active {
             // A popup belongs to the keyboard. Left open on a pane the keys
             // no longer reach, it would offer a suggestion nothing can accept.
@@ -458,11 +462,11 @@ impl App {
         };
         // The side session costs a licence slot, so it is asked only where the
         // global tooltip - which is what the user turned on to pay for it - is
-        // on too, or where the autocomplete offers nothing but what the side
-        // session finds, which is the same choice made from the other end.
-        let mode = self.settings.autocomplete_mode;
-        let paid_for = self.settings.intellisense != crate::config::IntellisenseMode::Off
-            || mode == crate::config::AutocompleteMode::DataOnly;
+        // on too, or where the global data switch is, which is the same choice
+        // made from the other end.
+        let offers = self.settings.autocomplete_offers();
+        let paid_for =
+            self.settings.intellisense != crate::config::IntellisenseMode::Off || offers.data;
         let namespace = tab.namespace.clone();
         let server = namespace
             .as_deref()
@@ -473,7 +477,7 @@ impl App {
                 namespace,
             });
         tab.completion
-            .refresh_with(&tab.grid, &mut self.vocabulary, server, mode);
+            .refresh_with(&tab.grid, &mut self.vocabulary, server, offers);
         if tab.completion.waiting() {
             ctx.request_repaint_after(Duration::from_millis(150));
         }
@@ -498,7 +502,7 @@ impl App {
         // being recorded, or for whatever surface the shell has put in front
         // of the window, must not reach the game either.
         let window_active = ctx.input(|i| i.viewport().focused.unwrap_or(true));
-        let capturing = self.panels.macros.capture_shortcut || self.panels.capture_manager_shortcut;
+        let capturing = self.panels.capturing_shortcut();
         let role = snake_view::Role {
             focused: true,
             take_focus: self.focused_tab != Some(uid),

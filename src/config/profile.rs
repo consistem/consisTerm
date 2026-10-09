@@ -9,6 +9,10 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 /// Service name under which passwords are stored in the OS keychain.
+///
+/// Still the app's old name, on purpose: every saved password is filed under
+/// it, and the keychain cannot be listed to move them, so renaming it would
+/// quietly forget them all.
 pub const KEYRING_SERVICE: &str = "newIrisTerminal";
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

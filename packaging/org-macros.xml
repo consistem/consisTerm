@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Organisation macros for consisTerm.
+
+  Distributed by the environment updater: put this file beside consisterm.exe,
+  named org-macros.xml, and every copy of the terminal on the machine loads it
+  - no setting to change. Settings > Macros > Organisation file overrides the
+  location for anyone who needs another one (a share, a mapped drive).
+
+  The app never writes to this file. Users see these macros read-only, next to
+  their own personal ones, and can copy one into their personal file to change
+  it.
+
+  Format
+    <group name="...">          a submenu in the terminal's right-click menu
+      <macro name="..."         what the menu shows
+             description="..."  the hover text (optional)
+             key="Ctrl+Shift+G" a shortcut (optional)
+             confirm="true"     ask before sending - use on ANYTHING that writes
+             hide_command="true">  keep the body out of the UI (optional)
+        <param name="x" prompt="Shown in the dialog" default="..."/>
+        <body>Lines sent one at a time; {{x}} is replaced by the param.</body>
+      </macro>
+    </group>
+
+  Every RDB* database is shared with the whole team: a macro that sets or
+  kills anything must carry confirm="true".
+-->
+<macros>
+  <group name="Inspect">
+    <macro name="Show global" description="ZWRITE a global">
+      <param name="global" prompt="Global name (without ^)"/>
+      <body>ZWRITE ^{{global}}</body>
+    </macro>
+    <macro name="Global browser" description="Open ^%G">
+      <body>Do ^%G</body>
+    </macro>
+    <macro name="Routine list" description="Open ^%RD">
+      <body>Do ^%RD</body>
+    </macro>
+    <macro name="Current namespace" description="Show where this session is">
+      <body>Write $NAMESPACE,!</body>
+    </macro>
+    <macro name="Process info" description="This process's job number and user">
+      <body>Write "Job: ",$JOB,"  User: ",$USERNAME,!</body>
+    </macro>
+  </group>
+  <group name="Navigate">
+    <macro name="Switch namespace" description="ZN to another namespace">
+      <param name="ns" prompt="Namespace" default="USER"/>
+      <body>ZN "{{ns}}"</body>
+    </macro>
+  </group>
+  <group name="Danger">
+    <macro name="Kill a global" description="Deletes data on a shared database - confirm carefully" confirm="true">
+      <param name="global" prompt="Global to KILL (without ^)"/>
+      <body>KILL ^{{global}}</body>
+    </macro>
+  </group>
+</macros>

@@ -346,7 +346,7 @@ fn paint_luna(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowButt
         rect.center(),
         Vec2::new(side_of(rect) * 0.82, side_of(rect) * 0.72),
     );
-    let rounding = egui::Rounding::same(2.0);
+    let rounding = egui::Rounding::same(3.0);
 
     let mut base = match icon.tint(style) {
         Some(colour) if focused => colour,
@@ -357,48 +357,36 @@ fn paint_luna(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowButt
         base = lighten(base, 0.18);
     }
 
-    // The tile: a dark edge, then the fill, then the highlights on top of it.
-    // Luna's buttons are lit from above and slightly left, with the deepest
-    // tone about two thirds down and a thin bright rim along the very bottom -
-    // that last one is what stops them looking painted on.
-    painter.rect_filled(tile, rounding, darken(base, 0.55));
+    // The tile: the fill, a faint sheen, and a light rim round the whole of
+    // it. XP's buttons are a nearly flat, saturated colour - lighter towards
+    // the top-left corner and a touch deeper at the foot - set off from the
+    // title bar by that rim rather than by a dark edge. A brighter top half,
+    // as this once had, read as a pale band across every button.
+    painter.rect_filled(tile, rounding, base);
     let inner = tile.shrink(1.0);
     let upper = Rect::from_min_max(
         inner.left_top(),
-        Pos2::new(inner.right(), inner.top() + inner.height() * 0.52),
+        Pos2::new(inner.right(), inner.top() + inner.height() * 0.5),
     );
     let lower = Rect::from_min_max(upper.left_bottom(), inner.right_bottom());
-    gradient(painter, upper, lighten(base, 0.30), lighten(base, 0.04));
-    gradient(painter, lower, darken(base, 0.94), darken(base, 0.70));
-
-    // The gloss over the top half, cut off square the way a Luna button's was.
-    // Kept faint: brighter, it washed the white glyph out of the top half of
-    // the tile, and a light theme colour lost the glyph altogether.
-    gradient(painter, upper, white(55), white(6));
-    // Bevel: bright inside the top and left edges, and a light rim along the
-    // bottom where the tile catches the desktop behind it.
+    gradient(painter, upper, lighten(base, 0.12), base);
+    gradient(painter, lower, base, darken(base, 0.88));
+    // Inside the top and left edges, where the light falls.
     painter.line_segment(
         [
             Pos2::new(inner.left() + 1.0, inner.top() + 0.5),
             Pos2::new(inner.right() - 1.0, inner.top() + 0.5),
         ],
-        Stroke::new(1.0_f32, white(165)),
+        Stroke::new(1.0_f32, white(60)),
     );
     painter.line_segment(
         [
-            Pos2::new(inner.left() + 0.5, inner.top() + 1.5),
-            Pos2::new(inner.left() + 0.5, inner.bottom() - 1.5),
+            Pos2::new(inner.left() + 0.5, inner.top() + 1.0),
+            Pos2::new(inner.left() + 0.5, inner.bottom() - 1.0),
         ],
-        Stroke::new(1.0_f32, white(70)),
+        Stroke::new(1.0_f32, white(35)),
     );
-    painter.line_segment(
-        [
-            Pos2::new(inner.left() + 1.5, inner.bottom() - 0.5),
-            Pos2::new(inner.right() - 1.5, inner.bottom() - 0.5),
-        ],
-        Stroke::new(1.0_f32, lighten(base, 0.30)),
-    );
-    painter.rect_stroke(tile, rounding, Stroke::new(1.0_f32, darken(base, 0.42)));
+    painter.rect_stroke(tile, rounding, Stroke::new(1.0_f32, lighten(base, 0.75)));
 
     // The glyph, in the theme's colour or the white Luna always used.
     let colour = style.icon.unwrap_or(Color32::WHITE);
@@ -461,7 +449,8 @@ fn paint_materia(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowB
     use crate::config::theme::{MATERIA_BLUE, MATERIA_PURPLE};
     let focused = ui.ctx().input(|i| i.viewport().focused.unwrap_or(true));
     let painter = ui.painter();
-    let radius = (side_of(rect) * 0.25).clamp(4.0, 6.5);
+    // The stone takes the room its socket used to.
+    let radius = (side_of(rect) * 0.3).clamp(4.5, 8.0);
     let center = rect.center();
 
     let mut base = icon.tint(style).unwrap_or(match icon {
@@ -494,6 +483,18 @@ fn paint_materia(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowB
 /// The side of a square hit area, which both painters size their glyphs from.
 fn side_of(rect: Rect) -> f32 {
     rect.height()
+}
+
+/// Whether the window is kept above the others, and who decided it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Pin {
+    Off,
+    /// The pin button.
+    Manual,
+    /// The drop-down terminal, while it is down, because its setting says
+    /// so - see [`crate::ui::quake`]. Not the user's own choice, so it is
+    /// drawn as pinned with a mark of its own, and a click pins it for good.
+    Auto,
 }
 
 /// What the window buttons in the title bar were asked to do.
@@ -534,7 +535,7 @@ pub fn sample_bar(ui: &mut Ui, style: &WindowButtons, middle: &str) {
                 window: "nit-theme-preview",
                 draggable: false,
                 settings: Some(&mut open),
-                on_top: Some(false),
+                on_top: Some(Pin::Off),
                 new_tab: Some(&mut plus),
                 tabs_fill: false,
                 tabs: &mut tabs,
@@ -575,7 +576,7 @@ pub struct TitleBar<'a> {
     /// The gear's open flag, and whether the window is pinned on top. `None`
     /// for a window without them.
     pub settings: Option<&'a mut bool>,
-    pub on_top: Option<bool>,
+    pub on_top: Option<Pin>,
     /// Draws the `+`, which only the caller knows how to.
     pub new_tab: Option<&'a mut dyn FnMut(&mut Ui)>,
     /// Draws whatever stands where the order puts `Tabs` - the tabs, the
@@ -627,9 +628,11 @@ fn drawn(bar: &TitleBar, button: TitleButton) -> bool {
 /// neither tab nor anything to drag - wide enough to look like a missing
 /// button, whenever every button had been ordered to the other end.
 ///
-/// The left end is reached by tabs that open the left-hand group. The right is
-/// reached by tabs nothing drawn follows, when they either fill the bar or are
-/// packed against that end.
+/// The spaces are only separators and take no room, so they never stand
+/// between the tabs and an end: tabs nothing drawn precedes reach the left
+/// end, and tabs nothing drawn follows reach the right, whenever they fill the
+/// bar or are packed against that end. Counting a space as something in the
+/// way left tabs that filled the middle group a margin short of both edges.
 fn tabs_ends(
     order: &[TitleButton],
     fill: bool,
@@ -642,7 +645,7 @@ fn tabs_ends(
     let right_space = order.iter().position(|b| *b == TitleButton::RightSpace);
     let leading = left_space.is_some_and(|space| at < space);
     let trailing = right_space.is_some_and(|space| at > space);
-    let first = leading && !order[..at].iter().any(|b| drawn(*b));
+    let first = (fill || leading) && !order[..at].iter().any(|b| drawn(*b));
     let last = (fill || trailing) && !order[at + 1..].iter().any(|b| drawn(*b));
     (first, last)
 }
@@ -843,18 +846,20 @@ fn settings_toggle(ui: &mut Ui, style: &WindowButtons, open: &mut bool) {
 /// Not hidden with the window controls: it is the only way to what it does
 /// from the title bar, and a setting that hides close has not asked for it to
 /// be put out of reach. Only the theme's own switch for it does that.
-fn on_top_toggle(ui: &mut Ui, style: &WindowButtons, on_top: Option<bool>) -> bool {
-    let Some(pinned) = on_top else {
+fn on_top_toggle(ui: &mut Ui, style: &WindowButtons, on_top: Option<Pin>) -> bool {
+    let Some(pin) = on_top else {
         return false;
     };
-    let hint = if pinned {
-        tr("Stop keeping the window above the others")
-    } else {
-        tr("Keep the window above all other windows")
+    let pinned = pin != Pin::Off;
+    let hint = match pin {
+        Pin::Manual => tr("Stop keeping the window above the others"),
+        Pin::Auto => tr("Kept above the others while dropped down, as the drop-down terminal is set to. Click to keep it there yourself."),
+        Pin::Off => tr("Keep the window above all other windows"),
     };
     // The filled head alone is a few pixels' difference, too little to read
-    // the state by. So off is faded, and on wears the gear's pressed outline:
-    // the one mark this title bar already uses for "this is switched on".
+    // the state by, so off is faded as well. On is the button at full
+    // strength and nothing more: the gear's pressed outline round it too
+    // read as a glow on a button that is not being pressed.
     let response = ui
         .scope(|ui| {
             if !pinned {
@@ -863,8 +868,15 @@ fn on_top_toggle(ui: &mut Ui, style: &WindowButtons, on_top: Option<bool>) -> bo
             optional_button(ui, Icon::Pin { pinned }, hint, style)
         })
         .inner;
-    if let (true, Some(response)) = (pinned, &response) {
-        pressed_outline(ui, response.rect);
+    // Pinned by the drop-down rather than by the button: a dot in the corner,
+    // which says the pin is on without saying the user put it there.
+    if let (Pin::Auto, Some(response)) = (pin, &response) {
+        let r = response.rect;
+        ui.painter().circle_filled(
+            egui::pos2(r.right() - r.width() * 0.2, r.bottom() - r.height() * 0.2),
+            (r.height() * 0.09).max(1.5),
+            ui.visuals().selection.bg_fill,
+        );
     }
     clicked(response)
 }
@@ -1130,5 +1142,19 @@ mod tests {
         // No room for both: the left-hand end wins, so nothing is drawn
         // before the bar starts.
         assert_eq!(centred_start(0.0..1000.0, 500.0, 600.0, 200.0), 500.0);
+    }
+
+    #[test]
+    fn tabs_filling_the_middle_reach_whichever_end_has_nothing_drawn_at_it() {
+        use TitleButton::*;
+        let all = |b: TitleButton| !matches!(b, LeftSpace | RightSpace);
+        // Nothing before the left space: the tabs run to the left-hand edge.
+        let middle = [LeftSpace, Tabs, RightSpace, Settings, Close];
+        assert_eq!(tabs_ends(&middle, true, &all), (true, false));
+        // Nothing after the right space either: both edges.
+        let alone = [LeftSpace, Tabs, RightSpace];
+        assert_eq!(tabs_ends(&alone, true, &all), (true, true));
+        // Tabs of a fixed width are centred there, and reach neither.
+        assert_eq!(tabs_ends(&alone, false, &all), (false, false));
     }
 }

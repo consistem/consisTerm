@@ -232,6 +232,7 @@ pub(super) fn settle(c: &mut Ctx<'_>, open: bool) {
 
 fn list() -> Vec<Section> {
     vec![
+        untitled(vec![Item::rows("macros_picture", "Macros", super::show_macros)]),
         untitled(vec![Item::control("macro_filter", "Filter", filter)
             .keys(&["search", "find", "filtrar", "procurar", "pesquisar"])]),
         drawn(group_cards),
@@ -598,15 +599,22 @@ fn organization_macros() -> Vec<Section> {
 /// path is typed, so it is a row of its own kind.
 fn org_macros(card: &mut Card<'_>, c: &mut Ctx<'_>) {
     let status = c.settings.org_macros().map(|path| path.exists());
+    let bundled = c.settings.org_macros_path.as_os_str().is_empty() && status.is_some();
     let subtitle = match status {
-        None => tr("A UNC share, mapped drive, or local copy. Leave empty for none."),
-        Some(true) => tr("Found."),
-        Some(false) => tr("Not reachable right now - personal macros will still load."),
+        None => tr("A UNC share, mapped drive, or local copy. Leave empty for none.").to_owned(),
+        // Nothing typed, and still a file in use: say which, or the empty
+        // field would read as there being none.
+        Some(true) if bundled => tr1(
+            "Empty, so the file beside the program is used: {}",
+            crate::config::ORG_MACROS_FILE,
+        ),
+        Some(true) => tr("Found.").to_owned(),
+        Some(false) => tr("Not reachable right now - personal macros will still load.").to_owned(),
     };
     let picking = &mut c.state.macros.picking_org;
     let settings = &mut *c.settings;
     let mut changed = false;
-    card.row(Row::new(tr("Path")).subtitle(subtitle), |ui| {
+    card.row(Row::new(tr("Path")).subtitle(subtitle.as_str()), |ui| {
         if file_dialog::AVAILABLE
             && ui
                 .add_enabled(picking.is_none(), prefs::button_widget(tr("Browse...")))

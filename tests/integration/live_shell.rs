@@ -18,9 +18,9 @@
 
 use std::time::{Duration, Instant};
 
-use new_iris_terminal::plugins::shells;
-use new_iris_terminal::pty::Session;
-use new_iris_terminal::term::{parser, Grid};
+use consisterm::plugins::shells;
+use consisterm::pty::Session;
+use consisterm::term::{parser, Grid};
 
 /// Pumps for `window`, feeding everything into `grid`.
 fn pump(session: &mut Session, grid: &mut Grid, window: Duration) -> String {
@@ -140,7 +140,7 @@ fn every_shell_opens_and_answers() {
 ///
 /// The bytes the gesture sends are spelled out here rather than imported -
 /// `clear_gesture` is private to the app - so they have to be kept in step with
-/// [`new_iris_terminal::app`]. That is the point: this is the test that says
+/// [`consisterm::app`]. That is the point: this is the test that says
 /// whether they still work on the shells this machine actually has.
 #[test]
 #[ignore = "starts a process per shell"]

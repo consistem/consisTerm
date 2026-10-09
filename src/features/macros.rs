@@ -572,7 +572,7 @@ fn escape(text: &str) -> String {
 /// created by the app — it is provided and maintained centrally.
 pub const SAMPLE: &str = r#"<?xml version="1.0" encoding="utf-8"?>
 <!--
-  Personal macros for newIrisTerminal.
+  Personal macros for consisTerm.
 
   This file is yours: the app can edit it. Macros supplied by the
   organisation live in a separate file, configured in Settings, and are
@@ -606,7 +606,7 @@ pub const SAMPLE: &str = r#"<?xml version="1.0" encoding="utf-8"?>
 /// different shape entirely - it stops matching and is left alone forever.
 const RETIRED_SAMPLES: [&str; 1] = [r#"<?xml version="1.0" encoding="utf-8"?>
 <!--
-  Personal macros for newIrisTerminal.
+  Personal macros for consisTerm.
 
   This file is yours: the app can edit it. Macros supplied by the
   organisation live in a separate file, configured in Settings, and are
@@ -1184,5 +1184,20 @@ mod tests {
             mine,
             "an edited file must be left alone"
         );
+    }
+
+    #[test]
+    fn the_organisation_file_shipped_for_distribution_loads_and_asks_before_writing() {
+        let groups = parse(include_str!("../../packaging/org-macros.xml")).unwrap();
+        assert!(groups.iter().map(|g| g.macros.len()).sum::<usize>() > 0);
+        for m in groups.iter().flat_map(|g| &g.macros) {
+            let writes = m.body.iter().any(|line| {
+                let upper = line.trim_start().to_uppercase();
+                ["KILL", "K ", "SET", "S ", "MERGE"]
+                    .iter()
+                    .any(|w| upper.starts_with(w))
+            });
+            assert!(!writes || m.confirm, "{} writes without asking", m.name);
+        }
     }
 }

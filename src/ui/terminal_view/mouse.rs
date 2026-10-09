@@ -105,9 +105,10 @@ pub(super) fn handle_mouse(
     // Wheel scrolling through scrollback.
     let (scroll, h_scroll, shift) = ui.input_mut(|i| {
         if response.hovered() && i.viewport().focused.unwrap_or(true) {
-            outcome.font_delta = wheel_font_delta(&i.events);
+            let notches = wheel_notches(&i.events);
+            outcome.font_delta = take_whole_steps(&mut state.zoom_wheel, notches);
             outcome.font_scale = pinch_font_scale(&i.events);
-            if outcome.font_delta != 0.0 || outcome.font_scale.is_some() {
+            if notches != 0.0 || outcome.font_scale.is_some() {
                 // A zoom gesture must not move the transcript or a scrollbar
                 // after it has changed the font size.
                 i.raw_scroll_delta = Vec2::ZERO;
@@ -264,18 +265,42 @@ pub(super) fn handle_mouse(
     outcome
 }
 
-fn wheel_font_delta(events: &[egui::Event]) -> f32 {
+/// How far Ctrl+wheel turned this frame, in notches of a classic mouse wheel.
+///
+/// Measured rather than counted. A precision touchpad's pinch, a free-spinning
+/// wheel and a high-resolution one all arrive as a stream of small fractional
+/// deltas, many to a gesture; counting each one as a step took the font from
+/// smallest to largest on a slight pinch.
+fn wheel_notches(events: &[egui::Event]) -> f32 {
     events
         .iter()
         .filter_map(|event| match event {
             egui::Event::MouseWheel {
-                delta, modifiers, ..
-            } if modifiers.ctrl && !modifiers.shift && !modifiers.alt && delta.y != 0.0 => {
-                Some(delta.y.signum())
-            }
+                unit,
+                delta,
+                modifiers,
+            } if modifiers.ctrl && !modifiers.shift && !modifiers.alt => Some(match unit {
+                egui::MouseWheelUnit::Line => delta.y,
+                // What winit reports for one notch of a wheel that scrolls
+                // by pixels.
+                egui::MouseWheelUnit::Point => delta.y / POINTS_PER_NOTCH,
+                egui::MouseWheelUnit::Page => delta.y * 3.0,
+            }),
             _ => None,
         })
         .sum()
+}
+
+const POINTS_PER_NOTCH: f32 = 50.0;
+
+/// Adds `notches` to what is `pending` and takes out the whole steps, leaving
+/// the remainder for the next frame - so many small deltas add up to the
+/// steps one big one would have made, and no more.
+fn take_whole_steps(pending: &mut f32, notches: f32) -> f32 {
+    *pending += notches;
+    let steps = pending.trunc();
+    *pending -= steps;
+    steps
 }
 
 fn pinch_font_scale(events: &[egui::Event]) -> Option<f32> {
@@ -313,21 +338,18 @@ mod tests {
             delta: egui::vec2(0.0, y),
             modifiers,
         };
-        assert_eq!(wheel_font_delta(&[wheel(1.0, egui::Modifiers::CTRL)]), 1.0);
+        assert_eq!(wheel_notches(&[wheel(1.0, egui::Modifiers::CTRL)]), 1.0);
+        assert_eq!(wheel_notches(&[wheel(-1.0, egui::Modifiers::CTRL)]), -1.0);
+        assert_eq!(wheel_notches(&[wheel(1.0, egui::Modifiers::NONE)]), 0.0);
         assert_eq!(
-            wheel_font_delta(&[wheel(-1.0, egui::Modifiers::CTRL)]),
-            -1.0
-        );
-        assert_eq!(wheel_font_delta(&[wheel(1.0, egui::Modifiers::NONE)]), 0.0);
-        assert_eq!(
-            wheel_font_delta(&[wheel(1.0, egui::Modifiers::CTRL | egui::Modifiers::SHIFT)]),
+            wheel_notches(&[wheel(1.0, egui::Modifiers::CTRL | egui::Modifiers::SHIFT)]),
             0.0
         );
         assert_eq!(
-            wheel_font_delta(&[wheel(1.0, egui::Modifiers::CTRL | egui::Modifiers::ALT)]),
+            wheel_notches(&[wheel(1.0, egui::Modifiers::CTRL | egui::Modifiers::ALT)]),
             0.0
         );
-        assert_eq!(wheel_font_delta(&[wheel(0.0, egui::Modifiers::CTRL)]), 0.0);
+        assert_eq!(wheel_notches(&[wheel(0.0, egui::Modifiers::CTRL)]), 0.0);
     }
 
     fn grid_with(lines: &[&str]) -> Grid {
@@ -428,5 +450,24 @@ mod tests {
             whole_line.selected_text(&grid).as_deref(),
             Some("do ^%CSW1A")
         );
+    }
+
+    #[test]
+    fn a_burst_of_small_ctrl_wheel_deltas_moves_the_font_by_the_steps_they_add_up_to() {
+        let wheel = |y| egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Point,
+            delta: egui::vec2(0.0, y),
+            modifiers: egui::Modifiers::CTRL,
+        };
+        // A pinch on a precision touchpad: twenty deltas of a tenth of a
+        // notch each, spread over several frames.
+        let mut pending = 0.0;
+        let mut moved = 0.0;
+        for _ in 0..4 {
+            let frame = vec![wheel(POINTS_PER_NOTCH / 10.0); 5];
+            moved += take_whole_steps(&mut pending, wheel_notches(&frame));
+        }
+        assert_eq!(moved, 2.0);
+        assert!(pending.abs() < 1e-4);
     }
 }

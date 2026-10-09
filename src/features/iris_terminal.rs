@@ -22,7 +22,11 @@ const ORIGINAL: &str = "Iristerm.exe.original";
 const DISPLACED: &str = "Iristerm.exe.removed";
 /// Present in every build of this program and in no `Iristerm.exe`: how a file
 /// in `bin` is told to be ours.
-const MARK: &[u8] = b"newIrisTerminal stands in for Iristerm.exe";
+const MARK: &[u8] = b"consisTerm stands in for Iristerm.exe";
+/// The mark a copy put there before the rename carries, which is just as much
+/// ours: without it, an installed copy read as an IRIS upgrade having
+/// overwritten it.
+const LEGACY_MARK: &[u8] = b"newIrisTerminal stands in for Iristerm.exe";
 
 /// Passed by the copy in `bin` to the program it forwards to, so that one
 /// knows it was asked for a terminal rather than started by hand.
@@ -56,7 +60,11 @@ pub fn state(bin: &Path) -> State {
 
 fn is_ours(path: &Path) -> bool {
     std::fs::read(path)
-        .map(|bytes| bytes.windows(MARK.len()).any(|w| w == MARK))
+        .map(|bytes| {
+            [MARK, LEGACY_MARK]
+                .iter()
+                .any(|mark| bytes.windows(mark.len()).any(|w| w == *mark))
+        })
         .unwrap_or(false)
 }
 
@@ -119,6 +127,25 @@ fn home_file() -> PathBuf {
 fn remember_home(exe: &Path) -> std::io::Result<()> {
     std::fs::create_dir_all(crate::config::config_dir())?;
     std::fs::write(home_file(), exe.display().to_string())
+}
+
+/// Points a stand-in installed before the rename at this program.
+///
+/// That copy is an old build, and finds the program to hand a launch to in
+/// the old config folder. Left alone, the IRIS tray went on opening the old
+/// version - or, once it was deleted, the stand-in itself.
+pub fn point_legacy_home() {
+    if running_as_terminal() {
+        return;
+    }
+    let (Some(dir), Ok(exe)) = (crate::config::legacy_config_dir(), std::env::current_exe()) else {
+        return;
+    };
+    let file = dir.join("iris-terminal-home.txt");
+    let wanted = exe.display().to_string();
+    if std::fs::read_to_string(&file).is_ok_and(|home| home.trim() != wanted) {
+        let _ = std::fs::write(&file, wanted);
+    }
 }
 
 /// Whether this process is the copy in an instance's `bin` folder.

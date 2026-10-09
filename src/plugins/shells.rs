@@ -91,7 +91,7 @@ fn stamp_path(dir: &Path) -> PathBuf {
 
 /// The header on a file the app wrote, so it is obvious which is which when the
 /// folder is opened.
-const GENERATED_HEADER: &str = "# Written by newIrisTerminal: this shell was found installed on this machine.\n\
+const GENERATED_HEADER: &str = "# Written by consisTerm: this shell was found installed on this machine.\n\
                                 # It is an ordinary shell plugin - rename it, change its arguments, or delete\n\
                                 # it, and the app will leave your version alone.\n";
 
@@ -189,7 +189,7 @@ fn materialise(dir: &Path, found: &[Candidate]) {
     let _ = std::fs::write(
         stamp_path(dir),
         format!(
-            "# Programs newIrisTerminal has written a shell file for. Delete a line to have\n\
+            "# Programs consisTerm has written a shell file for. Delete a line to have\n\
              # its file written again on the next start.\n{}\n",
             stamp.join("\n")
         ),

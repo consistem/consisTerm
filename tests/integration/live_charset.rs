@@ -34,9 +34,9 @@
 use std::io::{Read, Write};
 use std::time::{Duration, Instant};
 
-use new_iris_terminal::pty::launcher::{launcher, LaunchSpec};
-use new_iris_terminal::pty::{PtySession, Session};
-use new_iris_terminal::term::{lineedit, parser, Encoding, Grid};
+use consisterm::pty::launcher::{launcher, LaunchSpec};
+use consisterm::pty::{PtySession, Session};
+use consisterm::term::{lineedit, parser, Encoding, Grid};
 use portable_pty::{CommandBuilder, PtySize};
 
 fn instance_name() -> String {

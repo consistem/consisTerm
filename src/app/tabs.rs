@@ -178,21 +178,31 @@ impl App {
         // `FREE_STRIP` in `crate::ui::chrome` - and `width` is what is left,
         // across the theme's left and right spaces alike. Holding back more
         // here left a band of nothing between the tabs and the buttons.
-        ui.allocate_ui_at_rect(rect, |ui| self.tab_strip_in(ui, 0.0, true));
+        ui.allocate_ui_at_rect(rect, |ui| self.tab_strip_in(ui, 0.0, Strip::TitleBar));
     }
 
     /// The tab strip as a row of its own, the tabs sharing its width.
     pub(super) fn tab_strip(&mut self, ui: &mut egui::Ui) {
-        self.tab_strip_in(ui, 0.0, false);
+        self.tab_strip_in(ui, 0.0, Strip::Row);
+    }
+
+    /// The tabs as a column down a title bar on the side of the window, one
+    /// under another at the column's full width, the way Vivaldi and Opera
+    /// show theirs there.
+    pub(super) fn tab_column(&mut self, ui: &mut egui::Ui) {
+        self.tab_strip_in(ui, 0.0, Strip::Column);
     }
 
     /// The tabs share the row out between them, the way GNOME's Files and
     /// Text Editor do - all of it but `reserve`, which in the title bar is
     /// the space the window is dragged by and must not be taken.
     ///
-    /// `in_title_bar`: the tabs are what the window is moved by, so a tab
-    /// dragged up or down moves it instead of reordering.
-    fn tab_strip_in(&mut self, ui: &mut egui::Ui, reserve: f32, in_title_bar: bool) {
+    /// In the title bar the tabs are what the window is moved by, so a tab
+    /// dragged up or down moves it instead of reordering. In a column they
+    /// are reordered up and down instead, and scrolled the same way.
+    fn tab_strip_in(&mut self, ui: &mut egui::Ui, reserve: f32, strip: Strip) {
+        let in_title_bar = strip == Strip::TitleBar;
+        let vertical = strip == Strip::Column;
         let mut to_close = None;
         let mut to_rename = None;
         let mut to_split = None;
@@ -239,7 +249,8 @@ impl App {
         // same frame it was rolled on, and consumed when it changes tabs so
         // the strip does not also slide sideways under the pointer.
         let mut step = 0.0_f32;
-        if ui.rect_contains_pointer(ui.available_rect_before_wrap()) {
+        // A column scrolls the way the wheel turns already.
+        if !vertical && ui.rect_contains_pointer(ui.available_rect_before_wrap()) {
             ui.input_mut(|i| {
                 if i.modifiers.shift {
                     // Already swapped by egui, so the shifted wheel arrives on
@@ -283,15 +294,31 @@ impl App {
         // Fixed, each tab sizes itself to its name between the two bounds -
         // the space the tabs took before they shared the row - and is drawn
         // exactly as a shared one is.
-        let shared = (self.settings.tab_width == crate::config::TabWidth::Shared)
-            .then(|| ((room - gap * (count - 1.0)) / count).max(TAB_MIN_WIDTH));
+        let shared = if vertical {
+            Some(ui.available_width())
+        } else {
+            (self.settings.tab_width == crate::config::TabWidth::Shared)
+                .then(|| ((room - gap * (count - 1.0)) / count).max(TAB_MIN_WIDTH))
+        };
+        let tall = vertical.then(|| tab_height(ui));
+        let scroll = if vertical {
+            egui::ScrollArea::vertical().auto_shrink([false, true])
+        } else {
+            egui::ScrollArea::horizontal().auto_shrink([true, false])
+        };
 
-        egui::ScrollArea::horizontal()
-            .auto_shrink([true, false])
+        scroll
             .scroll_bar_visibility(visibility)
             .show(ui, |ui| {
-            ui.horizontal(|ui| {
-                ui.spacing_mut().item_spacing.x = gap;
+            let lay_out = |ui: &mut egui::Ui, add: &mut dyn FnMut(&mut egui::Ui)| {
+                if vertical {
+                    ui.vertical(|ui| add(ui));
+                } else {
+                    tab_row(ui, |ui| add(ui));
+                }
+            };
+            lay_out(ui, &mut |ui| {
+                ui.spacing_mut().item_spacing = egui::vec2(gap, 0.0);
                 for index in 0..self.tabs.len() {
                     let selected = index == self.active;
                     let split = self.tabs[index].split.is_some();
@@ -311,7 +338,7 @@ impl App {
                         selected,
                         label,
                         selected_colours,
-                        shared,
+                        [shared, tall],
                         close_side,
                     );
                     // A line between two tabs neither of which is shown: the
@@ -319,6 +346,13 @@ impl App {
                     let next_selected = index + 1 == self.active;
                     if index + 1 < self.tabs.len() && !selected && !next_selected {
                         let r = response.rect;
+                        if vertical {
+                            ui.painter().hline(
+                                r.left() + r.width() * 0.1..=r.right() - r.width() * 0.1,
+                                r.bottom() - 0.5,
+                                egui::Stroke::new(1.0_f32, divider),
+                            );
+                        } else {
                         ui.painter().line_segment(
                             [
                                 egui::pos2(r.right() - 0.5, r.top() + r.height() * 0.25),
@@ -326,6 +360,7 @@ impl App {
                             ],
                             egui::Stroke::new(1.0_f32, divider),
                         );
+                        }
                     }
                     let response =
                         response.on_hover_text(tr("Double-click to rename, drag to reorder."));
@@ -435,27 +470,41 @@ impl App {
                     if close.is_some_and(|close| close.on_hover_text(tr("Close this tab.")).clicked()) {
                         to_close = Some(index);
                     }
-                    spans.push((response.rect.left(), response.rect.right()));
+                    spans.push(if vertical {
+                        (response.rect.top(), response.rect.bottom())
+                    } else {
+                        (response.rect.left(), response.rect.right())
+                    });
                 }
 
                 let pointer = ui.ctx().pointer_interact_pos();
                 if let (Some(from), Some(pointer)) = (dragging, pointer) {
-                    to_move = drop_slot(&spans, from, pointer.x).map(|to| (from, to));
+                    // Along the strip, whichever way it runs.
+                    let (along, near, far) = if vertical {
+                        (pointer.y, ui.clip_rect().top(), ui.clip_rect().bottom())
+                    } else {
+                        (pointer.x, ui.clip_rect().left(), ui.clip_rect().right())
+                    };
+                    to_move = drop_slot(&spans, from, along).map(|to| (from, to));
                     // Held against either edge of the strip, the drag scrolls
                     // it: the tabs beyond the edge are where the user is
                     // trying to put this one, and they cannot be reached by
                     // a pointer that has nowhere further to go.
-                    let visible = ui.clip_rect();
                     let edge = 24.0;
-                    let push = if pointer.x < visible.left() + edge {
+                    let push = if along < near + edge {
                         1.0
-                    } else if pointer.x > visible.right() - edge {
+                    } else if along > far - edge {
                         -1.0
                     } else {
                         0.0
                     };
                     if push != 0.0 {
-                        ui.scroll_with_delta(egui::vec2(push * 8.0, 0.0));
+                        let delta = push * 8.0;
+                        ui.scroll_with_delta(if vertical {
+                            egui::vec2(0.0, delta)
+                        } else {
+                            egui::vec2(delta, 0.0)
+                        });
                         // The pointer holding still is still asking for the
                         // strip to move, and an idle loop asks for no frames.
                         ui.ctx().request_repaint();
@@ -731,6 +780,30 @@ impl App {
     }
 }
 
+/// The row the tabs are laid out in: the full height it is given, aligned to
+/// its top.
+///
+/// Not `ui.horizontal`, which starts a row a button high and centres what is
+/// taller in it. A tab is taller than a button, so it was pushed 2 px down from
+/// the top of the title bar, with that strip of bar showing above it and its
+/// own bottom cut off.
+fn tab_row<R>(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
+    let size = egui::vec2(ui.available_width(), ui.available_height());
+    ui.allocate_ui_with_layout(size, egui::Layout::left_to_right(egui::Align::Min), add)
+        .inner
+}
+
+/// Which way a strip of tabs runs, and what it is part of.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Strip {
+    /// A row of its own, under the title bar.
+    Row,
+    /// The title bar itself, which the tabs then also move the window by.
+    TitleBar,
+    /// A column down a title bar on the side of the window.
+    Column,
+}
+
 /// The narrowest and widest a tab is drawn. Between the two it fits its name;
 /// past the widest the name is cut short with an ellipsis, so one long name
 /// cannot push every other tab off the strip.
@@ -767,11 +840,13 @@ fn tab_pill(
     selected: bool,
     text: String,
     colours: (Option<egui::Color32>, Option<egui::Color32>),
-    width: Option<f32>,
+    [width, height]: [Option<f32>; 2],
     close_at: crate::config::TabCloseSide,
 ) -> (egui::Response, Option<egui::Response>) {
     let base = tab_height(ui);
-    let height = ui.available_height().max(base);
+    // A row's full height, so the tab runs from top to bottom of its bar; a
+    // column's tabs are each one tab tall.
+    let height = height.unwrap_or_else(|| ui.available_height().max(base));
     let close_side = base - 8.0;
     let pad = 8.0;
     let font = egui::TextStyle::Button.resolve(ui.style());
@@ -1053,5 +1128,49 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn a_tab_in_the_title_bar_runs_from_the_top_of_the_bar_to_its_bottom() {
+        let ctx = egui::Context::default();
+        let mut drawn = None;
+        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(800.0, 400.0));
+        let _ = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(screen),
+                ..Default::default()
+            },
+            |ctx| {
+                egui::TopBottomPanel::top("bar")
+                    .frame(egui::Frame::none())
+                    .show_separator_line(false)
+                    .show(ctx, |ui| {
+                        let height = tab_height(ui);
+                        let size = egui::vec2(ui.available_width(), height);
+                        let layout = egui::Layout::left_to_right(egui::Align::Center);
+                        ui.allocate_ui_with_layout(size, layout, |ui| {
+                            egui::ScrollArea::horizontal()
+                                .auto_shrink([true, false])
+                                .show(ui, |ui| {
+                                    tab_row(ui, |ui| {
+                                        let (tab, _) = tab_pill(
+                                            ui,
+                                            1,
+                                            true,
+                                            "tab".into(),
+                                            (None, None),
+                                            [Some(200.0), None],
+                                            crate::config::TabCloseSide::Left,
+                                        );
+                                        drawn = Some((tab.rect, height));
+                                    });
+                                });
+                        });
+                    });
+            },
+        );
+        let (tab, height) = drawn.unwrap();
+        assert_eq!(tab.top(), 0.0);
+        assert_eq!(tab.height(), height);
     }
 }

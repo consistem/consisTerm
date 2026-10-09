@@ -6,10 +6,10 @@
 //! not a thing to fail a build on; run it with
 //! `cargo test --release --test integration paint_cost:: -- --ignored --nocapture`.
 
+use consisterm::config::theme::Theme;
+use consisterm::term::Grid;
+use consisterm::ui::terminal_view::{self, PaneRole, RenderOpts, ViewState};
 use eframe::egui;
-use new_iris_terminal::config::theme::Theme;
-use new_iris_terminal::term::Grid;
-use new_iris_terminal::ui::terminal_view::{self, PaneRole, RenderOpts, ViewState};
 
 /// A screen with something on every row, which is what an IRIS session
 /// scrolling output looks like and the case the cost has to be paid for.
@@ -22,11 +22,7 @@ fn filled_grid(cols: usize, rows: usize, width: usize) -> Grid {
         .take(width.min(cols))
         .collect();
     for _ in 0..rows {
-        new_iris_terminal::term::parser::advance(
-            &mut vte,
-            &mut grid,
-            format!("{line}\r\n").as_bytes(),
-        );
+        consisterm::term::parser::advance(&mut vte, &mut grid, format!("{line}\r\n").as_bytes());
     }
     grid
 }

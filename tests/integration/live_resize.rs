@@ -16,10 +16,10 @@
 
 use std::time::{Duration, Instant};
 
-use new_iris_terminal::pty::launcher::{launcher, LaunchSpec};
-use new_iris_terminal::pty::PtySession;
-use new_iris_terminal::term::{parser, Grid};
-use new_iris_terminal::ui::terminal_view::TERMINAL_COLS;
+use consisterm::pty::launcher::{launcher, LaunchSpec};
+use consisterm::pty::PtySession;
+use consisterm::term::{parser, Grid};
+use consisterm::ui::terminal_view::TERMINAL_COLS;
 
 struct Live {
     session: PtySession,

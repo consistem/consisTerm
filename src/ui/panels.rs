@@ -25,6 +25,17 @@ use crate::i18n::{tr, tr1, tr2};
 /// theme: it has to stay legible as a warning in every one of them.
 pub const WARNING: egui::Color32 = egui::Color32::from_rgb(220, 120, 60);
 
+/// One gesture's worth of change to the terminal's font size.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Zoom {
+    /// Whole points up (positive) or down: Ctrl+Plus, Ctrl+Minus, Ctrl+wheel.
+    Step(f32),
+    /// A trackpad pinch, as the factor it moved by this frame.
+    Pinch(f32),
+    /// Back to the size a fresh install starts at: Ctrl+0.
+    Reset,
+}
+
 /// Something the user asked for. `app.rs` decides whether and how to honour it.
 #[derive(Clone, Debug)]
 pub enum UiRequest {
@@ -40,6 +51,8 @@ pub enum UiRequest {
     SettingsChanged,
     /// Keep the main window above all others, or stop.
     ToggleAlwaysOnTop,
+    /// Make the terminal's font bigger or smaller.
+    ZoomFont(Zoom),
     /// Write the personal macro file back to disk.
     SavePersonalMacros,
     /// Read both macro files again, after the organisation's has moved.
@@ -103,10 +116,20 @@ pub struct PanelState {
     /// macro happened to be open. Public for the same reason the editor's is:
     /// the app has to stop claiming shortcuts for itself while it is set.
     pub capture_manager_shortcut: bool,
+    /// The drop-down terminal's shortcut picker is listening.
+    pub capture_quake_shortcut: bool,
     /// Installed monospace families, listed once. Enumerating system fonts is
     /// slow enough that doing it per frame would be felt while the Settings
     /// window is open.
     pub(crate) font_families: Option<Vec<String>>,
+}
+
+impl PanelState {
+    /// A shortcut picker is listening for a chord, which the app must then
+    /// leave alone rather than act on.
+    pub fn capturing_shortcut(&self) -> bool {
+        self.macros.capture_shortcut || self.capture_manager_shortcut || self.capture_quake_shortcut
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -555,6 +578,18 @@ pub fn update_dialog(ctx: &Context, state: &mut crate::app::UpdateState) -> bool
                         .clicked()
                     {
                         apply = true;
+                    }
+                } else if !crate::features::update::SELF_INSTALL {
+                    // See `update::SELF_INSTALL`: the disk image is opened and
+                    // the app dragged across by hand, as any other is.
+                    let page = state.available.as_ref().map(|r| r.page.clone());
+                    if let Some(page) = page.filter(|p| !p.is_empty()) {
+                        if dialog::button(ui, tr("Open the release page"), Role::Suggested)
+                            .clicked()
+                        {
+                            ui.ctx().open_url(egui::OpenUrl::new_tab(page));
+                            state.asked = false;
+                        }
                     }
                 } else if dialog::button(ui, tr("Download"), Role::Suggested).clicked() {
                     state.start_download();
