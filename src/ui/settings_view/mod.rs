@@ -933,6 +933,16 @@ fn build_pages() -> Vec<Page> {
         page(Category::General, general()),
         page(Category::Appearance, appearance()),
     ];
+    // Only where there is a drop-down terminal: elsewhere the link to it is
+    // left out, and a page nothing leads to is one the search still would.
+    if crate::ui::quake::SUPPORTED {
+        pages.push(subpage(
+            Category::Windows,
+            QUAKE_PAGE,
+            "Drop-down terminal",
+            quake(),
+        ));
+    }
     pages.extend(themes::pages());
     pages.push(screensaver::page());
     pages.extend(vec![
@@ -943,7 +953,6 @@ fn build_pages() -> Vec<Page> {
             "Size presets",
             size_presets(),
         ),
-        subpage(Category::Windows, QUAKE_PAGE, "Drop-down terminal", quake()),
         page(Category::Terminal, terminal()),
         page(Category::Keyboard, keyboard()),
     ]);
