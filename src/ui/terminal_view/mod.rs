@@ -376,6 +376,10 @@ pub struct RenderResult {
     /// Columns to move IRIS's cursor by, after a click inside the line being
     /// typed. Negative is left.
     pub cursor_move: Option<i64>,
+    /// Font size change requested by Ctrl + mouse wheel over this pane.
+    pub font_delta: f32,
+    /// Proportional font size change requested by a trackpad pinch over this pane.
+    pub font_scale: Option<f32>,
     /// Grid dimensions the caller should resize the PTY to.
     ///
     /// `cols` is the *grid* width - [`TERMINAL_COLS`], not the window - because
@@ -993,6 +997,8 @@ pub fn show(
         context_action,
         copy_selection: mouse.copy_selection,
         cursor_move: mouse.cursor_move,
+        font_delta: mouse.font_delta,
+        font_scale: mouse.font_scale,
         cols: grid_cols,
         rows,
         view_cols,
@@ -1042,6 +1048,127 @@ fn phase_flip_after(time: f64) -> std::time::Duration {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pinch_over_a_focused_window_zooms_without_scrolling_the_transcript() {
+        for (inside, focused, scale) in [
+            (true, true, 1.25),
+            (true, true, 0.8),
+            (false, true, 1.25),
+            (true, false, 1.25),
+        ] {
+            let ctx = egui::Context::default();
+            let mut grid = Grid::new(20, 100, 100);
+            grid.cursor.row = 99;
+            let mut state = ViewState::default();
+            let mut font_scale = None;
+            for frame in 0..2 {
+                let mut input = egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, egui::vec2(320.0, 200.0))),
+                    ..Default::default()
+                };
+                input
+                    .viewports
+                    .entry(egui::ViewportId::ROOT)
+                    .or_default()
+                    .focused = Some(focused);
+                input.events.push(egui::Event::PointerMoved(if inside {
+                    egui::pos2(40.0, 40.0)
+                } else {
+                    egui::pos2(500.0, 500.0)
+                }));
+                if frame == 1 {
+                    input.events.push(egui::Event::Zoom(scale));
+                    input.events.push(egui::Event::MouseWheel {
+                        unit: egui::MouseWheelUnit::Point,
+                        delta: egui::vec2(0.0, 60.0),
+                        modifiers: egui::Modifiers::NONE,
+                    });
+                }
+                let _ = ctx.run(input, |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        let result = show(
+                            ui,
+                            &grid,
+                            &mut state,
+                            &Theme::default(),
+                            &RenderOpts::default(),
+                            1,
+                            PaneRole::default(),
+                            &[],
+                        );
+                        assert_eq!(result.font_delta, 0.0);
+                        font_scale = result.font_scale;
+                    });
+                });
+            }
+            assert_eq!(font_scale, (inside && focused).then_some(scale));
+            assert_eq!(state.anchor == ScrollAnchor::Bottom, !inside || focused);
+        }
+    }
+
+    #[test]
+    fn ctrl_wheel_over_the_pane_zooms_without_scrolling_the_transcript() {
+        for (ctrl, inside, direction) in [
+            (true, true, 1.0),
+            (true, true, -1.0),
+            (false, true, 1.0),
+            (true, false, 1.0),
+        ] {
+            let ctx = egui::Context::default();
+            let mut grid = Grid::new(20, 100, 100);
+            grid.cursor.row = 99;
+            let mut state = ViewState::default();
+            let mut font_delta = 0.0;
+            for frame in 0..3 {
+                let mut input = egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, egui::vec2(320.0, 200.0))),
+                    ..Default::default()
+                };
+                input.events.push(egui::Event::PointerMoved(if inside {
+                    egui::pos2(40.0, 40.0)
+                } else {
+                    egui::pos2(500.0, 500.0)
+                }));
+                if frame > 0 {
+                    input.modifiers = if ctrl && frame == 1 {
+                        egui::Modifiers::CTRL
+                    } else {
+                        egui::Modifiers::NONE
+                    };
+                    input.events.push(egui::Event::MouseWheel {
+                        unit: egui::MouseWheelUnit::Point,
+                        delta: egui::vec2(0.0, 60.0 * if frame == 1 { direction } else { 1.0 }),
+                        modifiers: input.modifiers,
+                    });
+                }
+                let _ = ctx.run(input, |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        let result = show(
+                            ui,
+                            &grid,
+                            &mut state,
+                            &Theme::default(),
+                            &RenderOpts::default(),
+                            1,
+                            PaneRole::default(),
+                            &[],
+                        );
+                        if frame == 1 {
+                            font_delta = result.font_delta;
+                        } else {
+                            assert_eq!(result.font_delta, 0.0);
+                        }
+                    });
+                });
+                if frame == 1 {
+                    assert_eq!(state.anchor == ScrollAnchor::Bottom, ctrl || !inside);
+                }
+            }
+            assert_eq!(font_delta, if ctrl && inside { direction } else { 0.0 });
+            assert_eq!(state.anchor == ScrollAnchor::Bottom, !inside);
+        }
+    }
 
     #[test]
     fn the_blink_asks_for_a_frame_at_each_half_and_not_before() {
