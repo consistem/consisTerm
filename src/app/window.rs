@@ -58,9 +58,22 @@ impl App {
     pub(super) fn ui_scale(&self) -> f32 {
         let scale = self.settings.ui_scale;
         if scale.is_finite() {
-            scale.clamp(1.0, 2.0)
+            scale.clamp(1.0, crate::ui::settings_view::UI_SCALE_MAX as f32 / 100.0)
         } else {
             1.0
+        }
+    }
+
+    /// Registers the drop-down terminal's shortcut when its settings have
+    /// changed since it was last registered, and says why when that fails.
+    pub(super) fn apply_quake(&mut self) {
+        let wanted = crate::ui::quake::Quake::from_settings(&self.settings);
+        if self.quake == Some(wanted) {
+            return;
+        }
+        self.quake = Some(wanted);
+        if let Err(why) = crate::ui::quake::configure(wanted) {
+            self.set_status(why);
         }
     }
 
@@ -104,6 +117,11 @@ impl App {
     /// what its own restore button would give back.
     pub(super) fn track_window_geometry(&mut self, ctx: &Context) {
         self.minimized = ctx.input(|i| i.viewport().minimized.unwrap_or(false));
+        // Dropped down, the window is the size and place of the screen's
+        // edge; remembered, it would reopen as a strip across the top.
+        if crate::ui::quake::docked() {
+            return;
+        }
         ctx.input(|i| {
             let viewport = i.viewport();
             if viewport.minimized.unwrap_or(false) {
@@ -245,6 +263,7 @@ impl App {
                 |t| t.window_buttons.show_on_top,
             );
         let on_top = self.settings.always_on_top && shown;
+        crate::ui::quake::set_pinned(on_top);
         if self.on_top_applied != Some(on_top) {
             self.on_top_applied = Some(on_top);
             crate::ui::desktop::set_always_on_top(ctx, on_top);
@@ -264,7 +283,7 @@ impl App {
     /// on this frame, it is gone before the last frame runs, and its size and
     /// position are saved as any other close of it saves them.
     pub(super) fn hide_to_tray(&mut self) -> bool {
-        if !crate::ui::tray::hide("newIrisTerminal") {
+        if !crate::ui::tray::hide(crate::APP_NAME) {
             return false;
         }
         if self.panels.show_settings {
@@ -301,7 +320,7 @@ impl App {
         let mut cancel = false;
         let mut open = true;
 
-        let title = tr("Close newIrisTerminal?");
+        let title = tr("Close consisTerm?");
         crate::ui::dialog::show(ctx, "nit-close-confirm", title, &mut open, |ui| {
             use crate::ui::dialog::{actions, button, Role};
             ui.vertical_centered(|ui| {

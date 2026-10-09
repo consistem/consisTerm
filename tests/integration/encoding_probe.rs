@@ -8,9 +8,9 @@
 
 use std::time::{Duration, Instant};
 
-use new_iris_terminal::pty::launcher::{launcher, LaunchSpec};
-use new_iris_terminal::pty::PtySession;
-use new_iris_terminal::term::Encoding;
+use consisterm::pty::launcher::{launcher, LaunchSpec};
+use consisterm::pty::PtySession;
+use consisterm::term::Encoding;
 
 #[test]
 #[ignore = "needs a local IRIS instance"]

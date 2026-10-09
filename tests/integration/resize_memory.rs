@@ -13,10 +13,10 @@
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::sync::atomic::{AtomicIsize, Ordering};
 
+use consisterm::config::theme::Theme;
+use consisterm::term::Grid;
+use consisterm::ui::terminal_view::{self, PaneRole, RenderOpts, ViewState, TERMINAL_COLS};
 use eframe::egui;
-use new_iris_terminal::config::theme::Theme;
-use new_iris_terminal::term::Grid;
-use new_iris_terminal::ui::terminal_view::{self, PaneRole, RenderOpts, ViewState, TERMINAL_COLS};
 
 /// Every allocation, less every deallocation. The default `realloc` and
 /// `alloc_zeroed` are built on these two, so both are counted.
@@ -49,7 +49,7 @@ fn used_grid(rows: usize) -> Grid {
     let mut vte = vte::Parser::new();
     let line = "USER>do ^%CSW1A write \"x\",! set a=1 ; a line of output\r\n";
     for _ in 0..600 {
-        new_iris_terminal::term::parser::advance(&mut vte, &mut grid, line.as_bytes());
+        consisterm::term::parser::advance(&mut vte, &mut grid, line.as_bytes());
     }
     grid
 }

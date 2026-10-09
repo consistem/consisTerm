@@ -238,7 +238,7 @@ impl App {
         }
         let report = self.usage_report();
         ctx.copy_text(report.clone());
-        let subject = format!("newIrisTerminal {} - usage report", update::CURRENT);
+        let subject = format!("{} {} - usage report", crate::APP_NAME, update::CURRENT);
         let mut link = usage::mailto(&to, &subject, &report);
         if link.len() > usage::MAILTO_LIMIT {
             link = usage::mailto(

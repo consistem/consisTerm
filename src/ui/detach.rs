@@ -55,6 +55,9 @@ pub struct Placement {
 /// main one, and after that wherever it was last dragged to - see
 /// `opening_position`. A caller with nothing to remember passes `None` and
 /// gets the last two.
+///
+/// `title_scale` is the "Title bar scale" setting, so the bar here is as tall
+/// as the main window's rather than a size of its own.
 #[allow(clippy::too_many_arguments)]
 pub fn shell(
     ctx: &Context,
@@ -63,6 +66,7 @@ pub fn shell(
     open: &mut bool,
     size: [f32; 2],
     buttons: &WindowButtons,
+    title_scale: f32,
     mut placement: Option<&mut Placement>,
     contents: impl FnOnce(&mut Ui),
 ) {
@@ -128,20 +132,34 @@ pub fn shell(
 
         crate::ui::screensaver_view::note_activity(ctx);
         crate::ui::shading::paint_backdrop(ctx);
-        {
-            egui::TopBottomPanel::top(egui::Id::new((id, "title-bar"))).show(ctx, |ui| {
-                if let Some(action) = title_bar(ui, id, title, buttons) {
-                    match action {
-                        // Closing this window is not closing the app: it
-                        // puts the dialog away, which is what the caller's
-                        // flag means.
-                        WindowAction::Close => closed = true,
-                        other => chrome::apply(ctx, other),
-                    }
-                }
+        // The bar and the page in one panel. As two - a top panel over a
+        // central one - the edge between them fell between two pixels at
+        // most scales, and the window's own clear colour showed through it
+        // as a line under the bar. One frame paints the whole background,
+        // and the two parts inside it only lay out.
+        let style = ctx.style();
+        egui::CentralPanel::default()
+            .frame(egui::Frame::central_panel(&style).inner_margin(egui::Margin::ZERO))
+            .show(ctx, |ui| {
+                egui::Frame::none()
+                    .inner_margin(egui::Frame::side_top_panel(&style).inner_margin)
+                    .show(ui, |ui| {
+                        ui.set_width(ui.available_width());
+                        crate::ui::prefs::scale_style(ui, title_scale.clamp(1.0, 2.0));
+                        if let Some(action) = title_bar(ui, id, title, buttons) {
+                            match action {
+                                // Closing this window is not closing the app:
+                                // it puts the dialog away, which is what the
+                                // caller's flag means.
+                                WindowAction::Close => closed = true,
+                                other => chrome::apply(ctx, other),
+                            }
+                        }
+                    });
+                egui::Frame::none()
+                    .inner_margin(egui::Frame::central_panel(&style).inner_margin)
+                    .show(ui, contents);
             });
-        }
-        egui::CentralPanel::default().show(ctx, contents);
         // Last, and in a foreground layer, for the same reason the main
         // window does it last. Nothing to keep off: a dialog has no
         // terminal in it reaching the window edge.

@@ -1,0 +1,16 @@
+# Derives every icon the app ships from assets/logo.png. Not part of the app's
+# build: run it by hand after changing the logo, and commit what it writes.
+#
+#     cargo run --manifest-path packaging/icons/Cargo.toml --release
+[package]
+name = "consisterm-icons"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# A crate of its own, not a member of the app's: the app's Cargo.toml is not a
+# workspace, and without this Cargo would go looking for one.
+[workspace]
+
+[dependencies]
+image = { version = "0.24", default-features = false, features = ["png"] }

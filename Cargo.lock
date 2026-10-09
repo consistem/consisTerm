@@ -759,6 +759,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "consisterm"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "crossbeam-channel",
+ "dirs",
+ "eframe",
+ "egui",
+ "env_logger",
+ "fontdb",
+ "image 0.24.9",
+ "keyring",
+ "log",
+ "portable-pty",
+ "quick-xml 0.36.2",
+ "raw-window-handle 0.6.2",
+ "serde",
+ "serde_json",
+ "toml 0.8.23",
+ "ureq",
+ "vte",
+ "wasmtime",
+ "windows-sys 0.59.0",
+ "winreg",
+ "winres",
+]
+
+[[package]]
 name = "core-foundation"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2702,35 +2731,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c196769dd60fd4f363e11d948139556a344e79d451aeb2fa2fd040738ef7691"
 dependencies = [
  "jni-sys 0.3.1",
-]
-
-[[package]]
-name = "new-iris-terminal"
-version = "0.1.13"
-dependencies = [
- "anyhow",
- "chrono",
- "crossbeam-channel",
- "dirs",
- "eframe",
- "egui",
- "env_logger",
- "fontdb",
- "image 0.24.9",
- "keyring",
- "log",
- "portable-pty",
- "quick-xml 0.36.2",
- "raw-window-handle 0.6.2",
- "serde",
- "serde_json",
- "toml 0.8.23",
- "ureq",
- "vte",
- "wasmtime",
- "windows-sys 0.59.0",
- "winreg",
- "winres",
 ]
 
 [[package]]

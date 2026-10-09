@@ -41,7 +41,7 @@ mod imp {
     const CALLBACK: u32 = WM_APP + 1;
     /// Sent by a second launch to the copy already running: show yourself.
     const WAKE: u32 = WM_APP + 2;
-    const CLASS: &str = "newIrisTerminalTray";
+    const CLASS: &str = "consisTermTray";
     const ICON_ID: u32 = 1;
     const CMD_OPEN: usize = 1;
     const CMD_EXIT: usize = 2;

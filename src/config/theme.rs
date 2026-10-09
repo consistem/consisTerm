@@ -252,15 +252,18 @@ pub type ButtonOrder = [TitleButton; 9];
 /// way it always did: close at the outer corner either way, and the gear on
 /// the inside beside minimize. The spaces sit straight after the tabs, which
 /// is where the empty stretch of the bar always was.
+///
+/// The pin is fourth from close, past minimize and maximize: beside close it
+/// was the button hit by anyone reaching for close and missing.
 pub fn default_order(left: bool) -> ButtonOrder {
     use TitleButton::*;
     if left {
         [
-            Close, OnTop, Minimize, Maximize, Settings, NewTab, Tabs, LeftSpace, RightSpace,
+            Close, Minimize, Maximize, OnTop, Settings, NewTab, Tabs, LeftSpace, RightSpace,
         ]
     } else {
         [
-            NewTab, Tabs, LeftSpace, RightSpace, Settings, Minimize, Maximize, OnTop, Close,
+            NewTab, Tabs, LeftSpace, RightSpace, Settings, OnTop, Minimize, Maximize, Close,
         ]
     }
 }
@@ -566,6 +569,91 @@ const LIGHT_SYNTAX: SyntaxPalette = SyntaxPalette {
 
 /// Fills the syntax fields of a theme file from a palette, leaving everything
 /// else at its default so the caller can write only what it cares about.
+/// High contrast on black, for low vision: every colour at least 7:1 against
+/// the background - WCAG's AAA level - and none of them leaning on hue alone.
+const HIGH_CONTRAST_SYNTAX: SyntaxPalette = SyntaxPalette {
+    label: "#FFFFFF",
+    command: "#00FFFF",
+    string: "#7FFFD4",
+    number: "#FFA0FF",
+    delimiter: "#FFFFFF",
+    operator: "#FFFFFF",
+    preprocessor: "#FFB347",
+    function: "#87CEFA",
+    global: "#FFD700",
+    system_variable: "#FFFF66",
+    class: "#C8D4FF",
+    method: "#66FFFF",
+    attribute: "#ADD8E6",
+    member: "#FFC0CB",
+    routine: "#E6B8FF",
+    extrinsic: "#B0E0FF",
+};
+
+/// The same, dark on white.
+const HIGH_CONTRAST_LIGHT_SYNTAX: SyntaxPalette = SyntaxPalette {
+    label: "#000000",
+    command: "#00008B",
+    string: "#5C3D00",
+    number: "#7A0055",
+    delimiter: "#000000",
+    operator: "#000000",
+    preprocessor: "#8B2500",
+    function: "#004D40",
+    global: "#8B0000",
+    system_variable: "#4D4D00",
+    class: "#3A0080",
+    method: "#00474D",
+    attribute: "#002E80",
+    member: "#6B0030",
+    routine: "#4B0066",
+    extrinsic: "#003366",
+};
+
+/// Okabe and Ito's palette, the one made to stay distinguishable under every
+/// common colour-vision deficiency - protanopia, deuteranopia, tritanopia. The
+/// tokens that matter most are also told apart by lightness, so a reader who
+/// sees none of the hues still sees which is which.
+const OKABE_ITO_SYNTAX: SyntaxPalette = SyntaxPalette {
+    label: "#F0E442",
+    command: "#56B4E9",
+    string: "#E69F00",
+    number: "#CC79A7",
+    delimiter: "#BBBBBB",
+    operator: "#BBBBBB",
+    preprocessor: "#E69F00",
+    function: "#35C29A",
+    global: "#FF8C42",
+    system_variable: "#F0E442",
+    class: "#8FC9F0",
+    method: "#56B4E9",
+    attribute: "#8FC9F0",
+    member: "#E3A3C9",
+    routine: "#E3A3C9",
+    extrinsic: "#8FC9F0",
+};
+
+/// Okabe-Ito on white. Its yellow and sky blue are too pale to read on paper,
+/// so those are the palette's darker relatives.
+const OKABE_ITO_LIGHT_SYNTAX: SyntaxPalette = SyntaxPalette {
+    label: "#6B5E00",
+    command: "#0072B2",
+    string: "#9A5B00",
+    number: "#9E4A7E",
+    delimiter: "#4D4D4D",
+    operator: "#4D4D4D",
+    preprocessor: "#B04A00",
+    function: "#00785A",
+    global: "#B04A00",
+    system_variable: "#6B5E00",
+    class: "#005A8C",
+    method: "#0072B2",
+    attribute: "#005A8C",
+    member: "#9E4A7E",
+    routine: "#9E4A7E",
+    extrinsic: "#005A8C",
+};
+
 fn with_syntax(palette: SyntaxPalette) -> ThemeFile {
     ThemeFile {
         syntax_global: palette.global.into(),
@@ -1565,6 +1653,90 @@ pub fn builtin_files() -> Vec<ThemeFile> {
             builtin: true,
             ..with_syntax(LIGHT_SYNTAX)
         },
+        // For low vision and colour-vision deficiency. Their colours are held
+        // to WCAG contrast ratios by a test below, not by eye.
+        ThemeFile {
+            name: "High Contrast Dark".into(),
+            background: "#000000".into(),
+            foreground: "#FFFFFF".into(),
+            cursor: "#FFD700".into(),
+            selection: "#1F4E99".into(),
+            ansi: ansi([
+                "#000000", "#FF6B6B", "#7CFC00", "#FFD700", "#6CB6FF", "#FF8CFF", "#00FFFF",
+                "#E6E6E6", "#A6A6A6", "#FF9999", "#B3FF66", "#FFFF66", "#99CCFF", "#FFB3FF",
+                "#99FFFF", "#FFFFFF",
+            ]),
+            ui_foreground: "#F2F2F2".into(),
+            // Off black, so the chrome still reads as separate from the
+            // terminal; white on it is still over 17:1.
+            ui_background: "#1A1A1A".into(),
+            ui_border: "#FFFFFF".into(),
+            font_family: default_font_family(),
+            font_size: 14.0,
+            dark: true,
+            builtin: true,
+            ..with_syntax(HIGH_CONTRAST_SYNTAX)
+        },
+        ThemeFile {
+            name: "High Contrast Light".into(),
+            background: "#FFFFFF".into(),
+            foreground: "#000000".into(),
+            cursor: "#0000CC".into(),
+            selection: "#FFE066".into(),
+            ansi: ansi([
+                "#000000", "#A30000", "#005C00", "#5C4A00", "#0033A0", "#7A0080", "#00585C",
+                "#4D4D4D", "#333333", "#8B0000", "#004D00", "#4D3D00", "#002B80", "#660066",
+                "#004A4D", "#000000",
+            ]),
+            ui_foreground: "#141414".into(),
+            ui_background: "#E6E6E6".into(),
+            ui_border: "#000000".into(),
+            font_family: default_font_family(),
+            font_size: 14.0,
+            dark: false,
+            builtin: true,
+            ..with_syntax(HIGH_CONTRAST_LIGHT_SYNTAX)
+        },
+        ThemeFile {
+            name: "Colour-blind Safe".into(),
+            background: "#121212".into(),
+            foreground: "#E8E8E8".into(),
+            cursor: "#F0E442".into(),
+            selection: "#1F4E79".into(),
+            // Red and green are vermillion and bluish green - Okabe-Ito's own
+            // stand-ins - so an error and a success differ in lightness too.
+            ansi: ansi([
+                "#121212", "#D55E00", "#009E73", "#F0E442", "#0072B2", "#CC79A7", "#56B4E9",
+                "#E0E0E0", "#7F7F7F", "#FF8C42", "#35C29A", "#F7EF8A", "#4AA3E8", "#E3A3C9",
+                "#8FD0F5", "#FFFFFF",
+            ]),
+            ui_foreground: "#E0E0E0".into(),
+            ui_background: "#1C1C1C".into(),
+            font_family: default_font_family(),
+            font_size: 14.0,
+            dark: true,
+            builtin: true,
+            ..with_syntax(OKABE_ITO_SYNTAX)
+        },
+        ThemeFile {
+            name: "Colour-blind Safe Light".into(),
+            background: "#FFFFFF".into(),
+            foreground: "#1A1A1A".into(),
+            cursor: "#0072B2".into(),
+            selection: "#CDE6F7".into(),
+            ansi: ansi([
+                "#1A1A1A", "#B04A00", "#00785A", "#6B5E00", "#0072B2", "#9E4A7E", "#005A8C",
+                "#595959", "#4D4D4D", "#D55E00", "#009E73", "#8A7A00", "#005A8C", "#CC79A7",
+                "#0072B2", "#1A1A1A",
+            ]),
+            ui_foreground: "#333333".into(),
+            ui_background: "#F2F2F2".into(),
+            font_family: default_font_family(),
+            font_size: 14.0,
+            dark: false,
+            builtin: true,
+            ..with_syntax(OKABE_ITO_LIGHT_SYNTAX)
+        },
     ]
 }
 
@@ -1889,7 +2061,7 @@ mod tests {
     fn a_dragged_row_lands_where_it_was_dropped_and_the_rest_close_up() {
         use TitleButton::*;
         let mut order = default_order(false);
-        // [NewTab, Tabs, LeftSpace, RightSpace, Settings, Minimize, Maximize, OnTop, Close]
+        // [NewTab, Tabs, LeftSpace, RightSpace, Settings, OnTop, Minimize, Maximize, Close]
         move_in_order(&mut order, 8, 0);
         assert_eq!(order[0], Close);
         assert_eq!(order[1], NewTab);
@@ -1924,7 +2096,7 @@ mod tests {
         use TitleButton::*;
         assert_eq!(
             buttons.leading(),
-            [Close, OnTop, Minimize, Maximize, Settings, NewTab, Tabs]
+            [Close, Minimize, Maximize, OnTop, Settings, NewTab, Tabs]
         );
         assert!(buttons.trailing().is_empty());
     }
@@ -2043,5 +2215,60 @@ mod tests {
         let back = Theme::from_file(&file);
         assert_eq!(back.background_gradient, None);
         assert_eq!(back.background_gradient_ends, Some((from, to)));
+    }
+
+    /// WCAG's contrast ratio between two colours, 1 to 21.
+    fn contrast(a: Color32, b: Color32) -> f32 {
+        let luminance = |c: Color32| {
+            let channel = |v: u8| {
+                let v = f32::from(v) / 255.0;
+                if v <= 0.03928 {
+                    v / 12.92
+                } else {
+                    ((v + 0.055) / 1.055).powf(2.4)
+                }
+            };
+            0.2126 * channel(c.r()) + 0.7152 * channel(c.g()) + 0.0722 * channel(c.b())
+        };
+        let (l1, l2) = (luminance(a), luminance(b));
+        (l1.max(l2) + 0.05) / (l1.min(l2) + 0.05)
+    }
+
+    #[test]
+    fn the_accessible_themes_keep_every_colour_readable_against_their_background() {
+        // AAA for the high-contrast ones, AA for the colour-blind ones, whose
+        // job is telling hues apart rather than sheer contrast.
+        for (name, least) in [
+            ("High Contrast Dark", 7.0),
+            ("High Contrast Light", 7.0),
+            ("Colour-blind Safe", 4.5),
+            ("Colour-blind Safe Light", 4.5),
+        ] {
+            let file = builtin_files()
+                .into_iter()
+                .find(|f| f.name == name)
+                .unwrap();
+            let theme = Theme::from_file(&file);
+            let bg = theme.background;
+            let mut colours = vec![("foreground", theme.foreground)];
+            colours.extend([
+                ("global", theme.syntax_global),
+                ("string", theme.syntax_string),
+                ("label", theme.syntax_label),
+                ("command", theme.syntax_command),
+                ("number", theme.syntax_number),
+                ("function", theme.syntax_function),
+                ("class", theme.syntax_class),
+                ("method", theme.syntax_method),
+                ("routine", theme.syntax_routine),
+            ]);
+            for (what, colour) in colours {
+                let ratio = contrast(colour, bg);
+                assert!(
+                    ratio >= least,
+                    "{name}: {what} is {ratio:.2}:1, under {least}:1"
+                );
+            }
+        }
     }
 }

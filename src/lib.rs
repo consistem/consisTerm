@@ -1,4 +1,4 @@
-//! newIrisTerminal — a terminal emulator for InterSystems IRIS.
+//! consisTerm — a terminal emulator for InterSystems IRIS.
 //!
 //! The crate is a library plus a thin binary so integration tests (and, later,
 //! the plugin host) can drive the terminal core without going through the GUI.
@@ -14,6 +14,15 @@ pub mod ui;
 
 use eframe::egui;
 use std::sync::Arc;
+
+/// The name the app goes by: the window title, the taskbar, the folder its
+/// settings live in. Written once, because it has already changed once.
+pub const APP_NAME: &str = "consisTerm";
+
+/// The reverse-DNS id the packages install under. On Wayland it is how the
+/// desktop finds the `.desktop` file and the icon for a window, which
+/// otherwise shows with a generic one.
+pub const APP_ID: &str = "br.com.consistem.consisterm";
 
 // Função para processar a imagem do ícone
 fn load_icon() -> egui::IconData {
@@ -57,10 +66,19 @@ fn estimated_inner_size(settings: &config::Settings, cols: u16, rows: u16) -> [f
 
 /// Starts the GUI. The binary is nothing more than a call to this.
 pub fn run() -> eframe::Result<()> {
+    // Before anything that opens a window or reads the settings: a release
+    // build is checked by running this on a machine with no display.
+    if std::env::args().skip(1).any(|a| a == "--version") {
+        println!("{APP_NAME} {}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
     // Read early, because a window's frame, size and position are all fixed
     // when it is created. `App::new` loads the settings again; the file is
     // small and the alternative is threading it through `run_native`'s
     // callback.
+    config::migrate_legacy_dir();
+    features::iris_terminal::point_legacy_home();
+    features::explorer_menu::refresh_legacy();
     let settings = config::Settings::load();
     // The copy standing in for the tray's terminal only passes the request on
     // to the real install, so updating that one updates both.
@@ -101,7 +119,8 @@ pub fn run() -> eframe::Result<()> {
         .with_min_inner_size([400.0, 240.0])
         // The title still matters with the frame off: it is what the
         // taskbar and the window switcher show.
-        .with_title("newIrisTerminal")
+        .with_title(APP_NAME)
+        .with_app_id(APP_ID)
         .with_decorations(false)
         .with_resizable(true)
         // Define o ícone da janela e barra de tarefas aqui:
@@ -122,7 +141,7 @@ pub fn run() -> eframe::Result<()> {
     };
 
     eframe::run_native(
-        "newIrisTerminal",
+        APP_NAME,
         options,
         Box::new(move |cc| Ok(Box::new(app::App::with_launch(cc, launch)))),
     )

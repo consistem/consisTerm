@@ -1,153 +1,212 @@
-# newIrisTerminal 🖥️
+<p align="center">
+  <img src="assets/logo.png" alt="consisTerm logo: a glass ring holding a terminal prompt, teal fading to violet" width="160">
+</p>
 
-A terminal emulator for InterSystems IRIS — Windows, Linux and macOS.
+<h1 align="center">consisTerm</h1>
 
-## 📖 Overview
+<p align="center">
+  <b>The terminal for InterSystems IRIS, built for the people who live in it.</b><br>
+  Read globals, look up data, ask Claude about the output, share commands across the team — without leaving the prompt.<br>
+  Windows · Linux · macOS
+</p>
 
-**newIrisTerminal** drives IRIS sessions through a real pseudo-terminal. Built in Rust with egui. Interface in English and Brazilian Portuguese.
+<p align="center">
+  <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue">
+  <img alt="Written in Rust" src="https://img.shields.io/badge/written%20in-Rust-orange">
+  <img alt="Runs on Windows, Linux and macOS" src="https://img.shields.io/badge/runs%20on-Windows%20%7C%20Linux%20%7C%20macOS-555">
+  <img alt="No account, no telemetry" src="https://img.shields.io/badge/no%20account-no%20telemetry-2ea44f">
+</p>
 
-## ✨ Highlights
+<p align="center">
+  <b>English</b> · <a href="README.pt-BR.md">Português</a>
+</p>
 
-- **Terminal zoom:** Ctrl + mouse wheel over a terminal pane increases or decreases the font size, using the same 8–28 point range as Ctrl+Plus/Minus. Trackpad pinch gestures also adjust the font proportionally when the platform delivers native pinch events (macOS), or through the same Ctrl + wheel path on drivers that emulate it. Scrolling without Ctrl keeps navigating the transcript.
+<p align="center">
+  <a href="#global-tooltip">Global tooltip</a> ·
+  <a href="#autocomplete-and-data-lookup">Autocomplete</a> ·
+  <a href="#send-it-to-claude">Claude</a> ·
+  <a href="#macros-for-you-and-for-the-whole-team">Macros</a> ·
+  <a href="#every-shell-in-one-window">Shells</a> ·
+  <a href="#and-everything-else">Everything else</a> ·
+  <a href="#downloads">Downloads</a>
+</p>
 
-* **Tabs:** one IRIS session per tab, each with its own scrollback and log.
-  Ctrl+T connects on the last-used server; right-click `+` for every profile,
-  server and discovered instance. A tab is named after its instance and, if you
-  like, the namespace the session is in — `CONSISTEM | RDB76-TR` — following
-  every `ZN`.
-* **Split panes:** *Split to right* or *Split to bottom* opens a second session
-  in the same tab. Drag the divider to resize, double-click it to even them out.
-  Each pane sizes its own session, so neither is truncated at a width it is not
-  drawn at.
-* **Lines far longer than the window:** the terminal reports a right margin of
-  16384 columns, so a `zwrite` of a wide global arrives whole and a long command
-  is echoed whole. The window is a view onto the line, wrapped or scrolled
-  sideways.
-* **ObjectScript colouring:** globals, strings, macros, class and method
-  references, routine and extrinsic calls, commands and their IRIS
-  abbreviations. Prompt-aware, so plain prose never lights up.
-* **Line editing at the prompt:** Home/End, Ctrl+Left/Right by word, click to
-  place the cursor, Ctrl+A to select, double-click for a word, triple-click for
-  a line. Built entirely from keys IRIS acts on, since IRIS owns the read
-  buffer. Typing `"`, `'`, `(`, `[` or `{` over a selection wraps it in the pair
-  instead of replacing it, the way an editor does — so a global name picked off
-  the screen is quoted in one keystroke.
-* **Find in the transcript:** Ctrl+F searches everything the session has
-  printed, scrollback included. Enter and Shift+Enter — or F3 — walk the hits,
-  every one is highlighted, and the view scrolls to the one being looked at.
-* **Command history that outlives the session:** Up offers a tab the commands
-  typed at its own prompt first, then the ones earlier runs left behind. Lines a
-  macro sent are never offered back.
-* **SQL mode:** type `/sql` at an IRIS prompt (or press Ctrl+Shift+Q) to drop
-  into the IRIS SQL shell; the same gesture leaves it. While the prompt reads
-  `NAMESPACE>>`, the line is coloured as SQL.
-* **Autocomplete at the prompt:** commands, `$` functions, `^` globals,
-  routines, `##class(` names and, in SQL mode, keywords and tables. Globals
-  come from the namespace itself — mapped ones and `^mtemp…` in IRISTEMP
-  included — and a prefix with too many is folded into one line per next
-  letter (`^TG…`) that narrows as you type. Inside `^GLOBAL(` it names the
-  subscript from the global's documentation and offers its constants, its
-  listed values and the subscripts that exist there now. Up/Down choose, Tab
-  accepts, Esc closes.
-* **Macros from XML:** `{{param}}` substitution, `confirm="true"` for anything
-  that writes, a keyboard shortcut per macro, and `hide_command="true"` for a
-  command line carrying a password. The macro editor checks every parameter
-  against the command, and one the command never uses is not asked for.
-* **IRIS utilities:** compile a package, compile a routine group, generate an
-  interface — each with a field per argument and the exact line it will send
-  shown underneath.
-* **Other shells:** Command Prompt, Windows PowerShell, PowerShell 7, Git Bash,
-  WSL, or whatever `/etc/shells` lists. Each is a `.toml` in `plugins/shells/`,
-  written there the first time the app finds it installed and yours to edit or
-  delete after that.
-* **A clear-screen that keeps the transcript:** `W #` files the old screen into
-  scrollback instead of destroying it, the way the native IrisTerm does.
-  Ctrl+Delete is the deliberate gesture that really throws it away.
-* **Themes you can edit in the app:** ten built-in and immutable — IRIS
-  Dark, IRIS Classic Green, Tokyo, Light, Tiger Aqua, Tiger Graphite, Windows
-  XP, Hello Kitty, Hello Kitty Dark and Final Fantasy VII.
-  Duplicate one and every colour is yours: the terminal, its scrollbar and the
-  chrome (each with an optional gradient), the window buttons, the selected
-  tab, the sixteen ANSI slots and the sixteen ObjectScript ones. Point at a
-  swatch and press Ctrl+C / Ctrl+V to copy a colour between elements. The
-  title bar's layout is the theme's too: drag its items into any order, with a
-  left and a right space to pack things left, right or centred.
-* **Settings with search:** one window, macOS/GNOME style — a sidebar of
-  pages, the themes, macros and screen savers among them, and a search field
-  that finds any setting by name or description, in English or Portuguese.
-  An interface scale from 100% to 200% enlarges everything but the terminal,
-  and a title bar scale enlarges the tabs and the title bar on top of it.
-* **Tabs and the title bar:** the tabs share the whole bar, and any of them,
-  or any button, moves the window when dragged up or down. With *Close to the
-  tray* on, launching the app again brings the running copy back instead of
-  starting a second one.
-* **Screen savers:** Matrix (in any colours), a bouncing DVD logo or your own
-  text, and a floating logo — Windows XP, Windows XP Pirated Edition, your text
-  or your own PNG/GIF.
-* **Export and logging:** screen or full scrollback, as text or
-  colour-preserving HTML, to a file or the clipboard. Per-session transcripts
-  are written through as the session runs, with password redaction and rotation.
-* **Analyze with Claude:** opens a Claude Code session with the terminal output
-  already in its context, then waits for your question. Four scopes: all
-  output, the last 10 commands, the last 5, or just the selection. Needs
-  `claude` on the PATH.
-* **Autologon:** credentials from the OS credential store, never from
-  `settings.toml`.
-* **Auto-update:** checks GitHub for a newer release at startup, through the
-  machine's own proxy. Nothing is downloaded or replaced without being asked.
+---
 
-## 🧾 Requirements
+## Global tooltip
 
-- **OS:** Windows 10 or later, Linux, or macOS
-- **Disk:** ~30 MB free space
-- An InterSystems IRIS or Caché instance to connect to — local instances are
-  discovered automatically via `iris list`
+**Point at a global and it tells you what it is.** Hover any piece of a
+`zwrite` line, a `write` of one node or a `^%G` listing, and consisTerm shows
+which property that subscript or `^`-piece holds, its type, its size and its
+list of allowed values — read from the classes that map the global, in the
+namespace the session is in.
 
-## Setup
+The question goes down a session of its own, never the one you are typing in,
+and it asks for structure only, never for a record's value. The first hover on
+a global is the only one that ever waits.
 
-- [ ] Grab the latest build from the [releases page](https://github.com/ccsJoaoAzevedo/newIrisTerminal/releases).
-- [ ] Run the executable — there is no installer and nothing is written outside
-      the config directory.
-- [ ] Pick a theme and a font in Settings, and add a profile for any server you
-      connect to that is not a local instance.
+<p align="center">
+  <img src="docs/images/global-tooltip.png" alt="The pointer over the third piece of a zwrite line; a tooltip names the property, its type and its allowed values" width="100%">
+  <br><sub>Hover a piece of a global and read what it means.</sub>
+</p>
 
-## 📥 Downloads & Links
+## Autocomplete and data lookup
 
-➡️ **[Get the latest build](https://github.com/ccsJoaoAzevedo/newIrisTerminal/releases/latest)**
+**Suggestions as you type, from the namespace itself.** Commands, `$`
+functions, `^` globals, routines, `##class(` names and, in SQL mode, keywords
+and tables. Globals come straight from the namespace — mapped ones and
+`^mtemp…` in IRISTEMP included — and a prefix with too many is folded into one
+line per next letter (`^TG…`) that narrows as you type.
 
-Repository: https://github.com/ccsJoaoAzevedo/newIrisTerminal
+Inside `^GLOBAL(` it goes further: it names the subscript you are on from the
+global's documentation and offers its constants, its listed values and the
+subscripts that actually exist there right now. Up/Down choose, Tab accepts,
+Esc closes.
+
+<p align="center">
+  <img src="docs/images/autocomplete.png" alt="Typing inside ^GLOBAL( shows a list of existing subscripts with the subscript's name above them" width="100%">
+  <br><sub>Real subscripts from the database, named by the global's documentation.</sub>
+</p>
+
+## Send it to Claude
+
+**Ask about what is on the screen.** *Analyze with Claude* opens a Claude Code
+session in a tab of its own with the terminal's output already in its context,
+and then waits for your question — nothing is asked on your behalf. Choose how
+much to hand over: everything, the last 10 commands, the last 5, or just the
+selection.
+
+<p align="center">
+  <img src="docs/images/claude.png" alt="A Claude Code tab beside an IRIS session, answering a question about an error in the output" width="100%">
+  <br><sub>An error on screen, and a tab that already knows about it.</sub>
+</p>
+
+Needs [`claude`](https://claude.com/claude-code) on the `PATH`.
+
+## Macros for you and for the whole team
+
+**A collection of commands, one click or one shortcut away.** Macros live in
+XML: `{{param}}` placeholders are asked for before sending, `confirm="true"`
+guards anything that writes, each macro can have its own shortcut, and
+`hide_command="true"` keeps a command carrying a password out of the
+interface. The editor in Settings checks every parameter against the command.
+
+**The organisation file** is a second, read-only collection that every copy of
+consisTerm loads beside your own. Put `org-macros.xml` next to the executable —
+or point Settings at a share — and the whole team has the same commands, kept
+in one place. A template ships in
+[`packaging/org-macros.xml`](packaging/org-macros.xml).
+
+<p align="center">
+  <img src="docs/images/macros.png" alt="The right-click menu of the terminal showing Organisation and Personal macro groups" width="100%">
+  <br><sub>The team's macros and your own, side by side.</sub>
+</p>
+
+## Every shell in one window
+
+**Not only IRIS.** Command Prompt, Windows PowerShell, PowerShell 7, Git Bash,
+WSL, or whatever `/etc/shells` lists — each in a tab, beside your IRIS
+sessions, split with them, themed with them. Every shell is a `.toml` in
+`plugins/shells/`, written the first time the app finds it installed and yours
+to edit after that. *Open consisTerm here* in Explorer's folder menu opens one
+in that folder.
+
+<p align="center">
+  <img src="docs/images/shells.png" alt="Tabs for an IRIS session, PowerShell and Git Bash in one window" width="100%">
+  <br><sub>IRIS, PowerShell and Git Bash in the same window.</sub>
+</p>
+
+---
+
+## And everything else
+
+* **Tabs and split panes** — one session per tab, each with its own scrollback
+  and log; split right or down for a second session in the same tab. Named
+  after the instance and, if you like, the namespace, following every `ZN`.
+* **Title bar anywhere** — top, bottom, left or right, as browsers offer. On a
+  side, the tabs become a column.
+* **Drop-down terminal** *(Windows)* — a system-wide shortcut (F12 by default)
+  brings the window down from the top or up from the bottom of the screen, the
+  way Guake and Yakuake do, and puts it away again.
+* **Lines far longer than the window** — the terminal reports a 16384-column
+  margin, so a `zwrite` of a wide global arrives whole.
+* **ObjectScript colouring** — globals, strings, macros, class and method
+  references, routines and commands, including their abbreviations.
+  Prompt-aware, so plain prose never lights up.
+* **Editing at the prompt** — Home/End, word jumps, click to place the cursor,
+  and typing `"`, `(` or `[` over a selection wraps it instead of replacing it.
+* **Command history that outlives the session**, and **Ctrl+F** across the
+  whole transcript.
+* **SQL mode** — `/sql` or Ctrl+Shift+Q drops into the IRIS SQL shell, with SQL
+  colouring while you are there.
+* **IRIS utilities** — compile a package, compile a routine group, generate an
+  interface, with the exact line shown before it is sent.
+* **Zoom** — Ctrl + wheel, Ctrl+Plus/Minus, a trackpad pinch; Ctrl+0 resets.
+* **Themes you can edit** — fourteen built in, including **High Contrast** dark
+  and light and **Colour-blind Safe** dark and light, built on the Okabe–Ito
+  palette. Duplicate any of them and every colour is yours, including the
+  title bar's layout.
+* **Settings with search**, in English or Portuguese, with an interface scale
+  from 100% to 150% and a separate title bar scale.
+* **Export and logging** — screen or scrollback as text or colour-preserving
+  HTML; per-session transcripts with password redaction and rotation.
+* **Screen savers** — Matrix, a bouncing logo, or your own text or picture.
+* **Autologon** — credentials from the OS credential store, never from a file.
+* **Close to the tray**, **always on top**, and **automatic updates** through
+  the machine's own proxy — nothing is downloaded without being asked.
+
+---
+
+## Downloads
+
+➡️ **[Latest release](https://github.com/consistem/consisTerm/releases/latest)**
+
+| Platform | File | Notes |
+| --- | --- | --- |
+| Windows x64 | `consisterm-<version>-windows-x64.exe` | Portable — no installer. Also as a `.zip`. |
+| Linux x86_64 | `consisterm-<version>-linux-x86_64.AppImage` | `chmod +x` and run. Needs glibc 2.35+ (Ubuntu 22.04, Debian 12, Fedora 36 or later). Also as a `.tar.gz`. |
+| macOS (Apple silicon and Intel) | `consisterm-<version>-macos-universal.dmg` | Open it and drag consisTerm to Applications. |
+
+Every release lists its `SHA256SUMS.txt`. An IRIS or Caché instance to connect
+to is the only other requirement — local instances are found on their own.
+
+---
+
+## Where it stands
+
+Honestly, as of 0.1:
+
+* **Solid:** IRIS and shell sessions on Windows, and everything above that is
+  not marked otherwise.
+* **New:** the Linux and macOS builds. They build cleanly, but have seen far
+  less use than Windows — reports welcome.
+* **Windows only, for now:** the drop-down terminal, the tray, the Explorer
+  menu and standing in for `Iristerm.exe` from the IRIS tray.
+* **Unsigned:** Windows SmartScreen and macOS Gatekeeper will ask before the
+  first run. On macOS, right-click the app and choose *Open*.
+
+---
 
 ## Configuration
 
-Everything lives under the platform config directory —
-`%APPDATA%\newIrisTerminal`, `~/.config/newIrisTerminal`, or
-`~/Library/Application Support/newIrisTerminal`:
+Everything lives in the platform's config folder — `%APPDATA%\consisTerm`,
+`~/.config/consisTerm` or `~/Library/Application Support/consisTerm`. Set
+`CONSISTERM_CONFIG_DIR` to keep it somewhere else, such as beside a portable
+copy.
 
 | File | Purpose |
-|---|---|
-| `settings.toml` | Language, theme, font, window, session and logging settings, and the profiles |
-| `macros.xml` | Your personal macros — written by the macro manager |
+| --- | --- |
+| `settings.toml` | Language, theme, font, window, sessions, logging, profiles |
+| `macros.xml` | Your personal macros |
 | `history.txt` | Commands typed at an IRIS prompt, for recall |
-| `themes/*.toml` | Your own themes, written by the theme manager |
-| `analysis/*.md` | Output handed to Claude Code by *Analyze with Claude* |
+| `themes/*.toml` | Your own themes |
 | `plugins/shells/*.toml` | One per shell, found or declared |
 
-Passwords are never in `settings.toml`: they go to the OS credential store
-(Windows Credential Manager, macOS Keychain, Secret Service), keyed by profile
-name — and the HTTP proxy's password with them, under `http-proxy`.
+Passwords never touch a file: they go to Windows Credential Manager, the macOS
+Keychain or the Secret Service.
 
-### Encoding
-
-A session has one character set, used to decode what arrives and to encode what
-is typed, and nothing translates a second time in between.
-
-**A local session is UTF-8, and there is nothing to choose.** Sessions are
-opened with `chcp 65001` in front of them, which is the only configuration in
-which accented text works in both directions.
-
-**A Telnet session is where the codepages are real**, because no console stands
-in the path and the socket carries the instance's own bytes. UTF-8, CP850,
-Windows-1252 and ISO 8859-1 are selectable per remote profile.
+Coming from **newIrisTerminal**? The first start copies your settings, macros,
+themes and history across; the old folder is left as it was.
 
 ## Build from source
 
@@ -156,42 +215,32 @@ cargo build --release
 cargo test
 ```
 
-The plugin host pulls in wasmtime and is off by default:
+The WASM plugin host is behind a feature flag:
 
 ```sh
 cargo build --release --features plugins
 ```
 
 On Windows without Visual Studio, the GNU toolchain needs a full MinGW-w64
-beside it (the one inside the Rust MSI lacks the assembler `dlltool` wants):
+beside it:
 
 ```powershell
 winget install Rustlang.Rust.GNU
 winget install BrechtSanders.WinLibs.POSIX.MSVCRT
 ```
 
-The tests that talk to a real instance are ignored by default; they open a
-session and read the banner, never logging in and never writing data:
-
-```sh
-cargo test --test integration live_session:: -- --ignored --nocapture
-```
-
-`IRIS_TEST_INSTANCE` picks the instance; otherwise the first discovered one is
-used.
+Release packaging lives in [`packaging/`](packaging/) and is described in
+[`docs/releasing.md`](docs/releasing.md).
 
 ## ⚠️ Safety note
 
-Macros and the IRIS utilities type into a live session, and `RDB*` databases are
-shared with the whole team. Any macro that modifies data should carry
-`confirm="true"`: the terminal then shows the exact expanded text and requires
-an explicit yes before sending.
+Macros and the IRIS utilities type into a live session, and `RDB*` databases
+are shared with the whole team. Give any macro that changes data
+`confirm="true"`: consisTerm then shows the exact text it will send and waits
+for an explicit yes.
 
-## Versioning
+## Versioning and license
 
-[ZeroVer](https://0ver.org): the major version stays at zero. The updater
-compares the numbers rather than the string, so `0.2.0` is newer than `0.1.9`.
+[ZeroVer](https://0ver.org) — the major version stays at zero. MIT licensed.
 
-## License
-
-MIT
+<p align="center"><sub>Made at <a href="https://www.consistem.com.br">Consistem</a>.</sub></p>

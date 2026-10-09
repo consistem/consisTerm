@@ -5,7 +5,7 @@ pub mod servers;
 pub mod session;
 pub mod theme;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -16,10 +16,136 @@ pub use theme::{Theme, ThemeFile};
 
 /// Config root. `dirs` resolves this to `%APPDATA%`, `~/.config`, or
 /// `~/Library/Application Support` as appropriate — never hardcode a path.
+///
+/// `CONSISTERM_CONFIG_DIR` overrides it, for a copy run from a USB stick or a
+/// shared folder, and for trying a build without touching the settings in
+/// use: on Windows `dirs` asks the shell for the folder, so pointing
+/// `%APPDATA%` elsewhere does not move it.
 pub fn config_dir() -> PathBuf {
+    if let Some(dir) = config_override() {
+        return dir;
+    }
     dirs::config_dir()
         .unwrap_or_else(|| PathBuf::from("."))
-        .join("newIrisTerminal")
+        .join(crate::APP_NAME)
+}
+
+fn config_override() -> Option<PathBuf> {
+    std::env::var_os("CONSISTERM_CONFIG_DIR")
+        .filter(|dir| !dir.is_empty())
+        .map(PathBuf::from)
+}
+
+/// An optional string written as `""` when absent, for a field whose default
+/// is not `None`.
+mod blank_is_none {
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S: Serializer>(value: &Option<String>, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(value.as_deref().unwrap_or(""))
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Option<String>, D::Error> {
+        let text = String::deserialize(d)?;
+        Ok((!text.trim().is_empty()).then_some(text))
+    }
+}
+
+/// What the app was called before it was consisTerm, and so the folder an
+/// existing install keeps everything in.
+const LEGACY_NAME: &str = "newIrisTerminal";
+
+/// Carries an install from before the rename across to [`config_dir`]: the
+/// settings, macros, themes, history and shells all live under it, and a
+/// rename that left them behind would look to the user like losing them.
+///
+/// Copied rather than moved, so going back to an old build still finds its
+/// own. Only when the new folder does not exist yet: after that it is the one
+/// in use, and copying again would put old settings over newer ones.
+pub fn migrate_legacy_dir() {
+    let Some(old) = legacy_config_dir() else {
+        return;
+    };
+    let new = config_dir();
+    if let Err(e) = migrate_dir(&old, &new) {
+        log::warn!(
+            "could not carry {} over to {}: {e:#}",
+            old.display(),
+            new.display()
+        );
+    }
+}
+
+/// Where an install from before the rename kept everything, unless a folder
+/// was chosen by hand - which is not where an old install kept anything.
+pub fn legacy_config_dir() -> Option<PathBuf> {
+    if config_override().is_some() {
+        return None;
+    }
+    Some(dirs::config_dir()?.join(LEGACY_NAME))
+}
+
+fn migrate_dir(old: &Path, new: &Path) -> Result<()> {
+    if new.exists() || !old.is_dir() {
+        return Ok(());
+    }
+    // Built beside the new folder and renamed into place whole. Copied
+    // straight there, a copy cut short - a full disk, a file held open -
+    // left a folder that existed, so the next start took the move as done
+    // and the settings it never reached were lost for good.
+    let mut staging = new.as_os_str().to_owned();
+    staging.push(".migrating");
+    let staging = PathBuf::from(staging);
+    let _ = std::fs::remove_dir_all(&staging);
+    let built = copy_tree(old, &staging)
+        .map_err(anyhow::Error::from)
+        .and_then(|()| {
+            // Paths the settings saved in full - the log folder above all -
+            // still name the old folder, and would go on writing there.
+            let settings = staging.join("settings.toml");
+            if let Ok(text) = std::fs::read_to_string(&settings) {
+                let rewritten = rewrite_paths(&text, old, new);
+                if rewritten != text {
+                    std::fs::write(&settings, rewritten)?;
+                }
+            }
+            std::fs::rename(&staging, new)?;
+            Ok(())
+        });
+    if built.is_err() {
+        let _ = std::fs::remove_dir_all(&staging);
+    }
+    built
+}
+
+/// Copies a folder's contents, all but the transcripts.
+///
+/// The logs are left where they were written: they can run to gigabytes,
+/// copied before the window opens, and nothing reads an old one back. New
+/// ones go to the new folder, which is where the rewritten settings point.
+fn copy_tree(from: &Path, to: &Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(to)?;
+    for entry in std::fs::read_dir(from)? {
+        let entry = entry?;
+        if entry.file_name() == "logs" {
+            continue;
+        }
+        let target = to.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            copy_tree(&entry.path(), &target)?;
+        } else {
+            std::fs::copy(entry.path(), &target)?;
+        }
+    }
+    Ok(())
+}
+
+/// `text` with every mention of the folder `old` turned into `new`, in the
+/// form TOML writes a path in: a backslash is doubled inside a basic string.
+fn rewrite_paths(text: &str, old: &Path, new: &Path) -> String {
+    let (old, new) = (old.display().to_string(), new.display().to_string());
+    text.replace(&old.replace('\\', "\\\\"), &new.replace('\\', "\\\\"))
+        .replace(&old, &new)
 }
 
 pub fn themes_dir() -> PathBuf {
@@ -33,7 +159,7 @@ pub fn plugins_dir() -> PathBuf {
 pub fn default_log_dir() -> PathBuf {
     dirs::data_dir()
         .unwrap_or_else(config_dir)
-        .join("newIrisTerminal")
+        .join(crate::APP_NAME)
         .join("logs")
 }
 
@@ -44,6 +170,21 @@ pub fn settings_path() -> PathBuf {
 /// The user's own macros. Editable from the app.
 pub fn personal_macros_path() -> PathBuf {
     config_dir().join("macros.xml")
+}
+
+/// What the organisation's macro file is called when it is shipped beside
+/// the program.
+pub const ORG_MACROS_FILE: &str = "org-macros.xml";
+
+/// Where the organisation's macros are looked for when Settings names no file:
+/// beside the executable. A deployment tool that puts the program on every
+/// machine can then put the macros there with it, and nobody has to point
+/// their settings at a share by hand.
+pub fn bundled_org_macros() -> Option<PathBuf> {
+    // The file the user runs, which for an AppImage is not the executable:
+    // that one lives in a mount that is gone when the program exits.
+    let exe = crate::features::update::running_file().ok()?;
+    Some(exe.parent()?.join(ORG_MACROS_FILE))
 }
 
 /// Commands typed at an IRIS prompt, one per line, oldest first.
@@ -179,30 +320,37 @@ impl IntellisenseMode {
     }
 }
 
-/// What the autocomplete popup offers.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+/// The one choice the autocomplete used to offer, before it was three
+/// switches. Only read, from a settings file written then - see
+/// `Settings::migrate`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum AutocompleteMode {
-    /// Commands, functions, globals, routines, classes, SQL, and inside a
-    /// global's subscripts both what exists there and what its documentation
-    /// says could.
-    #[default]
     Full,
-    /// Only the subscripts that exist under the node being typed. Nothing
-    /// pops up anywhere else.
     #[serde(rename = "data")]
     DataOnly,
 }
 
-impl AutocompleteMode {
-    pub const ALL: [AutocompleteMode; 2] = [AutocompleteMode::Full, AutocompleteMode::DataOnly];
+/// Which kinds of suggestion the autocomplete popup offers.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AutocompleteOffers {
+    /// Commands, `$` functions and special variables, `$SYSTEM` classes, and
+    /// at the SQL prompt its keywords and tables: what the language has.
+    pub commands: bool,
+    /// Globals, routines, `$$` entry points and `##class(` names: what the
+    /// namespace has.
+    pub names: bool,
+    /// Inside `^GLOBAL(`: the subscripts that exist there now and what the
+    /// global's documentation says one could be.
+    pub data: bool,
+}
 
-    pub fn label(self) -> &'static str {
-        match self {
-            AutocompleteMode::Full => "Everything",
-            AutocompleteMode::DataOnly => "Only global data",
-        }
-    }
+impl AutocompleteOffers {
+    pub const ALL: AutocompleteOffers = AutocompleteOffers {
+        commands: true,
+        names: true,
+        data: true,
+    };
 }
 
 /// How much of their row the tabs take.
@@ -250,6 +398,69 @@ impl TabCloseSide {
     }
 }
 
+/// Which edge of the screen the drop-down terminal comes down from - or up
+/// from - when its shortcut is pressed, the way Guake and Yakuake do it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum QuakeEdge {
+    /// An ordinary window, and the shortcut does nothing.
+    #[default]
+    Off,
+    Top,
+    Bottom,
+}
+
+impl QuakeEdge {
+    pub const ALL: [QuakeEdge; 3] = [QuakeEdge::Off, QuakeEdge::Top, QuakeEdge::Bottom];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            QuakeEdge::Off => "Off",
+            QuakeEdge::Top => "Top",
+            QuakeEdge::Bottom => "Bottom",
+        }
+    }
+}
+
+/// Which side of the window the title bar - and the tabs in it - is on, as
+/// Vivaldi and Opera offer theirs. On the left or right the tabs are a column.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum BarPosition {
+    #[default]
+    Top,
+    Bottom,
+    Left,
+    Right,
+}
+
+impl BarPosition {
+    pub const ALL: [BarPosition; 4] = [
+        BarPosition::Top,
+        BarPosition::Bottom,
+        BarPosition::Left,
+        BarPosition::Right,
+    ];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            BarPosition::Top => "Top",
+            BarPosition::Bottom => "Bottom",
+            BarPosition::Left => "Left",
+            BarPosition::Right => "Right",
+        }
+    }
+
+    /// The bar runs down a side, and the tabs in it are a column.
+    pub fn is_side(self) -> bool {
+        matches!(self, BarPosition::Left | BarPosition::Right)
+    }
+}
+
+/// The drop-down terminal's height, as a share of the screen, when nothing has
+/// said otherwise - Guake's default.
+pub const DEFAULT_QUAKE_HEIGHT: u32 = 40;
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -263,6 +474,9 @@ pub struct Settings {
     /// invisible until hovered. Reported as missing scrollbars often enough to
     /// be worth a switch of its own.
     pub show_scrollbars: bool,
+    /// Let the pictures in Settings move. Off draws each one still, for
+    /// whoever finds motion on screen hard going.
+    pub animations: bool,
     /// Monospace family the terminal draws with. Empty means egui's bundled
     /// font. Takes precedence over the active theme's `font_family`, which
     /// stays as that theme's suggestion.
@@ -327,7 +541,14 @@ pub struct Settings {
     pub autocomplete: bool,
     /// Whether the popup offers everything it knows, or only the subscripts
     /// that exist under the node being typed.
-    pub autocomplete_mode: AutocompleteMode,
+    /// See [`AutocompleteOffers`]: the three switches under Autocomplete.
+    pub autocomplete_commands: bool,
+    pub autocomplete_names: bool,
+    pub autocomplete_data: bool,
+    /// The single choice these replaced, read once from an older file and
+    /// never written again.
+    #[serde(skip_serializing)]
+    pub autocomplete_mode: Option<AutocompleteMode>,
     /// Colour a line typed at the SQL shell's prompt (`USER>>`) as SQL rather
     /// than as ObjectScript. Only matters while
     /// `terminal_syntax_highlight` is on; off, such a line is coloured as
@@ -405,6 +626,24 @@ pub struct Settings {
     pub tab_width: TabWidth,
     /// Which end of each tab the close button is drawn at.
     pub tab_close_side: TabCloseSide,
+    /// Which side of the window the title bar is on.
+    pub bar_position: BarPosition,
+    /// Where the drop-down terminal comes from, or `Off` for none.
+    pub quake_edge: QuakeEdge,
+    /// The drop-down terminal's height, in percent of the screen's.
+    pub quake_height: u32,
+    /// The system-wide chord that brings the drop-down terminal down and puts
+    /// it away again, e.g. `F12`.
+    ///
+    /// Written as an empty string when cleared. TOML has no null, so `None`
+    /// was left out of the file, and a missing field reads back as the
+    /// default - F12 again, grabbed from every other program.
+    #[serde(with = "blank_is_none")]
+    pub quake_shortcut: Option<String>,
+    /// Keep the drop-down terminal above other windows while it is down.
+    /// Off by default: summoned, it comes to the front like any window, and
+    /// only the pin keeps it there.
+    pub quake_on_top: bool,
     /// Reopen at the size the window was last closed at. Off opens every
     /// launch at [`Settings::default_geometry`].
     pub save_terminal_size: bool,
@@ -485,6 +724,7 @@ impl Default for Settings {
             theme: "IRIS Dark".into(),
             font_size: 14.0,
             show_scrollbars: true,
+            animations: true,
             font_family: String::new(),
             cursor_style: CursorStyle::default(),
             cursor_blink: false,
@@ -497,7 +737,10 @@ impl Default for Settings {
             recall_mid_line: true,
             surround_selection: true,
             autocomplete: true,
-            autocomplete_mode: AutocompleteMode::default(),
+            autocomplete_commands: true,
+            autocomplete_names: true,
+            autocomplete_data: true,
+            autocomplete_mode: None,
             sql_highlight: true,
             ui_scale: 1.0,
             title_bar_scale: 1.0,
@@ -520,6 +763,11 @@ impl Default for Settings {
             tabs_in_title_bar: false,
             tab_width: TabWidth::default(),
             tab_close_side: TabCloseSide::default(),
+            bar_position: BarPosition::default(),
+            quake_edge: QuakeEdge::default(),
+            quake_height: DEFAULT_QUAKE_HEIGHT,
+            quake_shortcut: Some("F12".into()),
+            quake_on_top: false,
             save_terminal_size: false,
             default_cols: DEFAULT_TERMINAL_COLS,
             default_rows: DEFAULT_TERMINAL_ROWS,
@@ -548,7 +796,10 @@ impl Settings {
         let path = settings_path();
         match std::fs::read_to_string(&path) {
             Ok(text) => match toml::from_str::<Settings>(&text) {
-                Ok(settings) => settings,
+                Ok(mut settings) => {
+                    settings.migrate();
+                    settings
+                }
                 Err(e) => {
                     // A malformed file must not stop the app from starting —
                     // fall back to defaults and say so.
@@ -557,6 +808,36 @@ impl Settings {
                 }
             },
             Err(_) => Settings::default(),
+        }
+    }
+
+    /// Carries a setting from an older file over to the one that replaced
+    /// it, so an upgrade keeps what was chosen.
+    fn migrate(&mut self) {
+        match self.autocomplete_mode.take() {
+            // "Only global data" was the one choice that turned anything off:
+            // the commands and the names.
+            Some(AutocompleteMode::DataOnly) => {
+                self.autocomplete_commands = false;
+                self.autocomplete_names = false;
+            }
+            // "Everything" with the global tooltip off never opened the second
+            // session the data comes from, so it never offered any - and that
+            // session holds an IRIS licence. Switched on now, the data would
+            // spend one the user had chosen not to.
+            Some(AutocompleteMode::Full) if self.intellisense == IntellisenseMode::Off => {
+                self.autocomplete_data = false;
+            }
+            _ => {}
+        }
+    }
+
+    /// Which kinds of suggestion the autocomplete offers.
+    pub fn autocomplete_offers(&self) -> AutocompleteOffers {
+        AutocompleteOffers {
+            commands: self.autocomplete_commands,
+            names: self.autocomplete_names,
+            data: self.autocomplete_data,
         }
     }
 
@@ -581,9 +862,13 @@ impl Settings {
             .or_else(|| self.profiles.first())
     }
 
-    /// The organisation macro file, if one is configured.
-    pub fn org_macros(&self) -> Option<&std::path::Path> {
-        (!self.org_macros_path.as_os_str().is_empty()).then_some(self.org_macros_path.as_path())
+    /// The organisation macro file: the one configured, or else the one
+    /// shipped beside the program - see [`bundled_org_macros`].
+    pub fn org_macros(&self) -> Option<PathBuf> {
+        if !self.org_macros_path.as_os_str().is_empty() {
+            return Some(self.org_macros_path.clone());
+        }
+        bundled_org_macros().filter(|path| path.is_file())
     }
 
     /// Terminal size a new window opens at, in characters.
@@ -990,5 +1275,89 @@ mod tests {
             ..Profile::default()
         };
         assert_eq!(settings.log_mode_for(&raw), LogMode::Raw);
+    }
+
+    #[test]
+    fn an_install_from_before_the_rename_is_carried_over_once() {
+        let root = std::env::temp_dir().join(format!("nit-migrate-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let (old, new) = (root.join("newIrisTerminal"), root.join("consisTerm"));
+        std::fs::create_dir_all(old.join("themes")).unwrap();
+        std::fs::write(old.join("themes").join("mine.toml"), "x").unwrap();
+        let log_dir = old.join("logs").display().to_string().replace('\\', "\\\\");
+        std::fs::write(
+            old.join("settings.toml"),
+            format!("log_dir = \"{log_dir}\"\n"),
+        )
+        .unwrap();
+
+        std::fs::create_dir_all(old.join("logs")).unwrap();
+        std::fs::write(old.join("logs").join("big.log"), "x").unwrap();
+        // What a copy cut short last time left behind.
+        std::fs::create_dir_all(root.join("consisTerm.migrating")).unwrap();
+        std::fs::write(
+            root.join("consisTerm.migrating").join("settings.toml"),
+            "half",
+        )
+        .unwrap();
+
+        migrate_dir(&old, &new).unwrap();
+        assert!(new.join("themes").join("mine.toml").exists());
+        assert!(
+            !new.join("logs").exists(),
+            "transcripts stay where they were"
+        );
+        assert!(!root.join("consisTerm.migrating").exists());
+        let settings = std::fs::read_to_string(new.join("settings.toml")).unwrap();
+        assert!(!settings.contains("newIrisTerminal"), "{settings}");
+        // The old folder is left as it was, for an older build to go on using.
+        assert!(old.join("settings.toml").exists());
+
+        // Once the new folder exists it is the one in use: nothing is copied
+        // over it again.
+        std::fs::write(new.join("settings.toml"), "newer").unwrap();
+        migrate_dir(&old, &new).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(new.join("settings.toml")).unwrap(),
+            "newer"
+        );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn only_global_data_from_an_older_file_becomes_the_data_switch_alone() {
+        let mut settings: Settings = toml::from_str("autocomplete_mode = \"data\"").unwrap();
+        settings.migrate();
+        let offers = settings.autocomplete_offers();
+        assert!(offers.data && !offers.commands && !offers.names);
+        // And it is not written back: the switches are the setting now.
+        assert!(!toml::to_string(&settings)
+            .unwrap()
+            .contains("autocomplete_mode"));
+
+        let mut full: Settings = toml::from_str("autocomplete_mode = \"full\"").unwrap();
+        full.migrate();
+        assert_eq!(full.autocomplete_offers(), AutocompleteOffers::ALL);
+
+        // The tooltip off meant no second session, and so no data.
+        let mut frugal: Settings = toml::from_str(
+            "autocomplete_mode = \"full\"
+intellisense = \"off\"",
+        )
+        .unwrap();
+        frugal.migrate();
+        assert!(!frugal.autocomplete_offers().data);
+        assert!(frugal.autocomplete_offers().commands);
+    }
+
+    #[test]
+    fn a_cleared_drop_down_shortcut_stays_cleared_after_a_restart() {
+        let settings = Settings {
+            quake_shortcut: None,
+            ..Settings::default()
+        };
+        let text = toml::to_string(&settings).unwrap();
+        let back: Settings = toml::from_str(&text).unwrap();
+        assert_eq!(back.quake_shortcut, None);
     }
 }

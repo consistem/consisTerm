@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Hardened-runtime entitlements. Deliberately empty: the app loads no unsigned code and is not
+     sandboxed (it spawns shells and IRIS sessions through a pty). If the `plugins` feature
+     (wasmtime, which JIT-compiles) is ever shipped, it needs com.apple.security.cs.allow-jit here.
+     Add exceptions only with a reason in a comment. -->
+<plist version="1.0">
+<dict>
+</dict>
+</plist>

@@ -24,7 +24,7 @@ use crate::pty::launcher::launcher;
 use crate::pty::Session;
 use crate::term::{lineedit, Grid, Motion};
 use crate::ui::chrome::{self, WindowAction};
-use crate::ui::panels::{self, PanelState, PendingMacro, UiRequest};
+use crate::ui::panels::{self, PanelState, PendingMacro, UiRequest, Zoom};
 use crate::ui::settings_view::{self, themes::ThemeAction};
 use crate::ui::terminal_view::{self, RenderOpts, Selection, ViewState};
 use crate::ui::{fonts, input, shortcut, snake_view};
@@ -112,6 +112,17 @@ pub struct App {
     /// refilled every frame - a pane that has gone must not still be claiming
     /// the space it used to be in.
     pane_rects: Vec<egui::Rect>,
+    /// Requests raised where there is no frame's list to add them to - the
+    /// shortcuts, and a pane drawing inside the central panel. Carried out
+    /// with the rest at the end of the frame.
+    queued: Vec<UiRequest>,
+    /// How far a pinch has gone since the font last changed size. A pinch
+    /// arrives as many factors a hair from 1, each too small to move the size
+    /// on its own; multiplied up here, they do.
+    pinch: f32,
+    /// The drop-down terminal as last registered, so a change to an unrelated
+    /// setting does not take the hotkey away and back.
+    quake: Option<crate::ui::quake::Quake>,
     /// Commands typed at an IRIS prompt, shared by every tab so a new one opens
     /// knowing what was run in the last.
     history: History,
@@ -263,6 +274,7 @@ impl App {
         crate::i18n::set_language(settings.language);
         crate::ui::desktop::install(cc);
         crate::ui::tray::install(cc);
+        crate::ui::quake::install(cc);
         crate::ui::desktop::set_pinned(settings.pin_to_desktop);
         let themes = load_themes();
 
@@ -341,6 +353,9 @@ impl App {
             closed_tabs: Vec::new(),
             macro_groups: load_macros(&settings).groups,
             pane_rects: Vec::new(),
+            queued: Vec::new(),
+            pinch: 1.0,
+            quake: None,
             history,
             vocabulary,
             settings,
@@ -386,8 +401,14 @@ impl App {
         }
         app.note_version_started();
 
+        // egui reads Ctrl+Plus, Ctrl+Minus and Ctrl+0 as zooming the whole
+        // interface before the app sees them. Here they size the terminal's
+        // font, and the interface's zoom is the scale setting, which
+        // `frame.rs` puts back every time anything else moves it.
+        cc.egui_ctx.options_mut(|o| o.zoom_with_keyboard = false);
         App::apply_style(&cc.egui_ctx, &app.theme(), &app.settings);
         app.apply_font(&cc.egui_ctx);
+        app.apply_quake();
 
         // Straight into the instance. Anyone with something to change has
         // Settings; everyone else was only ever going to press Connect. Unless
@@ -425,7 +446,7 @@ fn load_macros(settings: &Settings) -> macros::LoadReport {
     // exactly as shipped, so a change to the bundled set reaches an install
     // that has never edited the file.
     macros::ensure_personal_file(&personal);
-    macros::load_all(settings.org_macros(), &personal)
+    macros::load_all(settings.org_macros().as_deref(), &personal)
 }
 
 /// The profile for whatever the launcher's tray menu is set to open.

@@ -1,4 +1,4 @@
-//! "Open newIrisTerminal here" in the Explorer right-click menu, with a
+//! "Open consisTerm here" in the Explorer right-click menu, with a
 //! submenu entry per shell - and the command line both it and the IRIS tray
 //! launch the app with.
 //!
@@ -14,7 +14,19 @@ use std::path::{Path, PathBuf};
 
 /// The two places a folder's right-click menu is read from: the folder itself,
 /// and the background of an open one.
+///
+/// Only Windows has a registry to write them to; the tests read the shape on
+/// every platform, and anywhere else this would be dead code that fails CI.
+#[cfg(any(windows, test))]
 const ROOTS: [&str; 2] = [
+    r"Software\Classes\Directory\shell\consisTerm",
+    r"Software\Classes\Directory\Background\shell\consisTerm",
+];
+
+/// Where the entry was written before the app was renamed. Taken out
+/// whenever the menu is written or removed, or Explorer would show both.
+#[cfg(windows)]
+const LEGACY_ROOTS: [&str; 2] = [
     r"Software\Classes\Directory\shell\newIrisTerminal",
     r"Software\Classes\Directory\Background\shell\newIrisTerminal",
 ];
@@ -93,10 +105,12 @@ pub fn shell_id(file: &Path) -> String {
 
 /// One value to write: the key under `HKCU`, the value name (empty for the
 /// default value), and the data.
+#[cfg(any(windows, test))]
 type Entry = (String, &'static str, String);
 
 /// Everything the menu consists of, for one executable and these shells as
 /// `(id, name, program)`. Pure, so the shape can be tested without a registry.
+#[cfg(any(windows, test))]
 fn entries(exe: &str, title: &str, shells: &[(String, String, String)]) -> Vec<Entry> {
     let mut out = Vec::new();
     for root in ROOTS {
@@ -124,9 +138,12 @@ fn entries(exe: &str, title: &str, shells: &[(String, String, String)]) -> Vec<E
 #[cfg(windows)]
 pub fn is_registered() -> bool {
     use winreg::{enums::HKEY_CURRENT_USER, RegKey};
-    RegKey::predef(HKEY_CURRENT_USER)
-        .open_subkey(ROOTS[1])
-        .is_ok()
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    // The old entry counts: it is the same choice, made before the rename,
+    // and the next write moves it under the new name.
+    [ROOTS[1], LEGACY_ROOTS[1]]
+        .iter()
+        .any(|root| hkcu.open_subkey(root).is_ok())
 }
 
 /// Writes the entry afresh, so a shell that has gone leaves the submenu.
@@ -146,7 +163,7 @@ pub fn register() -> std::io::Result<()> {
         .collect();
     unregister()?;
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-    let title = crate::i18n::tr("Open newIrisTerminal here");
+    let title = crate::i18n::tr("Open consisTerm here");
     for (key, name, value) in entries(&exe.display().to_string(), title, &shells) {
         let (key, _) = hkcu.create_subkey(&key)?;
         key.set_value(name, &value)?;
@@ -154,12 +171,28 @@ pub fn register() -> std::io::Result<()> {
     Ok(())
 }
 
+/// Moves an entry written before the rename to the new name and this
+/// program. The old one ran the old executable, which an upgrade is free to
+/// delete; until the Shells page happened to rewrite it, the menu then opened
+/// nothing.
+#[cfg(windows)]
+pub fn refresh_legacy() {
+    use winreg::{enums::HKEY_CURRENT_USER, RegKey};
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    if hkcu.open_subkey(LEGACY_ROOTS[1]).is_ok() {
+        let _ = register();
+    }
+}
+
+#[cfg(not(windows))]
+pub fn refresh_legacy() {}
+
 /// Takes the entry out of the menu. Not there already is not an error.
 #[cfg(windows)]
 pub fn unregister() -> std::io::Result<()> {
     use winreg::{enums::HKEY_CURRENT_USER, RegKey};
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-    for root in ROOTS {
+    for root in ROOTS.iter().chain(&LEGACY_ROOTS) {
         match hkcu.delete_subkey_all(root) {
             Err(e) if e.kind() != std::io::ErrorKind::NotFound => return Err(e),
             _ => {}

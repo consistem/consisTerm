@@ -9,9 +9,9 @@
 
 use std::time::{Duration, Instant};
 
-use new_iris_terminal::pty::launcher::{launcher, LaunchSpec};
-use new_iris_terminal::pty::PtySession;
-use new_iris_terminal::term::{parser, Encoding, Grid};
+use consisterm::pty::launcher::{launcher, LaunchSpec};
+use consisterm::pty::PtySession;
+use consisterm::term::{parser, Encoding, Grid};
 
 /// Runs one command at a given PTY size and returns (raw bytes, rendered grid).
 fn run(cols: u16, rows: u16, command: &str) -> (Vec<u8>, Grid) {

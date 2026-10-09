@@ -37,7 +37,7 @@
 
 use std::collections::{BTreeSet, HashMap};
 
-use crate::config::AutocompleteMode;
+use crate::config::AutocompleteOffers;
 use crate::features::doc_lookup::{
     DocLookup, Existing, GlobalNames, Lookup, MapInfo, Names, SubscriptPrefix, SubscriptValue,
     Subscripts,
@@ -1219,21 +1219,20 @@ pub struct Server<'a> {
 /// suggestion over it would be over somebody else's screen - and anywhere but
 /// the end of the line.
 pub fn suggest(grid: &Grid, vocabulary: &mut Vocabulary) -> Option<Popup> {
-    suggest_with(grid, vocabulary, None, AutocompleteMode::Full, &mut false)
+    suggest_with(grid, vocabulary, None, AutocompleteOffers::ALL, &mut false)
 }
 
 /// [`suggest`], asking `server` for what only the namespace knows. `waiting`
 /// is set when it has been asked and has not answered yet, which is the
 /// caller's cue to look again shortly.
 ///
-/// In [`AutocompleteMode::DataOnly`] nothing is offered but the subscripts
-/// that exist under the node being typed: no commands, no names, and none of
-/// what the documentation says a subscript could hold.
+/// `offers` says which kinds of suggestion are wanted; a word of a kind that
+/// is switched off gets no popup at all.
 pub fn suggest_with(
     grid: &Grid,
     vocabulary: &mut Vocabulary,
     server: Option<&mut Server>,
-    mode: AutocompleteMode,
+    offers: AutocompleteOffers,
     waiting: &mut bool,
 ) -> Option<Popup> {
     let line = lineedit::current(grid)?;
@@ -1242,14 +1241,14 @@ pub fn suggest_with(
     }
     let prompt = lineedit::prompt(grid)?;
     let before = typed_before_cursor(grid, line);
-    let data_only = mode == AutocompleteMode::DataOnly;
     if !prompt.sql {
         if let Some(spot) = subscript_at(&before) {
+            if !offers.data {
+                return None;
+            }
             let server = server?;
             let mut loading = false;
-            let (mut hint, mut items) = if data_only {
-                (None, Vec::new())
-            } else {
+            let (mut hint, mut items) = {
                 let maps = match server.lookup.request(server.namespace, &spot.global) {
                     Lookup::Ready(maps) => maps,
                     Lookup::Pending => {
@@ -1308,10 +1307,15 @@ pub fn suggest_with(
             });
         }
     }
-    if data_only {
+    let token = token_at(&before, prompt.sql)?;
+    let wanted = match token.context {
+        Context::Command | Context::Dollar | Context::System | Context::Sql => offers.commands,
+        Context::Extrinsic | Context::Caret { .. } | Context::Class => offers.names,
+        Context::Subscript => offers.data,
+    };
+    if !wanted {
         return None;
     }
-    let token = token_at(&before, prompt.sql)?;
     // The fixed lists need no help; the rest are only as good as what has
     // been seen, and what is on screen right now is the freshest of it.
     if !matches!(
@@ -1421,7 +1425,7 @@ impl Completion {
     /// Costs nothing while disarmed and closed, which is every frame but the
     /// ones a user is typing in.
     pub fn refresh(&mut self, grid: &Grid, vocabulary: &mut Vocabulary) {
-        self.refresh_with(grid, vocabulary, None, AutocompleteMode::Full);
+        self.refresh_with(grid, vocabulary, None, AutocompleteOffers::ALL);
     }
 
     /// [`Completion::refresh`], asking `server` for what only the namespace
@@ -1431,7 +1435,7 @@ impl Completion {
         grid: &Grid,
         vocabulary: &mut Vocabulary,
         mut server: Option<Server>,
-        mode: AutocompleteMode,
+        offers: AutocompleteOffers,
     ) {
         if !self.armed && self.popup.is_none() {
             return;
@@ -1453,7 +1457,7 @@ impl Completion {
         }
         self.seen = Some(seen);
         self.waiting = false;
-        self.popup = suggest_with(grid, vocabulary, server.as_mut(), mode, &mut self.waiting);
+        self.popup = suggest_with(grid, vocabulary, server.as_mut(), offers, &mut self.waiting);
     }
 }
 
@@ -2013,9 +2017,18 @@ mod tests {
     fn only_global_data_offers_nothing_outside_a_subscript() {
         let mut v = Vocabulary::default();
         let grid = grid_with("USER>wr");
-        assert!(
-            suggest_with(&grid, &mut v, None, AutocompleteMode::DataOnly, &mut false).is_none()
-        );
-        assert!(suggest_with(&grid, &mut v, None, AutocompleteMode::Full, &mut false).is_some());
+        assert!(suggest_with(
+            &grid,
+            &mut v,
+            None,
+            AutocompleteOffers {
+                commands: false,
+                names: false,
+                data: true,
+            },
+            &mut false
+        )
+        .is_none());
+        assert!(suggest_with(&grid, &mut v, None, AutocompleteOffers::ALL, &mut false).is_some());
     }
 }

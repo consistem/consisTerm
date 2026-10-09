@@ -35,6 +35,34 @@ const RESERVED: &[(&str, Key)] = &[
 /// `Ctrl+Shift+G` and `shift+ctrl+g` work. Returns `None` when there is no key,
 /// more than one key, or a segment nothing recognises.
 pub fn parse(text: &str) -> Option<(Modifiers, Key)> {
+    parse_in(text, Scope::App)
+}
+
+/// [`parse`] for a shortcut the whole system answers to, which may also be a
+/// function key on its own - F12, the way Guake and Yakuake are summoned.
+pub fn parse_global(text: &str) -> Option<(Modifiers, Key)> {
+    parse_in(text, Scope::Global)
+}
+
+/// Where a shortcut is listened for, which decides what it may be.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Scope {
+    /// Inside the app: a modifier is required, or the key would fire while
+    /// the user was typing into the terminal.
+    App,
+    /// Anywhere on the system: a function key alone is allowed too, since
+    /// nobody types one.
+    Global,
+}
+
+/// F1 to F35: keys nobody types text with.
+fn is_function_key(key: Key) -> bool {
+    key.name()
+        .strip_prefix('F')
+        .is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()))
+}
+
+fn parse_in(text: &str, scope: Scope) -> Option<(Modifiers, Key)> {
     let mut modifiers = Modifiers::NONE;
     let mut key = None;
 
@@ -68,7 +96,7 @@ pub fn parse(text: &str) -> Option<(Modifiers, Key)> {
 
     let key = key?;
     // A bare letter would fire while the user was typing into the terminal.
-    if modifiers.is_none() {
+    if modifiers.is_none() && !(scope == Scope::Global && is_function_key(key)) {
         return None;
     }
     Some((modifiers, key))
@@ -168,6 +196,17 @@ pub fn is_reserved(modifiers: Modifiers, key: Key) -> Option<&'static str> {
 ///
 /// Reports whether the binding changed.
 pub fn picker(ui: &mut Ui, binding: &mut Option<String>, capture: &mut bool) -> bool {
+    picker_in(ui, binding, capture, Scope::App)
+}
+
+/// [`picker`] for a system-wide shortcut. Its messages go on lines of their
+/// own under the field, so it wants the width of a row to itself.
+pub fn picker_in(
+    ui: &mut Ui,
+    binding: &mut Option<String>,
+    capture: &mut bool,
+    scope: Scope,
+) -> bool {
     let mut changed = false;
     ui.horizontal(|ui| {
         let mut text = binding.clone().unwrap_or_default();
@@ -204,7 +243,7 @@ pub fn picker(ui: &mut Ui, binding: &mut Option<String>, capture: &mut bool) -> 
     });
 
     if *capture {
-        match captured(ui) {
+        match captured(ui, scope) {
             Capture::Waiting => {}
             Capture::Cancelled => *capture = false,
             Capture::Cleared => {
@@ -218,20 +257,28 @@ pub fn picker(ui: &mut Ui, binding: &mut Option<String>, capture: &mut bool) -> 
                 changed = true;
             }
         }
-        ui.small(tr(
-            "A modifier is required: Ctrl, Alt, or both, with or without Shift.",
-        ));
+        ui.small(match scope {
+            Scope::App => tr("A modifier is required: Ctrl, Alt, or both, with or without Shift."),
+            Scope::Global => tr("A function key on its own, or a chord with Ctrl or Alt."),
+        });
     }
 
     // Reported rather than rejected: a macro's binding is also edited by hand
     // in the shared XML, and a value we do not understand has to survive a
     // round trip through here instead of being erased.
     if let Some(key) = binding.as_deref() {
-        match parse(key) {
+        match parse_in(key, scope) {
             None => {
                 ui.colored_label(
                     WARNING,
-                    tr("Not understood, so it will not fire. Needs a modifier, like Ctrl+Shift+G."),
+                    match scope {
+                        Scope::App => tr(
+                            "Not understood, so it will not fire. Needs a modifier, like Ctrl+Shift+G.",
+                        ),
+                        Scope::Global => tr(
+                            "Not understood, so it will not fire. Use a function key like F12, or a chord like Ctrl+Shift+G.",
+                        ),
+                    },
                 );
             }
             Some((modifiers, parsed)) => {
@@ -267,7 +314,7 @@ enum Capture {
 /// fire the very shortcut being recorded. A chord without Ctrl or Alt is
 /// ignored rather than accepted - a bare letter, or Shift plus one, would fire
 /// while the user was typing at the prompt.
-fn captured(ui: &Ui) -> Capture {
+fn captured(ui: &Ui, scope: Scope) -> Capture {
     ui.input_mut(|input| {
         let mut result = Capture::Waiting;
         input.events.retain(|event| match event {
@@ -282,6 +329,9 @@ fn captured(ui: &Ui) -> Capture {
                     Key::Escape => result = Capture::Cancelled,
                     Key::Backspace | Key::Delete => result = Capture::Cleared,
                     key if modifiers.ctrl || modifiers.alt || modifiers.command => {
+                        result = Capture::Chord(format(*modifiers, *key));
+                    }
+                    key if scope == Scope::Global && is_function_key(*key) => {
                         result = Capture::Chord(format(*modifiers, *key));
                     }
                     _ => {}
@@ -389,5 +439,14 @@ mod tests {
 
         let (m, k) = parse("Ctrl+Shift+G").expect("parse");
         assert_eq!(is_reserved(m, k), None);
+    }
+
+    #[test]
+    fn a_function_key_alone_is_a_global_shortcut_but_not_an_app_one() {
+        assert_eq!(parse_global("F12"), Some((Modifiers::NONE, Key::F12)));
+        assert_eq!(parse("F12"), None);
+        // Letters still need a modifier anywhere: they are typed.
+        assert_eq!(parse_global("G"), None);
+        assert!(parse_global("Ctrl+Shift+G").is_some());
     }
 }

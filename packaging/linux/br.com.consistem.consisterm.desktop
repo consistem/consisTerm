@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=consisTerm
+GenericName=Terminal Emulator
+Comment=Terminal emulator for InterSystems IRIS
+Exec=consisterm %U
+TryExec=consisterm
+Icon=br.com.consistem.consisterm
+Terminal=false
+StartupNotify=true
+StartupWMClass=br.com.consistem.consisterm
+Categories=System;TerminalEmulator;Development;
+Keywords=terminal;iris;intersystems;objectscript;telnet;

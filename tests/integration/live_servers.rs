@@ -13,9 +13,9 @@
 
 use std::time::{Duration, Instant};
 
-use new_iris_terminal::config::servers;
-use new_iris_terminal::pty::Session;
-use new_iris_terminal::term::{parser, Grid};
+use consisterm::config::servers;
+use consisterm::pty::Session;
+use consisterm::term::{parser, Grid};
 
 /// Pumps a session until `predicate` accepts the rendered screen, or the
 /// timeout expires. Returns the final screen text either way.
@@ -65,7 +65,7 @@ fn at_a_login_prompt(screen: &str) -> bool {
 #[ignore = "needs the InterSystems launcher installed"]
 fn the_launchers_server_list_is_readable() {
     let list = servers::discover();
-    let instances: Vec<String> = new_iris_terminal::app::discover_instances();
+    let instances: Vec<String> = consisterm::app::discover_instances();
 
     println!("preferred (raw): {:?}", list.preferred);
     println!("instances: {instances:?}");
@@ -114,7 +114,7 @@ fn the_launchers_server_list_is_readable() {
 #[ignore = "needs a reachable IRIS server with the Telnet service enabled"]
 fn a_remote_server_reaches_a_login_prompt_over_telnet() {
     let list = servers::discover();
-    let instances = new_iris_terminal::app::discover_instances();
+    let instances = consisterm::app::discover_instances();
 
     // The first entry that is genuinely a Telnet target, so this works on any
     // machine rather than only where a server happens to be named `TESTES`.

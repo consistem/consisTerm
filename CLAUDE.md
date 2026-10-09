@@ -1,4 +1,4 @@
-# newIrisTerminal
+# consisTerm
 
 A terminal emulator for InterSystems IRIS, written in Rust with `egui`/`eframe`.
 It opens sessions against local IRIS instances, local shells, and remote servers
@@ -18,8 +18,11 @@ in the same command as `cargo`, because shell state does not persist between
 calls:
 
 ```bash
-export PATH="/c/Program Files/Rust stable GNU 1.98/bin:/c/Users/lucas.arent/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/mingw64/bin:$PATH"
+export PATH="/c/Program Files/Rust stable GNU 1.98/bin:$(ls -d /c/Users/$USERNAME/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.POSIX.*/mingw64/bin | head -1):$PATH"
 ```
+
+WinLibs installs as `UCRT` on some machines and `MSVCRT` on others, which is
+why the path is looked up rather than written out.
 
 `windres` is needed by `build.rs`, which embeds `assets/icon.ico`; without it
 the build panics rather than failing cleanly. The toolchain is GNU
@@ -155,7 +158,7 @@ however it was reached, and that a confirmation or a parameter prompt is only
 written once. Add new gestures the same way.
 
 **Settings, profiles, themes and macros all live on disk** under
-`config::config_dir()` (`%APPDATA%\newIrisTerminal`). Never hardcode that path;
+`config::config_dir()` (`%APPDATA%\consisTerm`). Never hardcode that path;
 call the function.
 
 ---
@@ -223,7 +226,7 @@ candidates against it and confirming against the PE entry point.
 For a number rather than a breakdown, sample `TotalProcessorTime` over a window:
 
 ```powershell
-$p = Start-Process .\target\release\new-iris-terminal.exe -PassThru
+$p = Start-Process .\target\release\consisterm.exe -PassThru
 Start-Sleep 8; $q = Get-Process -Id $p.Id; $t1 = $q.TotalProcessorTime
 Start-Sleep 15; $q.Refresh()
 ($q.TotalProcessorTime - $t1).TotalSeconds / 15 * 100   # % of one core
@@ -239,10 +242,22 @@ something is asking for frames that nothing is drawing.
 - **The proxy blocks GitHub release assets.** `api.github.com` and `github.com`
   are allowed; `release-assets.githubusercontent.com` answers 407. Any "download
   failed" against a release URL here is the proxy, not the code.
-- **There is no release CI.** A release is a hand-built binary uploaded through
-  the REST API.
+- **Releases are built by `.github/workflows/release.yml`** on a pushed `v*`
+  tag, through the scripts in `packaging/`; see `docs/releasing.md`. Nothing
+  there can be run here: the proxy blocks the AppImage tool's download, and
+  there is no macOS.
 - **`cargo test --features plugins` can fail with `only metadata stub found for
   rlib dependency std`** after mixing build configurations in `target/`. It is a
   stale artifact, not your change; a clean rebuild fixes it.
-- Do not write to `%APPDATA%\newIrisTerminal` from a test. Tests that need
+- **The app was called newIrisTerminal until 0.1.0**, and a few names keep the
+  old one on purpose: the keyring service (renaming it would lose every saved
+  password), the `LEGACY_*` registry keys and stand-in mark that let a new
+  build recognise and clean up an old install, and the one-time copy of the old
+  config folder in `config::migrate_legacy_dir`. Do not "finish the rename" on
+  those.
+- **To run a build without touching the settings in use**, set
+  `CONSISTERM_CONFIG_DIR` to a scratch folder. Pointing `%APPDATA%` elsewhere
+  does nothing on Windows: `dirs` asks the shell for the folder. A fresh config
+  still opens the default IRIS session unless `open_on_start = false`.
+- Do not write to `%APPDATA%\consisTerm` from a test. Tests that need
   config use a temporary directory.

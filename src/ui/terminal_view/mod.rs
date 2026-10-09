@@ -243,6 +243,9 @@ pub struct ViewState {
     /// Cell the current drag started on, kept because the selection itself is
     /// normalised and so forgets which end the pointer left behind.
     drag_anchor: Option<(usize, usize)>,
+    /// Ctrl+wheel travel not yet worth a whole font step, in notches. See
+    /// `mouse::wheel_notches`.
+    zoom_wheel: f32,
 }
 
 impl ViewState {
@@ -376,7 +379,8 @@ pub struct RenderResult {
     /// Columns to move IRIS's cursor by, after a click inside the line being
     /// typed. Negative is left.
     pub cursor_move: Option<i64>,
-    /// Font size change requested by Ctrl + mouse wheel over this pane.
+    /// Font size change requested by Ctrl + mouse wheel over this pane, in
+    /// whole steps.
     pub font_delta: f32,
     /// Proportional font size change requested by a trackpad pinch over this pane.
     pub font_scale: Option<f32>,

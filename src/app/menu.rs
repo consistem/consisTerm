@@ -10,15 +10,6 @@
 use super::*;
 
 impl App {
-    pub(super) fn zoom_terminal_font(&mut self, ctx: &Context, delta: f32, scale: f32) {
-        let size = (self.settings.font_size * scale + delta).clamp(8.0, 28.0);
-        if size != self.settings.font_size {
-            self.settings.font_size = size;
-            let _ = self.settings.save();
-            ctx.request_repaint();
-        }
-    }
-
     /// Draws the find bar over the terminal, when there is one to draw.
     ///
     /// Floated over the output rather than given a strip of the window: a strip
@@ -91,7 +82,7 @@ impl App {
         // The macro editor is listening for a chord: Ctrl+T there means "bind
         // this macro to Ctrl+T", and opening a tab instead would make the app's
         // own shortcuts the only ones that could never be recorded.
-        if self.panels.macros.capture_shortcut || self.panels.capture_manager_shortcut {
+        if self.panels.capturing_shortcut() {
             return;
         }
         // Nor while the window is not the active one: a macro shortcut sends
@@ -111,6 +102,7 @@ impl App {
         let next_tab = consume_exact(ctx, cmd, Key::Tab);
         let zoom_in = consume_exact(ctx, cmd, Key::Plus) | consume_exact(ctx, cmd, Key::Equals);
         let zoom_out = consume_exact(ctx, cmd, Key::Minus);
+        let zoom_reset = consume_exact(ctx, cmd, Key::Num0);
 
         let mut jump = None;
         for (n, key) in [
@@ -147,11 +139,12 @@ impl App {
         if let Some(n) = jump {
             self.activate_tab(n);
         }
-        // Font size drives cell size, which drives grid dimensions, so zooming
-        // reflows and resizes the PTY through the ordinary resize path.
         if zoom_in || zoom_out {
             let delta = if zoom_in { 1.0 } else { -1.0 };
-            self.zoom_terminal_font(ctx, delta, 1.0);
+            self.queued.push(UiRequest::ZoomFont(Zoom::Step(delta)));
+        }
+        if zoom_reset {
+            self.queued.push(UiRequest::ZoomFont(Zoom::Reset));
         }
 
         // Ctrl+Delete: reset the terminal and drop the history, the one
@@ -379,7 +372,8 @@ impl App {
         // Whether the tabs share this row. Read before the closure: it decides
         // both what goes in the middle of the bar and whether the session's own
         // line is drawn at all.
-        let inline_tabs = self.settings.tabs_in_title_bar && !self.tabs.is_empty();
+        let side = self.settings.bar_position.is_side();
+        let inline_tabs = !side && self.settings.tabs_in_title_bar && !self.tabs.is_empty();
         // Tabs of a fixed width leave the bar's own free strip after them, as
         // they did before they filled it; only tabs that fill it give it up.
         let tabs_fill = inline_tabs && self.settings.tab_width == crate::config::TabWidth::Shared;
@@ -391,7 +385,13 @@ impl App {
         // the order puts there. That is what keeps the gear reachable: it was
         // once decided per end, and a theme with left-hand buttons and the
         // buttons switched off drew it on neither.
-        let pin = Some(self.settings.always_on_top);
+        let pin = Some(if self.settings.always_on_top {
+            chrome::Pin::Manual
+        } else if crate::ui::quake::auto_pinned() {
+            chrome::Pin::Auto
+        } else {
+            chrome::Pin::Off
+        });
         // The row is as tall as what is tallest in it from the start. A plain
         // `horizontal` row starts a button high and grows when the taller tabs
         // are drawn, which centred every button ahead of the tabs on the short
@@ -426,6 +426,11 @@ impl App {
                 // Settings, with the themes.
                 let mut middle = |ui: &mut egui::Ui, room: f32| -> Option<WindowAction> {
                     let mut app = app.borrow_mut();
+                    // Down a side the tabs are a column under this row, and
+                    // the session's line is far too long for it.
+                    if side {
+                        return None;
+                    }
                     if inline_tabs {
                         // Drawn in the row rather than into a rectangle handed to
                         // `chrome`, which is what lets the row's own cursor
@@ -484,6 +489,35 @@ impl App {
         action
     }
 
+    /// The title bar down a side of the window: the buttons in a row across
+    /// its top, the tabs in a column under them, and what is left below the
+    /// tabs to drag the window by - the column has no other empty space.
+    pub(super) fn side_bar(
+        &mut self,
+        ui: &mut egui::Ui,
+        buttons: &crate::config::theme::WindowButtons,
+    ) -> Option<WindowAction> {
+        let mut action = self.menu_bar(ui, buttons);
+        if !self.tabs.is_empty() {
+            self.tab_column(ui);
+        }
+        let rest = ui.available_rect_before_wrap();
+        if rest.height() > 0.0 {
+            let handle = ui.interact(
+                rest,
+                egui::Id::new("nit-side-bar-drag"),
+                egui::Sense::click_and_drag(),
+            );
+            if handle.drag_started() {
+                ui.ctx().send_viewport_cmd(egui::ViewportCommand::StartDrag);
+            }
+            if handle.double_clicked() {
+                action = Some(WindowAction::ToggleMaximize);
+            }
+        }
+        action
+    }
+
     /// Carries out whatever a panel asked for.
     pub(super) fn handle_request(&mut self, ctx: &Context, request: UiRequest) {
         match request {
@@ -515,12 +549,27 @@ impl App {
                 }
             }
 
+            UiRequest::ZoomFont(zoom) => {
+                let (size, pinch) = zoomed_font(self.settings.font_size, self.pinch, zoom);
+                self.pinch = pinch;
+                // Font size drives cell size, which drives the grid, so the
+                // ordinary resize path reflows it and tells IRIS on the next
+                // frame.
+                if let Some(size) = size {
+                    self.settings.font_size = size;
+                    if let Err(e) = self.settings.save() {
+                        self.set_status(tr1("Could not save settings: {}", &format!("{e:#}")));
+                    }
+                    ctx.request_repaint();
+                }
+            }
             UiRequest::SettingsChanged => {
                 // The style is reapplied either way: a failed write still has
                 // to be reflected on screen, or the UI would disagree with the
                 // settings the user just changed.
                 App::apply_style(ctx, &self.theme(), &self.settings);
                 self.apply_font(ctx);
+                self.apply_quake();
                 crate::ui::desktop::set_pinned(self.settings.pin_to_desktop);
                 self.history.set_persist(
                     &config::command_history_path(),
@@ -658,5 +707,64 @@ impl App {
                 }
             }
         }
+    }
+}
+
+/// The font sizes zooming moves between, the same range the setting offers.
+const FONT_RANGE: std::ops::RangeInclusive<f32> = 8.0..=28.0;
+
+/// The font size `zoom` moves `size` to - `None` when it does not move it -
+/// and how far a pinch has been carried since the size last changed.
+///
+/// A pinch settles on whole and half points, so the size it leaves is one the
+/// settings slider can show and the next Ctrl+Plus steps evenly from; until it
+/// has gone far enough to reach the next one it is kept in `pinch` instead of
+/// being lost.
+fn zoomed_font(size: f32, pinch: f32, zoom: Zoom) -> (Option<f32>, f32) {
+    let half = |s: f32| (s * 2.0).round() / 2.0;
+    let target = match zoom {
+        Zoom::Step(delta) => size + delta,
+        Zoom::Reset => crate::config::Settings::default().font_size,
+        Zoom::Pinch(scale) => {
+            let pinch = pinch * scale;
+            let target = half(size * pinch).clamp(*FONT_RANGE.start(), *FONT_RANGE.end());
+            if target == size {
+                return (None, pinch);
+            }
+            target
+        }
+    };
+    let target = target.clamp(*FONT_RANGE.start(), *FONT_RANGE.end());
+    ((target != size).then_some(target), 1.0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_pinch_too_small_to_move_the_font_is_kept_until_it_adds_up() {
+        // 15 x 1.01 is 15.15, still nearer 15 than 15.5: nothing moves, and
+        // the pinch is kept.
+        let (size, pinch) = zoomed_font(15.0, 1.0, Zoom::Pinch(1.01));
+        assert_eq!(size, None);
+        // 15 x 1.01^2 is 15.3, which is nearer the next half point.
+        let (size, pinch) = zoomed_font(15.0, pinch, Zoom::Pinch(1.01));
+        assert_eq!(size, Some(15.5));
+        assert_eq!(pinch, 1.0);
+    }
+
+    #[test]
+    fn zooming_never_leaves_the_range_the_setting_offers() {
+        assert_eq!(zoomed_font(28.0, 1.0, Zoom::Step(1.0)).0, None);
+        assert_eq!(zoomed_font(8.0, 1.0, Zoom::Pinch(0.5)).0, None);
+        assert_eq!(zoomed_font(27.5, 1.0, Zoom::Step(1.0)).0, Some(28.0));
+    }
+
+    #[test]
+    fn ctrl_0_puts_the_font_back_to_where_a_fresh_install_starts() {
+        let fresh = crate::config::Settings::default().font_size;
+        assert_eq!(zoomed_font(22.0, 1.3, Zoom::Reset), (Some(fresh), 1.0));
+        assert_eq!(zoomed_font(fresh, 1.0, Zoom::Reset).0, None);
     }
 }

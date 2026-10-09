@@ -6,9 +6,9 @@
 
 use std::time::{Duration, Instant};
 
-use new_iris_terminal::pty::launcher::{launcher, IrisLauncher, LaunchSpec};
-use new_iris_terminal::pty::PtySession;
-use new_iris_terminal::term::{parser, Grid};
+use consisterm::pty::launcher::{launcher, IrisLauncher, LaunchSpec};
+use consisterm::pty::PtySession;
+use consisterm::term::{parser, Grid};
 
 fn instance() -> String {
     std::env::var("IRIS_TEST_INSTANCE")

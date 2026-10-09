@@ -217,9 +217,11 @@ pub fn paint_backdrop(ctx: &egui::Context) {
     ui_gradient(&painter, ctx.screen_rect(), &gradient);
 }
 
-/// A materia orb in its socket, as Final Fantasy VII drew them in the weapon
-/// and armour slots: a steel ring, then the stone, lit from the upper left,
-/// with a swirl inside it and a hard white glint.
+/// A materia orb as Final Fantasy VII drew one unequipped, in the list of
+/// what the party carries: the bare stone, lit from the upper left, with a
+/// swirl inside it, a hard white glint and only a thin dark edge round it.
+/// The steel socket of the weapon and armour slots was too heavy a frame for
+/// a button this small - it read as a border, not as the materia.
 ///
 /// The swirl is what sets it apart from an Aqua bubble, which is glass and
 /// shows nothing inside: materia is crystallised, and has a grain.
@@ -236,22 +238,8 @@ pub fn materia_orb(painter: &Painter, center: Pos2, radius: f32, base: Color32, 
             Color32::from_rgba_unmultiplied(base.r(), base.g(), base.b(), 0),
         );
     }
-    // The socket: a ring of steel, bright along its top and dark below.
-    let socket = radius * 1.28;
-    radial(
-        painter,
-        center,
-        socket,
-        Vec2::new(-socket * 0.3, -socket * 0.45),
-        Color32::from_rgb(232, 234, 240),
-        Color32::from_rgb(70, 74, 86),
-    );
-    painter.circle_stroke(
-        center,
-        socket,
-        Stroke::new(1.0_f32, Color32::from_rgb(30, 32, 40)),
-    );
-    painter.circle_filled(center, radius * 1.04, Color32::from_rgb(24, 26, 34));
+    // The edge the sprite is outlined with, just outside the stone.
+    painter.circle_filled(center, radius + 0.8, darken(base, 0.22));
 
     // The stone, deepest at the rim.
     radial(

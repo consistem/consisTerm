@@ -16,11 +16,11 @@
 
 use std::time::{Duration, Instant};
 
+use consisterm::pty::launcher::{launcher, LaunchSpec};
+use consisterm::pty::PtySession;
+use consisterm::term::{lineedit, parser, Grid, LineEdit};
+use consisterm::ui::input;
 use egui::{Key, Modifiers};
-use new_iris_terminal::pty::launcher::{launcher, LaunchSpec};
-use new_iris_terminal::pty::PtySession;
-use new_iris_terminal::term::{lineedit, parser, Grid, LineEdit};
-use new_iris_terminal::ui::input;
 
 struct Live {
     session: PtySession,
