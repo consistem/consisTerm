@@ -32,6 +32,37 @@ pub fn white(alpha: u8) -> Color32 {
     Color32::from_rgba_unmultiplied(255, 255, 255, alpha)
 }
 
+/// A Windows 95 control raised off the page: `face`, edged with the two-pixel
+/// bevel of 98.css's `--border-raised` - a highlight and a lighter face
+/// along the top and left, a shadow and the window frame along the bottom
+/// and right. A dark face gets a dimmer highlight, which is what a white one
+/// would look like at that brightness.
+pub fn classic_bevel(painter: &Painter, rect: Rect, face: Color32) {
+    let rect = painter.round_rect_to_pixels(rect);
+    let dark = crate::config::theme::is_dark(face);
+    let highlight = lighten(face, if dark { 0.35 } else { 1.0 });
+    let light = lighten(face, if dark { 0.15 } else { 0.5 });
+    let shadow = darken(face, if dark { 0.55 } else { 0.67 });
+    let frame = darken(face, 0.05);
+    painter.rect_filled(rect, Rounding::ZERO, face);
+    let edge = |painter: &Painter, r: Rect, tl: Color32, br: Color32| {
+        let w = Stroke::new(1.0_f32, tl);
+        let b = Stroke::new(1.0_f32, br);
+        let (l, t, rr, bb) = (
+            r.left() + 0.5,
+            r.top() + 0.5,
+            r.right() - 0.5,
+            r.bottom() - 0.5,
+        );
+        painter.line_segment([Pos2::new(l, t), Pos2::new(rr, t)], w);
+        painter.line_segment([Pos2::new(l, t), Pos2::new(l, bb)], w);
+        painter.line_segment([Pos2::new(l, bb), Pos2::new(rr + 0.5, bb)], b);
+        painter.line_segment([Pos2::new(rr, t), Pos2::new(rr, bb)], b);
+    };
+    edge(painter, rect, highlight, frame);
+    edge(painter, rect.shrink(1.0), light, shadow);
+}
+
 /// A vertical gradient across `rect`, as a two-triangle mesh.
 pub fn gradient(painter: &Painter, rect: Rect, top: Color32, bottom: Color32) {
     let mut mesh = Mesh::default();

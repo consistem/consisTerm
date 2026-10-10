@@ -29,6 +29,7 @@
 //!   controls a row carries on its right.
 //! - [`fold`], [`matches()`]: the search's notion of "the same text".
 
+use crate::ui::tip::Tip;
 use std::hash::Hash;
 
 use egui::{
@@ -122,6 +123,10 @@ pub struct Palette {
     pub accent: Color32,
     /// Text and marks drawn on the accent.
     pub on_accent: Color32,
+    /// The accent as text on the page - a link, the way back: the theme's
+    /// link colour, which `Theme::visuals` works out against what is really
+    /// behind the page, a gradient included.
+    pub accent_text: Color32,
 }
 
 impl Palette {
@@ -151,6 +156,7 @@ impl Palette {
         // hairlines and fields work on a card, on the sidebar and on a
         // gradient alike without being worked out for each.
         let ink = |alpha: f32| text.gamma_multiply(alpha);
+        let accent_text = visuals.hyperlink_color;
         let shared = Palette {
             sidebar: Color32::TRANSPARENT,
             card: Color32::TRANSPARENT,
@@ -164,6 +170,7 @@ impl Palette {
             heading: visuals.strong_text_color(),
             accent,
             on_accent,
+            accent_text,
         };
         // A theme with a painted backdrop leaves the panels transparent (see
         // `Theme::visuals`). Opaque cards there would cover the backdrop with
@@ -264,9 +271,6 @@ pub struct SidebarItem<'a> {
     pub symbol: Symbol,
     /// The tile behind the symbol.
     pub tile: Color32,
-    /// Starts a new group: a gap above it, the way System Settings separates
-    /// its clusters of panes.
-    pub group: bool,
 }
 
 /// What the sidebar was asked for.
@@ -307,10 +311,9 @@ pub fn sidebar(
         .auto_shrink([false, false])
         .show(&mut ui, |ui| {
             ui.spacing_mut().item_spacing.y = 2.0;
+            // Evenly spaced, no clusters: with eleven entries, gaps that set
+            // off groups of one read as the list being laid out wrong.
             for (index, item) in items.iter().enumerate() {
-                if item.group && index > 0 {
-                    ui.add_space(10.0);
-                }
                 if sidebar_entry(ui, item, selected == Some(index), &palette).clicked() {
                     clicked = Some(index);
                 }
@@ -463,7 +466,7 @@ pub fn page_header_with_back(ui: &mut Ui, title: &str, back: Option<&str>) -> bo
         let font = TextStyle::Body.resolve(ui.style());
         let galley = ui
             .painter()
-            .layout_no_wrap(back.to_owned(), font, palette.accent);
+            .layout_no_wrap(back.to_owned(), font, palette.accent_text);
         let chevron = 12.0;
         let size = vec2(
             chevron + 4.0 + galley.size().x,
@@ -888,7 +891,7 @@ pub fn row<R>(ui: &mut Ui, spec: Row<'_>, control: impl FnOnce(&mut Ui) -> R) ->
         ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
     }
     if let Some(hint) = spec.hint {
-        label = label.on_hover_text(hint);
+        label = label.tip(hint);
     }
 
     let painter = ui.painter();

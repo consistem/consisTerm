@@ -13,6 +13,15 @@
 //! setting. What is seldom needed on a page sits on a sub-page of its own,
 //! reached from a row with a chevron, and named for what is on it.
 //!
+//! The grouping follows what GNOME's, macOS's and Android's settings agree
+//! on: a setting lives with the thing it changes (the title bar's scale with
+//! the title bar, not with the font), what the app does when it starts and
+//! when it is closed is General, and a feature with several switches gets a
+//! section of its own, headed by its name and by a picture of what it does,
+//! rather than being a few rows inside another feature's card. What helps at
+//! the IRIS prompt - completion, the global tooltip, the colouring - is one
+//! category, since that is how it is looked for.
+//!
 //! No OK or Cancel. Every change is applied the moment it is made, so it can
 //! be judged against the terminal behind the window: a Cancel would be lying
 //! about what it did.
@@ -32,6 +41,7 @@
 //! other, but in the results it is only a way to its page, since out there
 //! nothing says which theme or macro its control would be changing.
 
+use crate::ui::tip::Tip;
 use std::sync::OnceLock;
 
 use egui::{Color32, Context, Key, KeyboardShortcut, Modifiers, PointerButton, Ui};
@@ -69,6 +79,7 @@ pub enum Category {
     ScreenSaver,
     Windows,
     Terminal,
+    Assistance,
     Keyboard,
     Macros,
     Sessions,
@@ -76,13 +87,14 @@ pub enum Category {
 }
 
 impl Category {
-    pub const ALL: [Category; 10] = [
+    pub const ALL: [Category; 11] = [
         Category::General,
         Category::Appearance,
         Category::Themes,
         Category::ScreenSaver,
         Category::Windows,
         Category::Terminal,
+        Category::Assistance,
         Category::Keyboard,
         Category::Macros,
         Category::Sessions,
@@ -98,6 +110,7 @@ impl Category {
             Category::ScreenSaver => "Screen saver",
             Category::Windows => "Window and tabs",
             Category::Terminal => "Terminal",
+            Category::Assistance => "IRIS assistance",
             Category::Keyboard => "Keyboard and editing",
             Category::Macros => "Macros",
             Category::Sessions => "Sessions",
@@ -113,6 +126,7 @@ impl Category {
             Category::ScreenSaver => Symbol::Display,
             Category::Windows => Symbol::Windows,
             Category::Terminal => Symbol::Prompt,
+            Category::Assistance => Symbol::Lines,
             Category::Keyboard => Symbol::Pencil,
             Category::Macros => Symbol::Bolt,
             Category::Sessions => Symbol::Person,
@@ -132,19 +146,12 @@ impl Category {
             Category::ScreenSaver => rgb(0x30, 0xb0, 0xc7),
             Category::Windows => rgb(0x00, 0x7a, 0xff).lerp_to_gamma(rgb(0x30, 0xb0, 0xc7), 0.5),
             Category::Terminal => rgb(0x3a, 0x3a, 0x3c),
+            Category::Assistance => rgb(0x58, 0x56, 0xd6),
             Category::Keyboard => rgb(0xff, 0x95, 0x00),
             Category::Macros => rgb(0xe8, 0xb0, 0x00),
             Category::Sessions => rgb(0x34, 0xc7, 0x59),
             Category::About => rgb(0x8e, 0x8e, 0x93).lerp_to_gamma(rgb(0x58, 0x56, 0xd6), 0.5),
         }
-    }
-
-    /// Opens a cluster of related entries, with a gap above it.
-    fn starts_group(self) -> bool {
-        matches!(
-            self,
-            Category::Windows | Category::Terminal | Category::Sessions | Category::About
-        )
     }
 
     fn index(self) -> usize {
@@ -789,7 +796,6 @@ fn window(ui: &mut Ui, c: &mut Ctx<'_>) {
             label: tr(category.label()),
             symbol: category.symbol(),
             tile: category.tile(),
-            group: category.starts_group(),
         })
         .collect();
     let searching = !c.state.settings_search.trim().is_empty();
@@ -954,6 +960,7 @@ fn build_pages() -> Vec<Page> {
             size_presets(),
         ),
         page(Category::Terminal, terminal()),
+        page(Category::Assistance, assistance()),
         page(Category::Keyboard, keyboard()),
     ]);
     pages.extend(macros::pages());
@@ -992,6 +999,34 @@ fn general() -> Vec<Section> {
             "Language",
             vec![Item::control("language", "Language", language)
                 .keys(&["idioma", "english", "portugues", "translation", "traducao"])],
+        ),
+        section(
+            "Startup",
+            vec![
+                Item::toggle("open_on_start", "Open the default profile at startup", |s| {
+                    &mut s.open_on_start
+                })
+                .keys(&["start", "launch", "iniciar", "abrir", "perfil"]),
+                Item::toggle("remember_open_tabs", "Remember open tabs and namespaces", |s| {
+                    &mut s.remember_open_tabs
+                })
+                .hint("Reopens the tabs and splits that were open when the terminal was closed, instead of the default profile, and takes each IRIS session back to the namespace it was left in. The sessions themselves are new: what was on screen is shown above them, but variables, locks and routines in progress are not. Closing every tab before closing the window leaves nothing to reopen.")
+                .keys(&["restore", "session", "restaurar", "sessao", "abas"]),
+            ],
+        ),
+        section(
+            "Closing",
+            vec![
+                Item::toggle(
+                    "confirm_close",
+                    "Ask before closing with a session still connected",
+                    |s| &mut s.confirm_close_with_live_session,
+                )
+                .keys(&["confirm", "quit", "exit", "confirmar", "sair"]),
+                Item::toggle("close_to_tray", "Close to the tray", |s| &mut s.close_to_tray)
+                    .hint("Closing the window hides it behind an icon in the notification area, and the sessions stay connected. Click the icon to bring it back; its menu's Exit quits.")
+                    .keys(&["tray", "notification", "bandeja", "notificacao", "minimize"]),
+            ],
         ),
         section(
             "Status messages",
@@ -1066,34 +1101,14 @@ fn appearance() -> Vec<Section> {
             ],
         ),
         section(
-            "Highlighting",
-            vec![
-                Item::toggle("syntax_highlight", "Syntax highlighting", |s| {
-                    &mut s.terminal_syntax_highlight
-                })
-                .hint("Colours globals, strings, numbers, commands, macros and class references. A guess about the text on screen; a colour IRIS sets itself always wins.")
-                .keys(&["colour", "color", "objectscript", "cores", "sintaxe", "realce"]),
-                Item::toggle("sql_highlight", "Colour SQL at the SQL shell's prompt", |s| {
-                    &mut s.sql_highlight
-                })
-                .keys(&["sql", "colour", "color", "cores"]),
-            ],
-        ),
-        section(
             "Interface",
             vec![
                 Item::control("ui_scale", "Interface scale", ui_scale)
                     .sub("Enlarges the tabs, the title bar, the dialogs and the managers. The terminal keeps the font size above.")
                     .keys(&["zoom", "dpi", "size", "tamanho", "escala"]),
-                Item::control("title_bar_scale", "Title bar scale", title_bar_scale)
-                    .sub("Enlarges the title bar and the tabs again, on top of the interface scale, leaving the dialogs and the managers as they are.")
-                    .keys(&["zoom", "tabs", "abas", "size", "tamanho", "escala", "title bar"]),
                 Item::toggle("show_scrollbars", "Show scrollbars", |s| &mut s.show_scrollbars)
                     .sub("Solid scrollbars instead of the thin ones that only appear on hover.")
                     .keys(&["scrollbar", "barra de rolagem"]),
-                Item::toggle("animations", "Animations", |s| &mut s.animations)
-                    .sub("The pictures that show what a feature does move. Off shows each one still.")
-                    .keys(&["animation", "motion", "movement", "animacao", "movimento", "reduce"]),
             ],
         ),
     ]
@@ -1173,6 +1188,26 @@ fn quake_edge(ui: &mut Ui, c: &mut Ctx<'_>) {
         .map(|&edge| (edge, tr(edge.label())))
         .collect();
     c.changed |= prefs::segmented(ui, &mut c.settings.quake_edge, &options);
+}
+
+fn quake_animation(ui: &mut Ui, c: &mut Ctx<'_>) {
+    let options: Vec<(crate::config::QuakeAnimation, &str)> = crate::config::QuakeAnimation::ALL
+        .iter()
+        .map(|&speed| (speed, tr(speed.label())))
+        .collect();
+    c.changed |= prefs::segmented(ui, &mut c.settings.quake_animation, &options);
+}
+
+fn quake_width(ui: &mut Ui, c: &mut Ctx<'_>) {
+    c.changed |= ui
+        .add(
+            egui::DragValue::new(&mut c.settings.quake_width)
+                .speed(0.0)
+                .range(crate::ui::quake::WIDTH_RANGE)
+                .suffix(" %"),
+        )
+        .on_hover_cursor(egui::CursorIcon::Text)
+        .changed();
 }
 
 /// Typed, not dragged, like the scale: the window it sizes is not on screen
@@ -1256,7 +1291,7 @@ fn scale_picker(ui: &mut Ui, c: &mut Ctx<'_>, max: u32, field: fn(&mut Settings)
         // sideways arrows a drag value shows on hover promised a gesture
         // that did nothing.
         .on_hover_cursor(egui::CursorIcon::Text)
-        .on_hover_text(tr1("Type a percentage from 100 to {}.", &max.to_string()))
+        .tip(tr1("Type a percentage from 100 to {}.", &max.to_string()))
         .changed();
     let mut picked = None;
     for step in UI_SCALE_STEPS.iter().filter(|s| **s <= max).rev() {
@@ -1288,7 +1323,8 @@ fn title_bar() -> Vec<Section> {
         section(
             "Title bar",
             vec![
-                picture("bar_picture", "Title bar", show_title_bar),
+                Item::rows("bar_picture", "Title bar", show_title_bar)
+                    .keys(&["preview", "previa", "layout"]),
                 Item::control("bar_position", "Position", bar_position)
                     .hint("Which side of the window the title bar is on, as web browsers offer. On the left or right it is a column: the buttons across its top and the tabs listed down it, and it can be made wider or narrower by its edge.")
                     .keys(&["position", "posição", "left", "right", "bottom", "esquerda", "direita", "baixo", "vertical", "vivaldi", "opera"]),
@@ -1305,6 +1341,9 @@ fn title_bar() -> Vec<Section> {
                 Item::control("tab_close_side", "Close button position", tab_close_side)
                     .hint("Which end of each tab the button that closes it is drawn at.")
                     .keys(&["tabs", "abas", "close", "fechar", "left", "right", "esquerda", "direita"]),
+                Item::control("title_bar_scale", "Title bar scale", title_bar_scale)
+                    .sub("Enlarges the title bar and the tabs again, on top of the interface scale, leaving the dialogs and the managers as they are.")
+                    .keys(&["zoom", "tabs", "abas", "size", "tamanho", "escala", "title bar"]),
             ],
         ),
         section(
@@ -1333,22 +1372,31 @@ fn title_bar() -> Vec<Section> {
 fn windows() -> Vec<Section> {
     let mut sections = title_bar();
     if crate::ui::quake::SUPPORTED {
-        sections.push(untitled(vec![Item::link(
-            "quake_link",
+        // On the page itself, picture and all, rather than a bare link: it is
+        // a feature of its own, and a row with nothing to say what it did was
+        // the part of this page nobody found.
+        sections.push(section(
             "Drop-down terminal",
-            Route::sub(Category::Windows, QUAKE_PAGE),
-        )
-        .sub("A terminal one key away, over whatever you are doing.")
-        .keys(&[
-            "quake",
-            "guake",
-            "yakuake",
-            "drop-down",
-            "suspenso",
-            "hotkey",
-            "atalho",
-            "f12",
-        ])]));
+            vec![
+                picture("quake_picture", "Drop-down terminal", show_drop_down),
+                Item::link(
+                    "quake_link",
+                    "Drop-down terminal settings",
+                    Route::sub(Category::Windows, QUAKE_PAGE),
+                )
+                .sub("A terminal one key away, over whatever you are doing.")
+                .keys(&[
+                    "quake",
+                    "guake",
+                    "yakuake",
+                    "drop-down",
+                    "suspenso",
+                    "hotkey",
+                    "atalho",
+                    "f12",
+                ]),
+            ],
+        ));
     }
     sections.extend(vec![
         section(
@@ -1380,29 +1428,12 @@ fn windows() -> Vec<Section> {
                 })
                 .hint("Reopens the window where it was last closed. Off centres it on the screen.")
                 .keys(&["remember", "lembrar", "salvar", "posicao"]),
+                Item::toggle("pin_to_desktop", "Pin to desktop", |s| &mut s.pin_to_desktop)
+                    .hint("Keeps the window on screen when the desktop is shown (Win+D). Otherwise it is an ordinary window: others cover it, and clicking it brings it to the front.")
+                    .keys(&["win+d", "desktop", "fixar", "area de trabalho"]),
             ],
         )
-        .footer("Takes effect the next time the app starts. The Settings window always reopens where it was left."),
-        section(
-            "Desktop",
-            vec![Item::toggle("pin_to_desktop", "Pin to desktop", |s| &mut s.pin_to_desktop)
-                .hint("Keeps the window on screen when the desktop is shown (Win+D). Otherwise it is an ordinary window: others cover it, and clicking it brings it to the front.")
-                .keys(&["win+d", "desktop", "fixar", "area de trabalho"])],
-        ),
-        section(
-            "Closing",
-            vec![
-                Item::toggle(
-                    "confirm_close",
-                    "Ask before closing with a session still connected",
-                    |s| &mut s.confirm_close_with_live_session,
-                )
-                .keys(&["confirm", "quit", "exit", "confirmar", "sair"]),
-                Item::toggle("close_to_tray", "Close to the tray", |s| &mut s.close_to_tray)
-                    .hint("Closing the window hides it behind an icon in the notification area, and the sessions stay connected. Click the icon to bring it back; its menu's Exit quits.")
-                    .keys(&["tray", "notification", "bandeja", "notificacao", "minimize"]),
-            ],
-        ),
+        .footer("The size and the position take effect the next time the app starts. The Settings window always reopens where it was left."),
     ]);
     sections
 }
@@ -1413,33 +1444,48 @@ fn picture(key: &'static str, title: &'static str, draw: fn(&mut Card<'_>, &mut 
     Item::rows(key, title, draw)
 }
 
-fn draw_picture(card: &mut Card<'_>, c: &Ctx<'_>, scene: crate::ui::illustration::Scene) {
-    let animate = c.settings.animations;
-    card.custom(|ui| crate::ui::illustration::show(ui, scene, animate));
+fn draw_picture(card: &mut Card<'_>, scene: crate::ui::illustration::Scene) {
+    card.custom(|ui| crate::ui::illustration::show(ui, scene, true));
 }
 
-fn show_tooltip(card: &mut Card<'_>, c: &mut Ctx<'_>) {
-    draw_picture(card, c, crate::ui::illustration::Scene::GlobalTooltip);
+fn show_tooltip(card: &mut Card<'_>, _: &mut Ctx<'_>) {
+    draw_picture(card, crate::ui::illustration::Scene::GlobalTooltip);
 }
 
-fn show_autocomplete(card: &mut Card<'_>, c: &mut Ctx<'_>) {
-    draw_picture(card, c, crate::ui::illustration::Scene::Autocomplete);
+fn show_autocomplete(card: &mut Card<'_>, _: &mut Ctx<'_>) {
+    draw_picture(card, crate::ui::illustration::Scene::Autocomplete);
 }
 
-pub(super) fn show_macros(card: &mut Card<'_>, c: &mut Ctx<'_>) {
-    draw_picture(card, c, crate::ui::illustration::Scene::Macros);
+pub(super) fn show_macros(card: &mut Card<'_>, _: &mut Ctx<'_>) {
+    draw_picture(card, crate::ui::illustration::Scene::Macros);
 }
 
-fn show_shells(card: &mut Card<'_>, c: &mut Ctx<'_>) {
-    draw_picture(card, c, crate::ui::illustration::Scene::Shells);
+fn show_shells(card: &mut Card<'_>, _: &mut Ctx<'_>) {
+    draw_picture(card, crate::ui::illustration::Scene::Shells);
 }
 
 fn show_drop_down(card: &mut Card<'_>, c: &mut Ctx<'_>) {
-    draw_picture(card, c, crate::ui::illustration::Scene::DropDown);
+    // The chord set below, and only one that would actually fire.
+    let key = c
+        .settings
+        .quake_shortcut
+        .as_deref()
+        .filter(|k| crate::ui::shortcut::parse_global(k).is_some());
+    card.custom(|ui| {
+        crate::ui::illustration::show_with_key(
+            ui,
+            crate::ui::illustration::Scene::DropDown,
+            true,
+            key,
+        )
+    });
 }
 
+/// Not a loop through every layout but the one the rows below are set to,
+/// so each change shows on it as it is made.
 fn show_title_bar(card: &mut Card<'_>, c: &mut Ctx<'_>) {
-    draw_picture(card, c, crate::ui::illustration::Scene::TitleBar);
+    let layout = crate::ui::illustration::BarLayout::of(c.settings);
+    card.custom(|ui| crate::ui::illustration::title_bar_preview(ui, layout));
 }
 
 /// The drop-down terminal's page, a sub-page of Window and tabs.
@@ -1451,22 +1497,27 @@ const QUAKE_PAGE: &str = "drop_down";
 fn quake() -> Vec<Section> {
     let on = |c: &Ctx<'_>| c.settings.quake_edge != crate::config::QuakeEdge::Off;
     vec![
-        section(
-            "Drop-down terminal",
-            vec![
-                picture("quake_picture", "Drop-down terminal", show_drop_down),
-                Item::control("quake_edge", "Comes from", quake_edge)
-                    .hint("Off keeps an ordinary window. Top or Bottom makes the shortcut below bring the window down from that edge of the screen the pointer is on, across its whole width, and put it away again when pressed while the window is in front.")
-                    .keys(&["quake", "guake", "yakuake", "drop-down", "suspenso", "hotkey", "atalho"]),
-                Item::control("quake_height", "Height", quake_height)
-                    .when(on)
-                    .keys(&["quake", "height", "altura"]),
-                Item::toggle("quake_on_top", "Keep it above other windows", |s| &mut s.quake_on_top)
-                    .when(on)
-                    .sub("While it is down. Off, it comes to the front like any window, and other windows can go over it - unless the pin button keeps it on top.")
-                    .keys(&["quake", "on top", "pin", "fixar", "acima"]),
-            ],
-        )
+        untitled(vec![
+            Item::control("quake_edge", "Comes from", quake_edge)
+                .hint("Off keeps an ordinary window. Top or Bottom makes the shortcut below bring the window down from that edge of the screen the pointer is on, across its whole width, and put it away again when pressed while the window is in front.")
+                .keys(&["quake", "guake", "yakuake", "drop-down", "suspenso", "hotkey", "atalho"]),
+            Item::control("quake_height", "Height", quake_height)
+                .when(on)
+                .sub("Of the screen. Dragged away from its edge, the window goes back to the size it has as an ordinary window.")
+                .keys(&["quake", "height", "altura", "size", "tamanho"]),
+            Item::control("quake_width", "Width", quake_width)
+                .when(on)
+                .sub("Of the screen, centred on its edge.")
+                .keys(&["quake", "width", "largura", "size", "tamanho"]),
+            Item::control("quake_animation", "Roll-in animation", quake_animation)
+                .when(on)
+                .sub("How it rolls in from its edge and back out. Off, it appears and goes at once.")
+                .keys(&["quake", "animation", "animacao", "slide", "deslizar", "speed", "velocidade"]),
+            Item::toggle("quake_on_top", "Keep it above other windows", |s| &mut s.quake_on_top)
+                .when(on)
+                .sub("While it is down. Off, it comes to the front like any window, and other windows can go over it - unless the pin button keeps it on top.")
+                .keys(&["quake", "on top", "pin", "fixar", "acima"]),
+        ])
         .footer("Like Guake and Yakuake on Linux: a terminal one key away, over whatever you are doing."),
         Section {
             enabled: Some(on),
@@ -1527,18 +1578,54 @@ fn rows_presets(ui: &mut Ui, c: &mut Ctx<'_>) {
 // ---------------------------------------------------------------------------
 
 fn terminal() -> Vec<Section> {
+    vec![section(
+        "Scrollback",
+        vec![
+            Item::control("scrollback_limit", "Scrollback lines", scrollback_limit)
+                .keys(&["history", "buffer", "lines", "historico", "linhas"]),
+            Item::toggle("wrap_lines", "Wrap long lines", |s| &mut s.wrap_lines)
+                .hint("On: a long line continues on the next row, breaking at the window edge. Off: it runs off to the right, reached by scrolling sideways or widening the window.")
+                .keys(&["wrap", "quebra", "linha", "horizontal"]),
+        ],
+    )
+    .footer("Either way the whole line is kept: the terminal is reported wider than the window, because IRIS cuts a line at the terminal width instead of wrapping it.")]
+}
+
+// ---------------------------------------------------------------------------
+// IRIS assistance
+// ---------------------------------------------------------------------------
+
+/// What the terminal does to help at the IRIS and SQL prompts: offering the
+/// rest of a word, explaining a global, colouring the line.
+fn assistance() -> Vec<Section> {
+    let completing = |c: &Ctx<'_>| c.settings.autocomplete;
     vec![
         section(
-            "Scrollback",
+            "Autocomplete",
             vec![
-                Item::control("scrollback_limit", "Scrollback lines", scrollback_limit)
-                    .keys(&["history", "buffer", "lines", "historico", "linhas"]),
-                Item::toggle("wrap_lines", "Wrap long lines", |s| &mut s.wrap_lines)
-                    .hint("On: a long line continues on the next row, breaking at the window edge. Off: it runs off to the right, reached by scrolling sideways or widening the window.")
-                    .keys(&["wrap", "quebra", "linha", "horizontal"]),
+                picture("autocomplete_picture", "Autocomplete", show_autocomplete),
+                Item::toggle("autocomplete", "Autocomplete", |s| &mut s.autocomplete)
+                    .sub("Offers the rest of the word being typed at an IRIS prompt. Tab accepts, Esc closes.")
+                    .keys(&["completion", "intellisense", "suggest", "sugestao", "completar", "code", "codigo"]),
+                Item::toggle("autocomplete_commands", "Commands and functions", |s| {
+                    &mut s.autocomplete_commands
+                })
+                .when(completing)
+                .sub("set, write, $piece, $SYSTEM classes - and at the SQL prompt, its keywords and tables.")
+                .keys(&["completion", "command", "comando", "function", "funcao", "sql", "completar"]),
+                Item::toggle("autocomplete_names", "Globals, routines and classes", |s| {
+                    &mut s.autocomplete_names
+                })
+                .when(completing)
+                .sub("Names from the namespace: ^globals, routines, $$ entry points and ##class( names.")
+                .keys(&["completion", "global", "routine", "rotina", "class", "classe", "completar"]),
+                Item::toggle("autocomplete_data", "Global data", |s| &mut s.autocomplete_data)
+                    .when(completing)
+                    .sub("Inside ^GLOBAL(: the subscripts that exist there now, and what its documentation says one could be.")
+                    .hint("^mtemp(\"CC shows every subscript starting with CC, and narrows as you type. The subscripts come from a second session of the same profile, which holds an IRIS licence while it is open.")
+                    .keys(&["completion", "data", "dados", "subscript", "subscrito", "mtemp", "completar"]),
             ],
-        )
-        .footer("Either way the whole line is kept: the terminal is reported wider than the window, because IRIS cuts a line at the terminal width instead of wrapping it."),
+        ),
         section(
             "Global tooltip",
             vec![picture("tooltip_picture", "Global tooltip", show_tooltip), Item::control("intellisense", "Global tooltip", intellisense)
@@ -1579,27 +1666,6 @@ fn keyboard() -> Vec<Section> {
                 })
                 .hint("On: typing \" ' ( [ or { over selected text on the command line puts the pair around it instead of replacing it, the way an editor does - so selecting a global name and pressing \" quotes it, and the text stays selected to be wrapped again. Off: the character replaces the selection. Only applies to a selection inside the line being typed; one in the scrollback is highlighted text and is never edited.")
                 .keys(&["quote", "bracket", "surround", "aspas", "parenteses"]),
-                picture("autocomplete_picture", "Autocomplete", show_autocomplete),
-                Item::toggle("autocomplete", "Autocomplete", |s| &mut s.autocomplete)
-                    .sub("Offers the rest of the word being typed at an IRIS prompt. Tab accepts, Esc closes.")
-                    .keys(&["completion", "intellisense", "suggest", "sugestao", "completar"]),
-                Item::toggle("autocomplete_commands", "Commands and functions", |s| {
-                    &mut s.autocomplete_commands
-                })
-                .when(|c| c.settings.autocomplete)
-                .sub("set, write, $piece, $SYSTEM classes - and at the SQL prompt, its keywords and tables.")
-                .keys(&["completion", "command", "comando", "function", "funcao", "sql", "completar"]),
-                Item::toggle("autocomplete_names", "Globals, routines and classes", |s| {
-                    &mut s.autocomplete_names
-                })
-                .when(|c| c.settings.autocomplete)
-                .sub("Names from the namespace: ^globals, routines, $$ entry points and ##class( names.")
-                .keys(&["completion", "global", "routine", "rotina", "class", "classe", "completar"]),
-                Item::toggle("autocomplete_data", "Global data", |s| &mut s.autocomplete_data)
-                    .when(|c| c.settings.autocomplete)
-                    .sub("Inside ^GLOBAL(: the subscripts that exist there now, and what its documentation says one could be.")
-                    .hint("^mtemp(\"CC shows every subscript starting with CC, and narrows as you type. The subscripts come from a second session of the same profile, which holds an IRIS licence while it is open.")
-                    .keys(&["completion", "data", "dados", "subscript", "subscrito", "mtemp", "completar"]),
             ],
         ),
         section(
@@ -1617,6 +1683,15 @@ fn keyboard() -> Vec<Section> {
                 .keys(&["history", "recall", "historico", "comandos"]),
             ],
         ),
+        // Where autocomplete was for a while, so whoever looks for it here
+        // is sent to where it went.
+        untitled(vec![Item::link(
+            "assistance_link",
+            "Autocomplete and global tooltip",
+            Route::page(Category::Assistance),
+        )
+        .sub("Suggestions while typing, what a global's pieces mean, and the colouring of the line are under IRIS assistance.")
+        .keys(&["completion", "completar", "sugestao", "intellisense"])]),
     ]
 }
 
@@ -1636,20 +1711,6 @@ fn sessions() -> Vec<Section> {
                 Item::control("default_profile", "Default profile", default_profile)
                     .when(|c| !c.settings.profiles.is_empty())
                     .keys(&["startup", "inicializacao", "padrao", "perfil"]),
-            ],
-        ),
-        section(
-            "Startup",
-            vec![
-                Item::toggle("open_on_start", "Open the default profile at startup", |s| {
-                    &mut s.open_on_start
-                })
-                .keys(&["start", "launch", "iniciar", "abrir"]),
-                Item::toggle("remember_open_tabs", "Remember open tabs and namespaces", |s| {
-                    &mut s.remember_open_tabs
-                })
-                .hint("Reopens the tabs and splits that were open when the terminal was closed, instead of the default profile, and takes each IRIS session back to the namespace it was left in. The sessions themselves are new: what was on screen is shown above them, but variables, locks and routines in progress are not. Closing every tab before closing the window leaves nothing to reopen.")
-                .keys(&["restore", "session", "restaurar", "sessao", "abas"]),
             ],
         ),
         section(
@@ -1987,7 +2048,7 @@ fn instance_menu(
                     tr1("Telnet login to {}", &format!("{address}:{port}"))
                 }
             };
-            if entry.on_hover_text(hint).clicked() {
+            if entry.tip(hint).clicked() {
                 point_at(profile, server, instances);
                 changed = true;
             }
@@ -2093,14 +2154,14 @@ fn shell_rows(card: &mut Card<'_>, _: &mut Ctx<'_>) {
 
 fn shells_folder(ui: &mut Ui, c: &mut Ctx<'_>) {
     if prefs::button(ui, tr("Open folder"))
-        .on_hover_text(crate::plugins::shells::shells_dir().display().to_string())
+        .tip(crate::plugins::shells::shells_dir().display().to_string())
         .clicked()
     {
         c.requests
             .push(UiRequest::OpenFolder(crate::plugins::shells::shells_dir()));
     }
     if prefs::button(ui, tr("Reload"))
-        .on_hover_text(tr("Probe again and re-read the folder."))
+        .tip(tr("Probe again and re-read the folder."))
         .clicked()
     {
         // The list is cached for the process, because the new-session menu
@@ -2192,35 +2253,16 @@ fn about() -> Vec<Section> {
     ]
 }
 
-/// The app's icon, decoded once and kept in the context for every frame
-/// after: decoding it each time the About page is drawn would cost a frame's
-/// budget for nothing.
-fn app_icon(ctx: &Context) -> egui::TextureHandle {
-    let id = egui::Id::new("nit-about-icon");
-    if let Some(texture) = ctx.data(|d| d.get_temp::<egui::TextureHandle>(id)) {
-        return texture;
-    }
-    let image = image::load_from_memory(include_bytes!("../../../assets/icon.ico"))
-        .map(|image| image.into_rgba8())
-        .unwrap_or_else(|_| image::RgbaImage::new(1, 1));
-    let size = [image.width() as usize, image.height() as usize];
-    let pixels = egui::ColorImage::from_rgba_unmultiplied(size, image.as_raw());
-    let texture = ctx.load_texture("about-icon", pixels, egui::TextureOptions::LINEAR);
-    ctx.data_mut(|d| d.insert_temp(id, texture.clone()));
-    texture
-}
-
 /// The top of the About page, centred and straight on the page: icon,
 /// name, the version with the way to check for a newer one beside it, one
 /// line on what the app is, and where to go for more.
 fn about_header(ui: &mut Ui, c: &mut Ctx<'_>) {
     ui.vertical_centered(|ui| {
         ui.add_space(16.0);
-        let icon = app_icon(ui.ctx());
-        ui.add(egui::Image::new(&icon).fit_to_exact_size(egui::vec2(112.0, 112.0)));
+        crate::ui::logo::show(ui, 168.0);
         ui.add_space(4.0);
         ui.label(egui::RichText::new(crate::APP_NAME).size(26.0).strong());
-        ui.label(tr("A terminal for InterSystems IRIS, made for the people who work in it."));
+        ui.label(tr("A terminal for InterSystems IRIS, made for the people who live in it."));
         ui.add_space(6.0);
 
         let version = tr1("Version {}", crate::features::update::CURRENT);
@@ -2234,15 +2276,15 @@ fn about_header(ui: &mut Ui, c: &mut Ctx<'_>) {
         centred_row(ui, "about-startup", |ui| {
             c.changed |= prefs::toggle(ui, &mut c.settings.check_for_updates).changed();
             ui.label(tr("Check for a new version at startup"))
-                .on_hover_text(tr("One request to GitHub through the machine's own proxy. Nothing is downloaded or replaced without being asked."));
+                .tip(tr("One request to GitHub through the machine's own proxy. Nothing is downloaded or replaced without being asked."));
         });
         ui.add_space(4.0);
         centred_row(ui, "about-links", |ui| {
-            if ui.button(tr("Website")).on_hover_text(repository).clicked() {
+            if ui.button(tr("Website")).tip(repository).clicked() {
                 open = Some(repository.to_owned());
             }
             let issues = format!("{repository}/issues");
-            if ui.button(tr("Report a problem")).on_hover_text(issues.as_str()).clicked() {
+            if ui.button(tr("Report a problem")).tip(issues.as_str()).clicked() {
                 open = Some(issues);
             }
         });
@@ -2278,23 +2320,20 @@ fn centred_row(ui: &mut Ui, id: &str, add: impl FnOnce(&mut Ui)) {
     }
 }
 
-/// Every tip in one list that scrolls inside its card, rather than a row each
-/// down the page: the page then ends where the settings do, and the list is
-/// there to be read through by whoever wants to.
+/// Every tip in its card, each with the room to be read: in a box that
+/// scrolled inside the page, they were read one at a time through a slot.
 fn tips_list(card: &mut Card<'_>, _: &mut Ctx<'_>) {
     card.custom(|ui| {
-        egui::ScrollArea::vertical()
-            .max_height(260.0)
-            .auto_shrink([false, true])
-            .show(ui, |ui| {
-                for (n, &(_, title, text)) in FEATURE_TIPS.iter().enumerate() {
-                    if n > 0 {
-                        ui.separator();
-                    }
-                    ui.label(egui::RichText::new(tr(title)).strong());
-                    ui.add(egui::Label::new(egui::RichText::new(tr(text)).weak()).wrap());
-                }
-            });
+        ui.spacing_mut().item_spacing.y = 4.0;
+        for (n, &(_, title, text)) in FEATURE_TIPS.iter().enumerate() {
+            if n > 0 {
+                ui.add_space(4.0);
+                ui.separator();
+                ui.add_space(2.0);
+            }
+            ui.label(egui::RichText::new(tr(title)).strong());
+            ui.add(egui::Label::new(egui::RichText::new(tr(text)).weak()).wrap());
+        }
     });
 }
 
@@ -2317,7 +2356,7 @@ fn send_usage_report(ui: &mut Ui, c: &mut Ctx<'_>) {
     let send = ui
         .add_enabled_ui(ready, |ui| prefs::button(ui, tr("Send now")))
         .inner
-        .on_disabled_hover_text(tr("Type the address to send it to first."));
+        .disabled_tip(tr("Type the address to send it to first."));
     if send.clicked() {
         c.requests.push(UiRequest::SendUsageReport(to));
     }
@@ -2378,7 +2417,7 @@ fn proxy_status(card: &mut Card<'_>, _: &mut Ctx<'_>) {
 fn proxy_user(ui: &mut Ui, c: &mut Ctx<'_>) {
     c.changed |= ui
         .add(egui::TextEdit::singleline(&mut c.settings.proxy_user).desired_width(180.0))
-        .on_hover_text(tr(
+        .tip(tr(
             "Only if the proxy asks for credentials. Leave empty otherwise.",
         ))
         .changed();
@@ -2399,7 +2438,7 @@ fn proxy_password(ui: &mut Ui, c: &mut Ctx<'_>) {
                 })
                 .desired_width(180.0),
         )
-        .on_hover_text(tr(
+        .tip(tr(
             "Kept in the operating system's credential store, never in settings.toml.",
         ))
         .lost_focus()

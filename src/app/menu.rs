@@ -8,6 +8,7 @@
 //! [`UiRequest`]: crate::ui::panels::UiRequest
 
 use super::*;
+use crate::ui::tip::Tip;
 
 impl App {
     /// Draws the find bar over the terminal, when there is one to draw.
@@ -237,7 +238,7 @@ impl App {
         let mut open_default = false;
         let mut pick: Option<Profile> = None;
         let endpoint = self.new_tab_profile.endpoint();
-        let new_tab = chrome::new_tab_button(ui, buttons).on_hover_text(tr1(
+        let new_tab = chrome::new_tab_button(ui, buttons).tip(tr1(
             "New session on {} (Ctrl+T).\nRight-click to connect somewhere else.",
             &endpoint,
         ));
@@ -271,7 +272,7 @@ impl App {
                     } else {
                         format!("{hint}\n{}", server.comment.trim())
                     };
-                    button = button.on_hover_text(hint);
+                    button = button.tip(hint);
                     if button.clicked() {
                         pick = Some(Profile::for_server(
                             server,
@@ -339,11 +340,7 @@ impl App {
                 ui.separator();
                 ui.weak(tr("Shells"));
                 for shell in &shells {
-                    if ui
-                        .button(&shell.name)
-                        .on_hover_text(shell.command_line())
-                        .clicked()
-                    {
+                    if ui.button(&shell.name).tip(shell.command_line()).clicked() {
                         pick = Some(Profile::for_shell(shell));
                         ui.close_menu();
                     }
@@ -538,6 +535,16 @@ impl App {
                 self.set_status(invocation.summary);
             }
             UiRequest::SendLines(lines) => self.send_lines_to_active(&lines),
+            UiRequest::SendMacro(lines) => self.send_macro_to_active(&lines),
+            UiRequest::SetMacroSecret(account, value) => {
+                use crate::features::macros::SecretStore;
+                if let Err(e) = macros::Keyring.set(&account, &value) {
+                    self.set_status(tr1(
+                        "Could not keep the hidden value: {}",
+                        &format!("{e:#}"),
+                    ));
+                }
+            }
 
             UiRequest::ExportText(range) => self.export(range, export::Format::Text),
             UiRequest::ExportHtml(range) => self.export(range, export::Format::Html),
@@ -616,6 +623,23 @@ impl App {
             }
             UiRequest::SavePersonalMacros => {
                 let path = config::personal_macros_path();
+                // The hidden values first: the file is written without them,
+                // and must not be the only copy left of a value that failed
+                // to reach the store.
+                match macros::store_personal_secrets(
+                    &self.macro_groups,
+                    &self.personal_secrets,
+                    &macros::Keyring,
+                ) {
+                    Ok(now) => self.personal_secrets = now,
+                    Err(e) => {
+                        self.set_status(tr1(
+                            "Could not keep the hidden value: {}",
+                            &format!("{e:#}"),
+                        ));
+                        return;
+                    }
+                }
                 let xml = macros::to_xml(&self.macro_groups);
                 match std::fs::write(&path, xml) {
                     Ok(()) => self.set_status(tr1(
@@ -631,6 +655,9 @@ impl App {
                 // stall the window on every one.
                 let report = super::load_macros(&self.settings);
                 self.macro_groups = report.groups;
+                // What is in the store now: anything forgotten since the last
+                // save was forgotten by that save.
+                self.personal_secrets = macros::personal_secret_accounts(&self.macro_groups);
                 if let Some(problem) = report.problems.first() {
                     self.set_status(problem.clone());
                 }
@@ -685,6 +712,11 @@ impl App {
                     return;
                 }
                 let removed = self.themes.remove(index);
+                // Its highlighting goes with it, or a theme given the name
+                // later would start from this one's.
+                if self.settings.theme_highlight.remove(&name).is_some() {
+                    self.handle_request(ctx, UiRequest::SettingsChanged);
+                }
                 if let Some(path) = removed.path.as_ref() {
                     if let Err(e) = std::fs::remove_file(path) {
                         self.set_status(tr2(

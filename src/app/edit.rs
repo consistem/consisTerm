@@ -568,6 +568,19 @@ impl App {
     }
 
     pub(super) fn send_lines_to_active(&mut self, lines: &[String]) {
+        let lines: Vec<_> = lines
+            .iter()
+            .map(|text| crate::features::macros::SentLine {
+                text: text.clone(),
+                hidden: Vec::new(),
+            })
+            .collect();
+        self.send_macro_to_active(&lines);
+    }
+
+    /// [`App::send_lines_to_active`], masking the hidden values of a macro
+    /// where the session echoes them - see `Tab::send_hiding`.
+    pub(super) fn send_macro_to_active(&mut self, lines: &[crate::features::macros::SentLine]) {
         let at = self.focused_at();
         let Some(tab) = self.pane(at) else {
             self.set_status(tr("No active session."));
@@ -581,8 +594,8 @@ impl App {
         // appended to the tail of an unfinished one it is not the command
         // either of them was: IRIS would read `write 1ZWRITE ^CSW1`.
         self.clear_typed_line(at);
-        if let Some(tab) = self.pane(at) {
-            tab.send_lines(lines);
+        if let Some(tab) = self.pane_mut(at) {
+            tab.send_hiding(lines);
         }
     }
 

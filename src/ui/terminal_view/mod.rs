@@ -4,6 +4,7 @@
 //! That is cheap enough: a run of cells sharing one background is emitted as a
 //! single rect, and text is batched per colour run rather than per character.
 
+use crate::ui::tip::Tip;
 use egui::{Align2, Color32, FontFamily, FontId, Pos2, Rect, Response, Sense, Stroke, Ui, Vec2};
 
 use crate::config::{CursorStyle, IntellisenseMode, Theme};
@@ -854,7 +855,7 @@ pub fn show(
         }
         if ui
             .add_enabled(has_selection, egui::Button::new(tr("Copy and paste")))
-            .on_hover_text(tr(
+            .tip(tr(
                 "Puts the selection on the clipboard and types it at the prompt.",
             ))
             .clicked()
@@ -926,7 +927,7 @@ pub fn show(
         });
         if ui
             .button(tr("Clear terminal and scrollback"))
-            .on_hover_text(tr("Ctrl+Delete. Unlike a clear-screen from the session itself, this really does throw the history away. It asks the far side to clear - W # at an idle IRIS prompt, Ctrl+L in a shell - so the next prompt goes back to the top; the echo and the old screen are dropped rather than kept."))
+            .tip(tr("Ctrl+Delete. Unlike a clear-screen from the session itself, this really does throw the history away. It asks the far side to clear - W # at an idle IRIS prompt, Ctrl+L in a shell - so the next prompt goes back to the top; the echo and the old screen are dropped rather than kept."))
             .clicked()
         {
             context_action = Some(ContextAction::ClearTerminal);
@@ -942,7 +943,7 @@ pub fn show(
             };
             if ui
                 .button(label)
-                .on_hover_text(tr("Ctrl+Shift+Q, or /sql at the prompt. Runs the IRIS SQL shell, which formats the results itself; quit leaves it."))
+                .tip(tr("Ctrl+Shift+Q, or /sql at the prompt. Runs the IRIS SQL shell, which formats the results itself; quit leaves it."))
                 .clicked()
             {
                 context_action = Some(ContextAction::ToggleSqlMode);
@@ -958,7 +959,7 @@ pub fn show(
         if pane.split {
             if ui
                 .button(tr("Remove split"))
-                .on_hover_text(tr(
+                .tip(tr(
                     "Gives the second session a tab of its own. Nothing is closed.",
                 ))
                 .clicked()
@@ -969,7 +970,7 @@ pub fn show(
         } else {
             if ui
                 .button(tr("Split to right"))
-                .on_hover_text(tr(
+                .tip(tr(
                     "Opens a second session in this tab, beside this one. Click into a pane to type in it.",
                 ))
                 .clicked()
@@ -981,10 +982,29 @@ pub fn show(
                 context_action = Some(ContextAction::SplitBottom);
                 ui.close_menu();
             }
+            // The same splits with another kind of session in the new pane -
+            // a PowerShell beside the IRIS prompt - from the shells the
+            // new-session menu offers.
+            let shells = crate::plugins::shells::available();
+            if !shells.is_empty() {
+                ui.menu_button(tr("Split with another shell"), |ui| {
+                    for shell in &shells {
+                        ui.menu_button(&shell.name, |ui| {
+                            for (label, right) in [(tr("To the right"), true), (tr("To the bottom"), false)] {
+                                if ui.button(label).clicked() {
+                                    context_action =
+                                        Some(ContextAction::SplitWithShell(shell.name.clone(), right));
+                                    ui.close_menu();
+                                }
+                            }
+                        });
+                    }
+                });
+            }
         }
         if ui
             .button(tr("Close pane"))
-            .on_hover_text(if pane.split {
+            .tip(if pane.split {
                 tr("Closes this session. The other pane stays, in a tab of its own.")
             } else {
                 tr("Closes this session.")

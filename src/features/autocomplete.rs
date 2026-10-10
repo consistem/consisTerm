@@ -39,8 +39,8 @@ use std::collections::{BTreeSet, HashMap};
 
 use crate::config::AutocompleteOffers;
 use crate::features::doc_lookup::{
-    DocLookup, Existing, GlobalNames, Lookup, MapInfo, Names, SubscriptPrefix, SubscriptValue,
-    Subscripts,
+    Count, DocLookup, Existing, GlobalNames, Lookup, MapInfo, Names, SubscriptPrefix,
+    SubscriptValue, Subscripts,
 };
 use crate::i18n::{tr, tr1, tr2};
 use crate::term::syntax::{self, Kind};
@@ -1176,12 +1176,30 @@ pub struct Popup {
     /// which subscript of the global, as its documentation names it.
     pub hint: Option<String>,
     pub items: Vec<Candidate>,
+    /// A line under the suggestions saying how many there are in all, when
+    /// the list is only the start of them.
+    pub status: Option<String>,
+    /// Something is still being asked: the suggestions, or the count. Drawn
+    /// as dots coming on one at a time, so a popup with a hint and nothing
+    /// under it yet is not read as a node with nothing in it.
+    pub loading: Loading,
     pub selected: usize,
     /// The user has moved through the list, which is what lets Enter accept
     /// rather than run the line. Without it, Enter on a word that happens to
     /// have suggestions would complete it instead of submitting what was
     /// typed.
     pub navigated: bool,
+}
+
+/// What a popup is still waiting for.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Loading {
+    #[default]
+    No,
+    /// The suggestions themselves.
+    Suggestions,
+    /// Only how many there are; the suggestions are in.
+    Count,
 }
 
 impl Popup {
@@ -1248,6 +1266,8 @@ pub fn suggest_with(
             }
             let server = server?;
             let mut loading = false;
+            let mut counting = false;
+            let mut status = None;
             let (mut hint, mut items) = {
                 let maps = match server.lookup.request(server.namespace, &spot.global) {
                     Lookup::Ready(maps) => maps,
@@ -1281,6 +1301,31 @@ pub fn suggest_with(
                         so_far
                     }
                 };
+                if found.as_ref().is_some_and(|f| f.more && !loading) {
+                    // Cut short, so how many there are is worth saying - and
+                    // asked only now, behind the list itself.
+                    match server.lookup.subscript_count(
+                        server.namespace,
+                        &spot.global,
+                        &spot.before,
+                        &prefix,
+                    ) {
+                        Count::Ready(n, capped) => {
+                            let n = group_thousands(n);
+                            status = Some(if capped {
+                                tr1("More than {} subscripts - type to narrow them down", &n)
+                            } else {
+                                tr1("{} subscripts - type to narrow them down", &n)
+                            });
+                        }
+                        Count::Pending => {
+                            *waiting = true;
+                            counting = true;
+                            status = Some(tr("Counting subscripts").to_string());
+                        }
+                        Count::Unknown => {}
+                    }
+                }
                 if let Some(found) = found {
                     let typed: Vec<char> = spot.text.chars().collect();
                     let existing: Vec<Candidate> = existing_subscripts(&found, &prefix)
@@ -1293,8 +1338,15 @@ pub fn suggest_with(
                 }
             }
             if loading && hint.is_none() {
-                hint = Some(tr1("Looking up ^{}…", &spot.global));
+                hint = Some(tr1("Looking up ^{}", &spot.global));
             }
+            let loading = if loading {
+                Loading::Suggestions
+            } else if counting {
+                Loading::Count
+            } else {
+                Loading::No
+            };
             return (hint.is_some() || !items.is_empty()).then_some(Popup {
                 token: Token {
                     context: Context::Subscript,
@@ -1302,6 +1354,8 @@ pub fn suggest_with(
                 },
                 hint,
                 items,
+                status,
+                loading,
                 selected: 0,
                 navigated: false,
             });
@@ -1328,15 +1382,17 @@ pub fn suggest_with(
     // offered with a line above it saying the list is not complete - rather
     // than nothing, or a list that silently grows under the selection.
     let mut hint = None;
+    let mut loading = Loading::No;
     let names = match (token.context, server) {
         (Context::Caret { routine: false }, Some(server)) => {
             match server.lookup.globals(server.namespace, &token.text) {
                 Names::Ready(names) => Some(names),
                 Names::Pending(so_far) => {
                     *waiting = true;
+                    loading = Loading::Suggestions;
                     hint = Some(match so_far.names.len() {
-                        0 => tr1("Looking up ^{}…", &token.text),
-                        n => tr1("Still loading… {} so far", &n.to_string()),
+                        0 => tr1("Looking up ^{}", &token.text),
+                        n => tr1("Still loading - {} so far", &n.to_string()),
                     });
                     Some(so_far)
                 }
@@ -1350,9 +1406,28 @@ pub fn suggest_with(
         token,
         hint,
         items,
+        status: None,
+        loading,
         selected: 0,
         navigated: false,
     })
+}
+
+/// `1234567` as `1.234.567` or `1,234,567`, in the interface's language.
+fn group_thousands(n: usize) -> String {
+    let sep = match crate::i18n::language() {
+        crate::i18n::Lang::PtBr => '.',
+        crate::i18n::Lang::En => ',',
+    };
+    let digits = n.to_string();
+    let mut out = String::new();
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i).is_multiple_of(3) {
+            out.push(sep);
+        }
+        out.push(c);
+    }
+    out
 }
 
 /// What was typed from the prompt to the cursor. A cursor past the end of the
@@ -1705,6 +1780,8 @@ mod tests {
     fn the_selection_wraps_and_moving_it_is_what_lets_enter_accept() {
         let mut popup = Popup {
             hint: None,
+            status: None,
+            loading: Loading::No,
             token: Token {
                 context: Context::Dollar,
                 text: "zd".into(),

@@ -139,9 +139,11 @@ impl Pane {
 /// tabs under the loop that is drawing them. Applied once the central panel has
 /// finished - the same reason the tab strip collects its own actions and
 /// applies them after its loop.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) enum LayoutAction {
     Split(usize, SplitDir),
+    /// Split with the named shell in the new pane.
+    SplitWithShell(usize, SplitDir, String),
     Unsplit(usize),
     ClosePane(At),
 }

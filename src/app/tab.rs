@@ -29,6 +29,93 @@ fn hide_zn_echo(grid: &mut Grid, wanted: &str) {
     grid.cursor.col = col;
 }
 
+/// How long the echo of a macro line with a hidden value is watched for - see
+/// `Tab::hiding`. Long enough for a session busy with the line before it;
+/// the raw transcript is held off for as long.
+const HIDING_WAIT: std::time::Duration = std::time::Duration::from_secs(30);
+
+/// What a hidden value is shown as once the session has echoed it.
+const MASK: char = '\u{2022}';
+
+/// How far back into the scrollback an echo is looked for: a line answered
+/// by a screenful of output in the same read has scrolled off by then.
+const HIDING_LOOK_BACK: usize = 200;
+
+/// A line sent with a hidden value in it, waiting to be echoed.
+pub struct Hiding {
+    line: Vec<char>,
+    hidden: Vec<std::ops::Range<usize>>,
+    since: std::time::Instant,
+}
+
+/// Masks the hidden characters of `hiding`'s line wherever the line is on
+/// screen. Returns whether one echo was completed by this call: every hidden
+/// character masked, at least one of them just now - an echo masked by an
+/// earlier run of the same macro must not count as this one's.
+///
+/// The line is found by its first shown run, which IRIS echoes before the
+/// value that follows it, so a value is masked as it comes in rather than
+/// once it is whole. Only a cell still holding the very character sent is
+/// masked, so nothing else on the row can be.
+fn mask_echo(grid: &mut Grid, hiding: &Hiding) -> bool {
+    let line = &hiding.line;
+    let hidden = |at: usize| hiding.hidden.iter().any(|r| r.contains(&at));
+    let anchor = (0..line.len())
+        .find(|&at| !hidden(at))
+        .map(|start| {
+            let end = (start..line.len())
+                .find(|&at| hidden(at))
+                .unwrap_or(line.len());
+            (start, end)
+        })
+        .unwrap_or((0, line.len()));
+    let whole = anchor == (0, line.len()) && hiding.hidden.iter().any(|r| !r.is_empty());
+    let (a0, a1) = anchor;
+    let mut completed = false;
+    let scrolled = grid.scrollback.len().saturating_sub(HIDING_LOOK_BACK);
+    let rows = grid
+        .scrollback
+        .iter_mut()
+        .skip(scrolled)
+        .chain(grid.screen.iter_mut());
+    for row in rows {
+        // Only as far as the row is written: an erase can stretch a row to
+        // the full width IRIS was given, thirty-two thousand columns.
+        let used = row.used_width();
+        let cells = &mut row.cells;
+        if a1 - a0 == 0 || used < a1 - a0 {
+            continue;
+        }
+        for col in 0..=used - (a1 - a0) {
+            let matches = if whole {
+                // The whole line is the value: found only once it is all in.
+                (0..line.len()).all(|k| cells.get(col + k).is_some_and(|c| c.ch == line[k]))
+            } else {
+                (a0..a1).all(|k| cells[col + k - a0].ch == line[k])
+            };
+            if !matches || col < a0 && !whole {
+                continue;
+            }
+            let start = if whole { col } else { col - a0 };
+            let (mut all, mut changed) = (true, false);
+            for range in &hiding.hidden {
+                for k in range.clone() {
+                    match cells.get_mut(start + k) {
+                        Some(cell) if cell.ch == line[k] => {
+                            cell.ch = MASK;
+                            changed = true;
+                        }
+                        Some(cell) if cell.ch == MASK => {}
+                        _ => all = false,
+                    }
+                }
+            }
+            completed |= all && changed;
+        }
+    }
+    completed
+}
+
 /// Rotate a transcript once it passes this size.
 const LOG_ROTATE_BYTES: u64 = 64 * 1024 * 1024;
 
@@ -94,6 +181,10 @@ pub struct Tab {
     /// after [`ZN_ECHO_WAIT`]: a `ZN` that failed never reaches that prompt,
     /// and one the user types later must not be the line that goes.
     zn_sent: Option<(String, std::time::Instant)>,
+    /// Macro lines sent with a hidden value, until their echo is masked or
+    /// [`HIDING_WAIT`] runs out. The raw transcript is held off meanwhile:
+    /// its bytes reach the file before the screen they make can be masked.
+    hiding: Vec<Hiding>,
     /// The folder a shell's prompt last said it was in, so a remembered tab
     /// can reopen there. See [`lineedit::shell_cwd`].
     pub cwd: Option<String>,
@@ -170,6 +261,7 @@ impl Tab {
             resume_namespace: None,
             cwd: None,
             zn_sent: None,
+            hiding: Vec::new(),
             sql: false,
             completion: Completion::default(),
         };
@@ -215,6 +307,7 @@ impl Tab {
             resume_namespace: None,
             cwd: None,
             zn_sent: None,
+            hiding: Vec::new(),
             sql: false,
             completion: Completion::default(),
         }
@@ -418,6 +511,23 @@ impl Tab {
         self.session.as_ref()?.process_id()
     }
 
+    /// Sends a macro's lines, and watches for the echo of every one that
+    /// carries a hidden value, to mask it.
+    pub fn send_hiding(&mut self, lines: &[crate::features::macros::SentLine]) {
+        let now = std::time::Instant::now();
+        for line in lines {
+            if !line.hidden.is_empty() {
+                self.hiding.push(Hiding {
+                    line: line.text.chars().collect(),
+                    hidden: line.hidden.clone(),
+                    since: now,
+                });
+            }
+        }
+        let text: Vec<String> = lines.iter().map(|l| l.text.clone()).collect();
+        self.send_lines(&text);
+    }
+
     /// Pulls output, parses it, answers device reports, and runs autologon.
     pub fn pump(&mut self, plugins: &mut PluginHost) {
         // The piece tooltip's own session, which is not this tab's and so is
@@ -435,11 +545,17 @@ impl Tab {
             let bytes = plugins.on_output(&bytes);
 
             // Mute logging across the password step so a credential never
-            // reaches disk.
-            let muting = self.autologon.state() == AutoState::WaitPassword;
+            // reaches disk - and while a hidden macro value may be in what
+            // just came in.
+            let muting =
+                self.autologon.state() == AutoState::WaitPassword || !self.hiding.is_empty();
             if let Some(log) = self.log.as_mut() {
                 if muting {
                     log.mute();
+                } else {
+                    // A wait given up on between two reads, with nothing to
+                    // unmute it then: this read is clear of it.
+                    log.unmute();
                 }
                 let _ = log.write_raw(&bytes);
             }
@@ -498,7 +614,13 @@ impl Tab {
                 }
             }
 
-            let still_on_password = self.autologon.state() == AutoState::WaitPassword;
+            // Before anything reads the screen for the transcript.
+            let grid = &mut self.grid;
+            self.hiding
+                .retain(|h| h.since.elapsed() < HIDING_WAIT && !mask_echo(grid, h));
+
+            let still_on_password =
+                self.autologon.state() == AutoState::WaitPassword || !self.hiding.is_empty();
             // Everything above the row the cursor is on. A command and its
             // output are final the moment the next prompt is printed, and the
             // transcript is read while the session is still open, so waiting
@@ -518,6 +640,10 @@ impl Tab {
                 }
             }
         }
+
+        // Given up on with nothing more arriving: the log must not stay muted
+        // until the next output.
+        self.hiding.retain(|h| h.since.elapsed() < HIDING_WAIT);
 
         // A clear that never came - the session was sitting in a `read`, say,
         // and swallowed the command as input. The purge is called off rather
@@ -770,9 +896,60 @@ mod tests {
             resume_namespace: None,
             cwd: None,
             zn_sent: None,
+            hiding: Vec::new(),
             sql: false,
             completion: Completion::default(),
         }
+    }
+
+    fn hiding(text: &str, hidden: std::ops::Range<usize>) -> Hiding {
+        Hiding {
+            line: text.chars().collect(),
+            hidden: vec![hidden],
+            since: std::time::Instant::now(),
+        }
+    }
+
+    fn screen_text(grid: &Grid) -> Vec<String> {
+        grid.screen.iter().map(|r| r.to_text()).collect()
+    }
+
+    fn echo(grid: &mut Grid, text: &str) {
+        let mut parser = vte::Parser::new();
+        crate::term::parser::advance(&mut parser, grid, text.as_bytes());
+    }
+
+    #[test]
+    fn a_hidden_value_is_masked_as_it_is_echoed_and_only_it() {
+        let mut grid = Grid::new(80, 5, 10);
+        let h = hiding("d L(\"user\",\"pw1\")", 12..15);
+        // IRIS echoes as it reads: the value arrives a character at a time.
+        echo(&mut grid, "USER>d L(\"user\",\"p");
+        assert!(!mask_echo(&mut grid, &h));
+        assert_eq!(screen_text(&grid)[0], "USER>d L(\"user\",\"\u{2022}");
+        echo(&mut grid, "w1\")\r\npw1 is not the line\r\nUSER>");
+        assert!(mask_echo(&mut grid, &h), "the echo is complete");
+        let text = screen_text(&grid);
+        assert_eq!(text[0], "USER>d L(\"user\",\"\u{2022}\u{2022}\u{2022}\")");
+        assert_eq!(text[1], "pw1 is not the line", "only the line's own cells");
+        // A second run of the same macro is not done by the first one's
+        // masked echo.
+        assert!(!mask_echo(&mut grid, &h));
+        echo(&mut grid, "d L(\"user\",\"pw1\")");
+        assert!(mask_echo(&mut grid, &h));
+        assert!(!screen_text(&grid).iter().any(|row| row.contains("\"pw1\"")));
+    }
+
+    #[test]
+    fn a_line_that_is_all_value_is_masked_once_it_is_whole() {
+        let mut grid = Grid::new(80, 5, 10);
+        let h = hiding("s3cr3t", 0..6);
+        echo(&mut grid, "Password: s3cr3t");
+        assert!(mask_echo(&mut grid, &h));
+        assert_eq!(
+            screen_text(&grid)[0],
+            format!("Password: {}", "\u{2022}".repeat(6))
+        );
     }
 
     fn split_tab_of(first: &str, second: &str) -> Tab {

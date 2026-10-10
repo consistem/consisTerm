@@ -54,7 +54,7 @@ $Stage = Join-Path $Work $BaseName
 if (Test-Path $Work) { Remove-Item -Recurse -Force $Work }
 New-Item -ItemType Directory -Force $Stage | Out-Null
 Copy-Item $Exe (Join-Path $Stage "$Bin.exe")
-foreach ($f in 'README.md', 'LICENSE') {
+foreach ($f in 'README.md', 'README.en.md', 'LICENSE') {
     $p = Join-Path $Root $f
     if (Test-Path $p) { Copy-Item $p $Stage }
 }

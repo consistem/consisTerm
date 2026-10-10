@@ -5,6 +5,7 @@
 //! with it. Everything the frame used to do has to be provided here, or the
 //! window cannot be moved or resized at all.
 
+use crate::ui::tip::Tip;
 use egui::viewport::ResizeDirection;
 use egui::{
     Color32, Context, CursorIcon, Id, Pos2, Rect, Response, Sense, Stroke, Ui, Vec2,
@@ -81,6 +82,9 @@ impl Icon {
                 WindowButtonStyle::Aqua | WindowButtonStyle::Luna | WindowButtonStyle::Materia => {
                     style.close
                 }
+                // A classic close button is the grey face every button has;
+                // what marks it is the glyph, so the cross takes that.
+                WindowButtonStyle::Classic => style.icon,
             }),
         }
     }
@@ -154,7 +158,7 @@ fn window_button(ui: &mut Ui, icon: Icon, hint: &str, style: &WindowButtons) -> 
     let (rect, response) = ui.allocate_exact_size(Vec2::splat(side), Sense::click_and_drag());
     drags_window(ui, &response);
     paint(ui, rect, icon, response.hovered(), style);
-    response.on_hover_text(hint)
+    response.tip(hint)
 }
 
 fn paint(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowButtons) {
@@ -163,6 +167,7 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowButtons) 
         WindowButtonStyle::Aqua => paint_aqua(ui, rect, icon, hovered, style),
         WindowButtonStyle::Luna => paint_luna(ui, rect, icon, hovered, style),
         WindowButtonStyle::Materia => paint_materia(ui, rect, icon, hovered, style),
+        WindowButtonStyle::Classic => paint_classic(ui, rect, icon, hovered, style),
     }
 }
 
@@ -331,67 +336,73 @@ fn paint_aqua(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowButt
     }
 }
 
-/// Windows XP's Luna: a rounded, gradient-filled tile with a bevel along its
-/// top edge and a white glyph that is always on.
+/// Windows XP's Luna, as XP.css draws it: a rounded square tile with a white
+/// rim, lit from its top-left corner and deepening to the bottom-right, and a
+/// heavy white glyph that is always on.
 ///
 /// Unlike Aqua's, these say what they do at rest - Luna drew the X, the dash
 /// and the box whether or not the pointer was anywhere near - so nothing here
-/// is hidden until hover; hover only lifts the colour.
+/// is hidden until hover; hover only lifts the colour, as XP's hover images do.
 fn paint_luna(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowButtons) {
     let focused = ui.ctx().input(|i| i.viewport().focused.unwrap_or(true));
     let painter = ui.painter();
-    // Slightly wider than tall, and inset from the hit area: Luna's buttons sat
-    // in the title bar with air around them.
-    let tile = Rect::from_center_size(
-        rect.center(),
-        Vec2::new(side_of(rect) * 0.82, side_of(rect) * 0.72),
-    );
+    // 21 px buttons in a 28 px bar: square, with air round them.
+    let side = (side_of(rect) * 0.80).round();
+    let tile = ui
+        .painter()
+        .round_rect_to_pixels(Rect::from_center_size(rect.center(), Vec2::splat(side)));
     let rounding = egui::Rounding::same(3.0);
 
     let mut base = match icon.tint(style) {
         Some(colour) if focused => colour,
-        Some(colour) => darken(lighten(colour, 0.35), 0.85),
+        // XP's inactive buttons faded towards the pale title bar behind them.
+        Some(colour) => lighten(colour, 0.35),
         None => ui.visuals().widgets.inactive.bg_fill,
     };
     if hovered {
-        base = lighten(base, 0.18);
+        base = lighten(base, 0.16);
     }
 
-    // The tile: the fill, a faint sheen, and a light rim round the whole of
-    // it. XP's buttons are a nearly flat, saturated colour - lighter towards
-    // the top-left corner and a touch deeper at the foot - set off from the
-    // title bar by that rim rather than by a dark edge. A brighter top half,
-    // as this once had, read as a pale band across every button.
+    // The body: a bright top-left falling to a deep bottom-right, in two
+    // runs so the middle stays the button's own colour.
     painter.rect_filled(tile, rounding, base);
     let inner = tile.shrink(1.0);
     let upper = Rect::from_min_max(
         inner.left_top(),
-        Pos2::new(inner.right(), inner.top() + inner.height() * 0.5),
+        Pos2::new(inner.right(), inner.top() + inner.height() * 0.45),
     );
     let lower = Rect::from_min_max(upper.left_bottom(), inner.right_bottom());
-    gradient(painter, upper, lighten(base, 0.12), base);
-    gradient(painter, lower, base, darken(base, 0.88));
-    // Inside the top and left edges, where the light falls.
+    gradient(painter, upper, lighten(base, 0.30), base);
+    gradient(painter, lower, base, darken(base, 0.80));
+    // Light along the top and the left inside the rim, shade down the right.
     painter.line_segment(
         [
             Pos2::new(inner.left() + 1.0, inner.top() + 0.5),
             Pos2::new(inner.right() - 1.0, inner.top() + 0.5),
         ],
-        Stroke::new(1.0_f32, white(60)),
+        Stroke::new(1.0_f32, white(110)),
     );
     painter.line_segment(
         [
             Pos2::new(inner.left() + 0.5, inner.top() + 1.0),
             Pos2::new(inner.left() + 0.5, inner.bottom() - 1.0),
         ],
-        Stroke::new(1.0_f32, white(35)),
+        Stroke::new(1.0_f32, white(60)),
     );
-    painter.rect_stroke(tile, rounding, Stroke::new(1.0_f32, lighten(base, 0.75)));
+    painter.line_segment(
+        [
+            Pos2::new(inner.right() - 0.5, inner.top() + 1.0),
+            Pos2::new(inner.right() - 0.5, inner.bottom() - 1.0),
+        ],
+        Stroke::new(1.0_f32, darken(base, 0.62)),
+    );
+    // The white rim every XP control button has.
+    painter.rect_stroke(tile, rounding, Stroke::new(1.0_f32, Color32::WHITE));
 
-    // The glyph, in the theme's colour or the white Luna always used.
     let colour = style.icon.unwrap_or(Color32::WHITE);
-    let stroke = Stroke::new(1.3_f32, colour);
-    let glyph = Rect::from_center_size(tile.center(), Vec2::splat((side_of(rect) * 0.26).max(5.0)));
+    // XP's marks are drawn three pixels thick at 21 px.
+    let weight = (side * 0.13).clamp(2.0, 3.5);
+    let glyph = Rect::from_center_size(tile.center(), Vec2::splat((side * 0.48).round()));
     match icon {
         // Luna never had one either, and its glyphs are always on.
         Icon::Settings | Icon::Pin { .. } | Icon::NewTab | Icon::CloseTab => {
@@ -408,32 +419,124 @@ fn paint_luna(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowButt
             icons::draw(painter, tile, icon.glyph(), colour, darken(base, 0.80))
         }
         Icon::Minimize => {
-            // Luna's minimize sat on the baseline rather than in the middle.
-            let y = glyph.bottom();
-            painter.line_segment(
-                [Pos2::new(glyph.left(), y), Pos2::new(glyph.right(), y)],
-                stroke,
+            // A short thick bar on the baseline, at the left: XP's dash.
+            let bar = Rect::from_min_max(
+                Pos2::new(glyph.left(), glyph.bottom() - weight),
+                Pos2::new(glyph.left() + glyph.width() * 0.62, glyph.bottom()),
             );
+            painter.rect_filled(bar, 0.0, colour);
         }
         Icon::Maximize => {
-            painter.rect_stroke(glyph, 0.0, stroke);
-            // The heavier top edge of the little window.
-            painter.line_segment(
-                [
-                    Pos2::new(glyph.left(), glyph.top() + 1.0),
-                    Pos2::new(glyph.right(), glyph.top() + 1.0),
-                ],
-                stroke,
+            painter.rect_stroke(glyph.shrink(0.5), 0.0, Stroke::new(1.0_f32, colour));
+            // The heavy top edge of the little window.
+            let top = Rect::from_min_size(glyph.min, Vec2::new(glyph.width(), weight));
+            painter.rect_filled(top, 0.0, colour);
+        }
+        Icon::Restore => {
+            let small = Rect::from_min_size(glyph.min, glyph.size() * 0.72);
+            let back = small.translate(Vec2::new(glyph.width() * 0.28, 0.0));
+            let front = small.translate(Vec2::new(0.0, glyph.height() * 0.28));
+            for r in [back, front] {
+                if r == front {
+                    painter.rect_filled(r, 0.0, base);
+                }
+                painter.rect_stroke(r.shrink(0.5), 0.0, Stroke::new(1.0_f32, colour));
+                painter.rect_filled(
+                    Rect::from_min_size(r.min, Vec2::new(r.width(), (weight * 0.7).max(2.0))),
+                    0.0,
+                    colour,
+                );
+            }
+        }
+        Icon::Close => {
+            let stroke = Stroke::new(weight * 0.8, colour);
+            let g = glyph.shrink(1.0);
+            painter.line_segment([g.left_top(), g.right_bottom()], stroke);
+            painter.line_segment([g.right_top(), g.left_bottom()], stroke);
+        }
+    }
+}
+
+/// Windows 95 and 98: a grey button raised by its bevel, as 98.css cuts it,
+/// with the glyph in black - or whatever the theme names - always on.
+///
+/// Those buttons had no hover; this one lifts its face a shade, so the row
+/// still answers the pointer the way everything else in the app does.
+fn paint_classic(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowButtons) {
+    let focused = ui.ctx().input(|i| i.viewport().focused.unwrap_or(true));
+    let painter = ui.painter();
+    // 16 by 14, as the real ones were, at whatever size the bar is.
+    let h = (side_of(rect) * 0.66).round();
+    let tile = ui.painter().round_rect_to_pixels(Rect::from_center_size(
+        rect.center(),
+        Vec2::new((h * 1.15).round(), h),
+    ));
+    // The app's own buttons are cut from the same face as the window's: in a
+    // row of grey buttons one in the widget colour reads as broken.
+    let mut face = icon
+        .tint(style)
+        .or(style.minimize)
+        .unwrap_or(ui.visuals().widgets.inactive.bg_fill);
+    if hovered {
+        face = lighten(face, 0.08);
+    }
+    crate::ui::shading::classic_bevel(painter, tile, face);
+
+    let dark = crate::config::theme::is_dark(face);
+    let mut colour = style.icon.unwrap_or(if dark {
+        Color32::from_gray(0xe8)
+    } else {
+        Color32::BLACK
+    });
+    if !focused {
+        // Greyed, as a disabled control's mark was, rather than gone.
+        colour = colour.gamma_multiply(0.6);
+    }
+    let weight = (h * 0.15).clamp(2.0, 3.0).round();
+    let glyph = ui.painter().round_rect_to_pixels(Rect::from_center_size(
+        tile.center(),
+        Vec2::new(h * 0.6, h * 0.55),
+    ));
+    match icon {
+        Icon::Settings | Icon::Pin { .. } | Icon::NewTab | Icon::CloseTab => {
+            icons::draw(painter, tile.shrink(1.0), icon.glyph(), colour, face);
+        }
+        Icon::Minimize => {
+            let bar = Rect::from_min_max(
+                Pos2::new(glyph.left(), glyph.bottom() - weight),
+                Pos2::new(glyph.left() + glyph.width() * 0.7, glyph.bottom()),
+            );
+            painter.rect_filled(bar, 0.0, colour);
+        }
+        Icon::Maximize => {
+            painter.rect_stroke(glyph.shrink(0.5), 0.0, Stroke::new(1.0_f32, colour));
+            painter.rect_filled(
+                Rect::from_min_size(glyph.min, Vec2::new(glyph.width(), weight)),
+                0.0,
+                colour,
             );
         }
         Icon::Restore => {
-            painter.rect_stroke(glyph.translate(Vec2::new(1.5, -1.5)), 0.0, stroke);
-            painter.rect_filled(glyph, 0.0, darken(base, 0.80));
-            painter.rect_stroke(glyph, 0.0, stroke);
+            let small = Rect::from_min_size(glyph.min, glyph.size() * 0.72);
+            let back = small.translate(Vec2::new(glyph.width() * 0.28, 0.0));
+            let front = small.translate(Vec2::new(0.0, glyph.height() * 0.28));
+            for r in [back, front] {
+                if r == front {
+                    painter.rect_filled(r, 0.0, face);
+                }
+                painter.rect_stroke(r.shrink(0.5), 0.0, Stroke::new(1.0_f32, colour));
+                painter.rect_filled(
+                    Rect::from_min_size(r.min, Vec2::new(r.width(), 2.0)),
+                    0.0,
+                    colour,
+                );
+            }
         }
         Icon::Close => {
-            painter.line_segment([glyph.left_top(), glyph.right_bottom()], stroke);
-            painter.line_segment([glyph.right_top(), glyph.left_bottom()], stroke);
+            let stroke = Stroke::new(weight * 0.75, colour);
+            let g = glyph.shrink2(Vec2::new(glyph.width() * 0.1, 0.0));
+            painter.line_segment([g.left_top(), g.right_bottom()], stroke);
+            painter.line_segment([g.right_top(), g.left_bottom()], stroke);
         }
     }
 }
@@ -899,9 +1002,10 @@ pub fn new_tab_button(ui: &mut Ui, style: &WindowButtons) -> Response {
     bare_button(ui, Icon::NewTab, style)
 }
 
-/// The cross inside a tab, in the theme's button style.
-pub fn close_tab_button(ui: &mut Ui, style: &WindowButtons) -> Response {
-    bare_button(ui, Icon::CloseTab, style)
+/// The colour of the cross inside each tab, when the theme gives it one -
+/// its own, or under a filled style the close light's.
+pub fn close_tab_colour(style: &WindowButtons) -> Option<Color32> {
+    Icon::CloseTab.tint(style)
 }
 
 /// A control with no tooltip, for callers whose tooltip needs text this module

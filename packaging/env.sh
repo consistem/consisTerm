@@ -50,7 +50,7 @@ warn() {
 # Copy the readme and licence, where they exist, into a package directory.
 copy_docs() {
   local dest="$1" f
-  for f in README.md LICENSE LICENSE-MIT; do
+  for f in README.md README.en.md LICENSE LICENSE-MIT; do
     if [ -f "$ROOT/$f" ]; then cp "$ROOT/$f" "$dest/"; fi
   done
 }

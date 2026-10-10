@@ -7,6 +7,7 @@
 //! [`At`]: super::At
 
 use super::*;
+use crate::ui::tip::Tip;
 
 /// A tab name being edited.
 pub(super) struct Renaming {
@@ -220,6 +221,7 @@ impl App {
             Some(theme.tab_selected.unwrap_or(theme.background)),
             theme.tab_selected_text,
         );
+        let close_colour = crate::ui::chrome::close_tab_colour(&theme.window_buttons);
         let divider = theme
             .ui_border
             .unwrap_or(theme.ui_foreground)
@@ -338,6 +340,7 @@ impl App {
                         selected,
                         label,
                         selected_colours,
+                        close_colour,
                         [shared, tall],
                         close_side,
                     );
@@ -363,7 +366,7 @@ impl App {
                         }
                     }
                     let response =
-                        response.on_hover_text(tr("Double-click to rename, drag to reorder."));
+                        response.tip(tr("Double-click to rename, drag to reorder."));
                     if response.clicked() {
                         to_activate = Some(index);
                     }
@@ -416,7 +419,7 @@ impl App {
                         if split {
                             if ui
                                 .button(tr("Remove split"))
-                                .on_hover_text(tr(
+                                .tip(tr(
                                     "Gives the second session a tab of its own. Nothing is closed.",
                                 ))
                                 .clicked()
@@ -427,7 +430,7 @@ impl App {
                         } else if !game {
                             if ui
                                 .button(tr("Split to right"))
-                                .on_hover_text(tr(
+                                .tip(tr(
                                     "Opens a second session in this tab, beside this one. Click into a pane to type in it.",
                                 ))
                                 .clicked()
@@ -443,7 +446,7 @@ impl App {
                         ui.separator();
                         if ui
                             .button(tr("Close"))
-                            .on_hover_text(if split {
+                            .tip(if split {
                                 tr("Closes both sessions in this tab.")
                             } else {
                                 tr("Closes this session.")
@@ -467,7 +470,7 @@ impl App {
                             ui.close_menu();
                         }
                     });
-                    if close.is_some_and(|close| close.on_hover_text(tr("Close this tab.")).clicked()) {
+                    if close.is_some_and(|close| close.tip(tr("Close this tab.")).clicked()) {
                         to_close = Some(index);
                     }
                     spans.push(if vertical {
@@ -598,6 +601,30 @@ impl App {
         let profile = self.tabs[index].profile.clone();
         // Down the middle to start with. The divider between them is what moves
         // it from there.
+        self.open_split(index, dir, profile, 0.5);
+        self.tabs[index].focus = Pane::Second;
+        self.active = index;
+    }
+
+    /// [`App::split_tab`], with the shell called `shell` in the new pane
+    /// instead of the tab's own kind of session. A shell gone from the list
+    /// since the menu was drawn splits nothing, and says so.
+    pub(super) fn split_tab_with_shell(&mut self, index: usize, dir: SplitDir, shell: &str) {
+        if self
+            .tabs
+            .get(index)
+            .is_none_or(|tab| tab.split.is_some() || tab.is_game())
+        {
+            return;
+        }
+        let Some(found) = crate::plugins::shells::available()
+            .into_iter()
+            .find(|s| s.name == shell)
+        else {
+            self.set_status(tr1("{} is no longer available.", shell));
+            return;
+        };
+        let profile = Profile::for_shell(&found);
         self.open_split(index, dir, profile, 0.5);
         self.tabs[index].focus = Pane::Second;
         self.active = index;
@@ -834,12 +861,103 @@ pub(super) fn tab_height(ui: &egui::Ui) -> f32 {
 ///
 /// The close button is registered after the tab, so it is the one a click on
 /// it reaches; the tab itself takes clicks, drags and the context menu.
+/// Where the shown tab was drawn this frame, and in what.
+pub(super) fn shown_tab_id() -> egui::Id {
+    egui::Id::new("nit-shown-tab")
+}
+
+/// Paints over the boundary between the shown tab and the terminal it runs on
+/// into, a pixel each side, in the tab's colour.
+///
+/// At a title bar scale the boundary falls between two pixels, and egui
+/// feathers the edge of every fill it draws: the tab and the terminal each
+/// covered only part of that row, and the bar's own colour showed through
+/// between them as a line. Painted from the terminal's side, after both, on
+/// their own layer, and only the width of the tab.
+pub(super) fn seal_shown_tab(
+    ctx: &egui::Context,
+    layer: egui::LayerId,
+    terminal: egui::Rect,
+    bar: crate::config::BarPosition,
+    background: egui::Color32,
+) {
+    let Some((tab, fill)) = ctx.data(|d| d.get_temp::<(egui::Rect, egui::Color32)>(shown_tab_id()))
+    else {
+        return;
+    };
+    let near = |a: f32, b: f32| (a - b).abs() <= 2.0;
+    let Some((own, theirs)) = seam_bands(tab, terminal, bar, ctx.pixels_per_point(), near) else {
+        return;
+    };
+    let painter = ctx.layer_painter(layer);
+    painter.rect_filled(own, 0.0, background);
+    painter.rect_filled(theirs, 0.0, fill);
+}
+
+/// The two bands that close the seam between the tab and the terminal: the
+/// pixel the terminal's edge falls inside, in the terminal's colour, and from
+/// there to the tab, in the tab's. Split at the pixel boundary so neither
+/// reaches into the other: one band in the tab's colour over the whole seam
+/// put a pixel of the tab on the terminal.
+fn seam_bands(
+    tab: egui::Rect,
+    terminal: egui::Rect,
+    bar: crate::config::BarPosition,
+    pixels_per_point: f32,
+    near: impl Fn(f32, f32) -> bool,
+) -> Option<(egui::Rect, egui::Rect)> {
+    use crate::config::BarPosition;
+    let down = |v: f32| (v * pixels_per_point).floor() / pixels_per_point;
+    let up = |v: f32| (v * pixels_per_point).ceil() / pixels_per_point;
+    let px = 1.0 / pixels_per_point;
+    let across = |ys: std::ops::RangeInclusive<f32>| egui::Rect::from_x_y_ranges(tab.x_range(), ys);
+    let along = |xs: std::ops::RangeInclusive<f32>| egui::Rect::from_x_y_ranges(xs, tab.y_range());
+    Some(match bar {
+        BarPosition::Top if near(tab.bottom(), terminal.top()) => {
+            let e = terminal.top();
+            (
+                across(down(e)..=up(e)),
+                across(tab.bottom().min(down(e)) - px..=down(e)),
+            )
+        }
+        BarPosition::Bottom if near(tab.top(), terminal.bottom()) => {
+            let e = terminal.bottom();
+            (
+                across(down(e)..=up(e)),
+                across(up(e)..=tab.top().max(up(e)) + px),
+            )
+        }
+        BarPosition::Left if near(tab.right(), terminal.left()) => {
+            let e = terminal.left();
+            (
+                along(down(e)..=up(e)),
+                along(tab.right().min(down(e)) - px..=down(e)),
+            )
+        }
+        BarPosition::Right if near(tab.left(), terminal.right()) => {
+            let e = terminal.right();
+            (
+                along(down(e)..=up(e)),
+                along(up(e)..=tab.left().max(up(e)) + px),
+            )
+        }
+        _ => return None,
+    })
+}
+
+/// Below this contrast ratio a tab's cross is drawn in the tab's ink instead
+/// of the theme's colour for it. Low on purpose: it catches a colour that is
+/// gone, not one that is merely soft.
+const MIN_CROSS_CONTRAST: f32 = 1.5;
+
+#[allow(clippy::too_many_arguments)] // one tab's look, every part of which the strip decides
 fn tab_pill(
     ui: &mut egui::Ui,
     uid: u64,
     selected: bool,
     text: String,
     colours: (Option<egui::Color32>, Option<egui::Color32>),
+    close_colour: Option<egui::Color32>,
     [width, height]: [Option<f32>; 2],
     close_at: crate::config::TabCloseSide,
 ) -> (egui::Response, Option<egui::Response>) {
@@ -891,6 +1009,10 @@ fn tab_pill(
         if selected {
             let fill = colours.0.unwrap_or(visuals.extreme_bg_color);
             ui.painter().rect_filled(rect, 0.0, fill);
+            // For the terminal to seal the edge they share - see
+            // `seal_shown_tab`.
+            ui.ctx()
+                .data_mut(|d| d.insert_temp(shown_tab_id(), (rect, fill)));
         } else if response.hovered() || response.dragged() {
             ui.painter().rect_filled(
                 rect,
@@ -913,7 +1035,20 @@ fn tab_pill(
             }
             let arm = close_side * 0.22;
             let c = close_rect.center();
-            let stroke = egui::Stroke::new(1.4_f32, ink);
+            // The theme's colour for it when there is one - the Themes page
+            // offers it - and otherwise the tab's own ink. Also the ink when
+            // the colour all but vanishes into what the tab is filled with
+            // just now: one colour has to serve the shown tab and a hovered
+            // one, and on a theme whose two differ widely it cannot suit both.
+            let behind = if selected {
+                colours.0.unwrap_or(visuals.extreme_bg_color)
+            } else {
+                visuals.panel_fill
+            };
+            let colour = close_colour
+                .filter(|&c| crate::config::theme::contrast(c, behind) >= MIN_CROSS_CONTRAST)
+                .unwrap_or(ink);
+            let stroke = egui::Stroke::new(1.4_f32, colour);
             ui.painter().line_segment(
                 [c + egui::vec2(-arm, -arm), c + egui::vec2(arm, arm)],
                 stroke,
@@ -1048,6 +1183,57 @@ fn kept_index(index: usize, kept: &[bool]) -> usize {
 mod tests {
     use super::*;
 
+    /// The tab's colour stops at the pixel the terminal's edge is in, and the
+    /// terminal's at the tab's: a band of the tab's colour reaching a pixel
+    /// into the terminal was the lip on Windows 98 Dark's focused tab.
+    #[test]
+    fn the_seam_bands_never_cross_into_the_other_side() {
+        use crate::config::BarPosition;
+        use egui::{pos2, Rect};
+        for ppp in [1.0_f32, 1.25, 1.5, 2.0] {
+            for bar in BarPosition::ALL {
+                // A seam half a pixel off the lattice at 125%.
+                let e = 100.4;
+                let (terminal, tab) = match bar {
+                    BarPosition::Top => (
+                        Rect::from_min_max(pos2(0.0, e), pos2(400.0, 300.0)),
+                        Rect::from_min_max(pos2(10.0, 80.0), pos2(90.0, e)),
+                    ),
+                    BarPosition::Bottom => (
+                        Rect::from_min_max(pos2(0.0, 0.0), pos2(400.0, e)),
+                        Rect::from_min_max(pos2(10.0, e), pos2(90.0, 120.0)),
+                    ),
+                    BarPosition::Left => (
+                        Rect::from_min_max(pos2(e, 0.0), pos2(400.0, 300.0)),
+                        Rect::from_min_max(pos2(60.0, 10.0), pos2(e, 40.0)),
+                    ),
+                    BarPosition::Right => (
+                        Rect::from_min_max(pos2(0.0, 0.0), pos2(e, 300.0)),
+                        Rect::from_min_max(pos2(e, 10.0), pos2(140.0, 40.0)),
+                    ),
+                };
+                let near = |a: f32, b: f32| (a - b).abs() <= 2.0;
+                let (own, theirs) = seam_bands(tab, terminal, bar, ppp, near).unwrap();
+                let lattice = |v: f32| ((v * ppp).round() - v * ppp).abs() < 1e-3;
+                // The tab's band starts on a pixel boundary and outside the
+                // terminal's pixels; the terminal's covers its edge's pixel.
+                let (own_lo, own_hi, their_lo, their_hi) = match bar {
+                    BarPosition::Top | BarPosition::Bottom => {
+                        (own.top(), own.bottom(), theirs.top(), theirs.bottom())
+                    }
+                    _ => (own.left(), own.right(), theirs.left(), theirs.right()),
+                };
+                assert!(own_lo <= e && e <= own_hi, "{bar:?} at {ppp}");
+                let meets = match bar {
+                    BarPosition::Top | BarPosition::Left => their_hi == own_lo,
+                    _ => their_lo == own_hi,
+                };
+                assert!(meets, "{bar:?} at {ppp}: {own:?} {theirs:?}");
+                assert!(lattice(own_lo) && lattice(own_hi), "{bar:?} at {ppp}");
+            }
+        }
+    }
+
     #[test]
     fn the_active_tab_keeps_its_place_when_a_game_before_it_is_left_out() {
         assert_eq!(kept_index(2, &[true, false, true]), 1);
@@ -1159,6 +1345,7 @@ mod tests {
                                             true,
                                             "tab".into(),
                                             (None, None),
+                                            None,
                                             [Some(200.0), None],
                                             crate::config::TabCloseSide::Left,
                                         );

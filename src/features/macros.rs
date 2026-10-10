@@ -17,6 +17,224 @@ pub struct Param {
     /// Label shown in the fill-in dialog; falls back to the name.
     pub prompt: String,
     pub default: String,
+    /// The user's own value for a parameter of an organization macro, used in
+    /// place of `default`. Kept in settings.toml, never in either macro file:
+    /// the shared one is not the user's to write, and a personal macro has
+    /// its own `default` to change. A hidden one is kept in the credential
+    /// store instead - see [`SecretStore`].
+    pub own: Option<String>,
+    /// `secret="true"`: the value is a password or the like. Typed masked,
+    /// shown masked, kept in the operating system's credential store rather
+    /// than in any file, and masked again where the session echoes it.
+    pub secret: bool,
+}
+
+impl Param {
+    /// Whether the value is hidden. A parameter written without `secret` is
+    /// hidden when it is named like a password - see `parse` - so a file from
+    /// before the flag keeps the protection it had; one that says
+    /// `secret="false"` is taken at its word.
+    pub fn is_secret(&self) -> bool {
+        self.secret
+    }
+
+    /// The value the dialog starts from: the user's own, or the default.
+    pub fn value(&self) -> &str {
+        self.own.as_deref().unwrap_or(&self.default)
+    }
+
+    /// Whether the parameter asks for something that must never be written
+    /// to disk - a password, a token. Judged on its name and its prompt, in
+    /// both languages, and on purpose generously: a value wrongly refused a
+    /// place in settings.toml costs a keystroke each run; a password wrongly
+    /// given one is on disk for good.
+    ///
+    /// The long words are found anywhere (`senhaBanco`, `db_password`); the
+    /// short ones only as a word of their own, since `pass` is also the start
+    /// of `passo` and `passagem`, ordinary values that would otherwise be
+    /// masked and moved into the credential store.
+    pub fn looks_secret(&self) -> bool {
+        const ANYWHERE: [&str; 6] = ["senha", "password", "passwd", "token", "secret", "segredo"];
+        const WHOLE: [&str; 2] = ["pass", "pwd"];
+        let text = format!("{} {}", self.name, self.prompt).to_lowercase();
+        ANYWHERE.iter().any(|w| text.contains(w))
+            || text
+                .split(|c: char| !c.is_alphanumeric())
+                .any(|word| WHOLE.contains(&word))
+    }
+}
+
+/// The user's own values for organization macros' parameters, by group, then
+/// macro, then parameter name - what `apply_own_values` lays over the shared
+/// file each time it is loaded.
+pub type OwnValues = std::collections::BTreeMap<
+    String,
+    std::collections::BTreeMap<String, std::collections::BTreeMap<String, String>>,
+>;
+
+/// Where hidden parameter values are kept, since no file may hold them: the
+/// operating system's credential store in the app, a map in the tests.
+pub trait SecretStore {
+    fn get(&self, account: &str) -> Option<String>;
+    /// Stores `value`, or forgets the account when it is empty.
+    fn set(&self, account: &str, value: &str) -> Result<()>;
+}
+
+/// The credential store, beside the profile and proxy passwords.
+pub struct Keyring;
+
+impl SecretStore for Keyring {
+    fn get(&self, account: &str) -> Option<String> {
+        keyring::Entry::new(crate::config::profile::KEYRING_SERVICE, account)
+            .ok()?
+            .get_password()
+            .ok()
+            .filter(|v| !v.is_empty())
+    }
+
+    fn set(&self, account: &str, value: &str) -> Result<()> {
+        let entry = keyring::Entry::new(crate::config::profile::KEYRING_SERVICE, account)?;
+        if value.is_empty() {
+            // Nothing stored is not a failure: forgetting is asked for on
+            // every save, of values that mostly never were.
+            let _ = entry.delete_password();
+        } else {
+            entry.set_password(value)?;
+        }
+        Ok(())
+    }
+}
+
+/// The credential-store account of one parameter's hidden value. The origin
+/// is part of it: a personal group merged with an organization one of the
+/// same name can hold a macro of the same name, and the two values are not
+/// the same value. A `/` in a name is escaped, so `a/b`+`c` and `a`+`b/c`
+/// cannot meet.
+pub fn secret_account(origin: Origin, group: &str, name: &str, param: &str) -> String {
+    let part = |s: &str| s.replace('%', "%25").replace('/', "%2F");
+    let origin = match origin {
+        Origin::Organization => "organization",
+        Origin::Personal => "personal",
+    };
+    format!(
+        "macro/{origin}/{}/{}/{}",
+        part(group),
+        part(name),
+        part(param)
+    )
+}
+
+/// Gives every organization macro's parameters the user's own values: from
+/// `own` for an ordinary one, from `secrets` for a hidden one - whatever an
+/// older or hand-edited settings file holds for that. And gives a personal
+/// macro's hidden parameters the value its file leaves out.
+pub fn apply_own_values(groups: &mut [MacroGroup], own: &OwnValues, secrets: &dyn SecretStore) {
+    for group in groups.iter_mut() {
+        let by_macro = own.get(&group.name);
+        for m in group.macros.iter_mut() {
+            let account = |p: &Param| secret_account(m.origin, &group.name, &m.name, &p.name);
+            if m.origin == Origin::Personal {
+                for p in m.params.iter_mut() {
+                    // A default already in the file - written by hand, or
+                    // before the flag - stays until the next save moves it.
+                    if p.is_secret() && p.default.is_empty() {
+                        p.default = secrets.get(&account(p)).unwrap_or_default();
+                    }
+                }
+                continue;
+            }
+            // Every parameter is set, found or not: one forgotten since the
+            // last time must lose the value it had.
+            let by_param = by_macro.and_then(|b| b.get(&m.name));
+            for p in m.params.iter_mut() {
+                p.own = if p.is_secret() {
+                    secrets.get(&account(p))
+                } else {
+                    by_param.and_then(|b| b.get(&p.name)).cloned()
+                };
+            }
+        }
+    }
+}
+
+/// The credential-store accounts the personal macros' hidden parameters use.
+pub fn personal_secret_accounts(groups: &[MacroGroup]) -> std::collections::BTreeSet<String> {
+    groups
+        .iter()
+        .flat_map(|group| {
+            group
+                .macros
+                .iter()
+                .filter(|m| m.origin.is_editable())
+                .flat_map(move |m| {
+                    m.params
+                        .iter()
+                        .filter(|p| p.is_secret())
+                        .map(move |p| secret_account(m.origin, &group.name, &m.name, &p.name))
+                })
+        })
+        .collect()
+}
+
+/// Puts the hidden defaults of personal macros in `secrets`, which `to_xml`
+/// leaves out of the file, and forgets every account of `before` - what the
+/// last load or save used - that no hidden parameter uses now: a macro
+/// deleted or renamed, a parameter renamed or no longer hidden. Otherwise the
+/// value would stay in the store with nothing in the app able to remove it.
+/// Returns the accounts in use, to be `before` next time.
+pub fn store_personal_secrets(
+    groups: &[MacroGroup],
+    before: &std::collections::BTreeSet<String>,
+    secrets: &dyn SecretStore,
+) -> Result<std::collections::BTreeSet<String>> {
+    let now = personal_secret_accounts(groups);
+    for group in groups {
+        for m in group.macros.iter().filter(|m| m.origin.is_editable()) {
+            for p in m.params.iter().filter(|p| p.is_secret()) {
+                secrets.set(
+                    &secret_account(m.origin, &group.name, &m.name, &p.name),
+                    &p.default,
+                )?;
+            }
+        }
+    }
+    for gone in before.difference(&now) {
+        secrets.set(gone, "")?;
+    }
+    Ok(now)
+}
+
+/// Records `value` as the user's own for parameter `param` of macro `name` in
+/// `group`, or forgets it with `None`, dropping tables left empty.
+pub fn set_own_value(
+    own: &mut OwnValues,
+    group: &str,
+    name: &str,
+    param: &str,
+    value: Option<&str>,
+) {
+    match value {
+        Some(value) => {
+            own.entry(group.to_string())
+                .or_default()
+                .entry(name.to_string())
+                .or_default()
+                .insert(param.to_string(), value.to_string());
+        }
+        None => {
+            if let Some(by_macro) = own.get_mut(group) {
+                if let Some(by_param) = by_macro.get_mut(name) {
+                    by_param.remove(param);
+                    if by_param.is_empty() {
+                        by_macro.remove(name);
+                    }
+                }
+                if by_macro.is_empty() {
+                    own.remove(group);
+                }
+            }
+        }
+    }
 }
 
 /// Where a macro came from. Organisation macros are shared and read-only in
@@ -86,24 +304,67 @@ impl Macro {
     /// value that itself contains `{{other}}` is sent as typed, where replacing
     /// one name after another used to substitute it a second time.
     pub fn expand(&self, values: &[(String, String)]) -> Vec<String> {
+        self.expand_marked(values)
+            .into_iter()
+            .map(|line| line.into_iter().map(|piece| piece.text).collect())
+            .collect()
+    }
+
+    /// [`Macro::expand`], line by line and piece by piece, each piece saying
+    /// which of `values` it came from - or none, for the macro's own text.
+    /// What the fill-in dialog colours, so each field can be seen landing
+    /// where it goes in the command.
+    pub fn expand_marked(&self, values: &[(String, String)]) -> Vec<Vec<Piece>> {
         self.body
             .iter()
             .map(|line| {
-                let mut out = String::with_capacity(line.len());
+                let mut pieces = Vec::new();
                 let mut copied = 0;
                 for found in placeholders(line) {
                     // The first of two values with the same name wins, as it
                     // did when each name was replaced in turn.
-                    let Some((_, value)) = values.iter().find(|(name, _)| name == found.name)
-                    else {
+                    let Some(at) = values.iter().position(|(name, _)| name == found.name) else {
                         continue;
                     };
-                    out.push_str(&line[copied..found.range.start]);
-                    out.push_str(value);
+                    if copied < found.range.start {
+                        pieces.push(Piece::text(&line[copied..found.range.start]));
+                    }
+                    pieces.push(Piece {
+                        text: values[at].1.clone(),
+                        value: Some(at),
+                    });
                     copied = found.range.end;
                 }
-                out.push_str(&line[copied..]);
-                out
+                if copied < line.len() || pieces.is_empty() {
+                    pieces.push(Piece::text(&line[copied..]));
+                }
+                pieces
+            })
+            .collect()
+    }
+
+    /// [`Macro::expand`], each line with the character ranges that hold a
+    /// hidden parameter's value - what the session masks when it echoes the
+    /// line back.
+    pub fn expand_for_sending(&self, values: &[(String, String)]) -> Vec<SentLine> {
+        let secret: Vec<bool> = values
+            .iter()
+            .map(|(name, _)| self.params.iter().any(|p| &p.name == name && p.is_secret()))
+            .collect();
+        self.expand_marked(values)
+            .into_iter()
+            .map(|pieces| {
+                let mut line = SentLine::default();
+                let mut at = 0;
+                for piece in pieces {
+                    let len = piece.text.chars().count();
+                    if len > 0 && piece.value.is_some_and(|v| secret.get(v) == Some(&true)) {
+                        line.hidden.push(at..at + len);
+                    }
+                    at += len;
+                    line.text.push_str(&piece.text);
+                }
+                line
             })
             .collect()
     }
@@ -114,7 +375,7 @@ impl Macro {
     /// cannot would be asked for and then thrown away.
     pub fn default_values(&self) -> Vec<(String, String)> {
         self.usable_params()
-            .map(|p| (p.name.clone(), p.default.clone()))
+            .map(|p| (p.name.clone(), p.value().to_string()))
             .collect()
     }
 
@@ -188,6 +449,31 @@ pub enum ParamUse {
     Duplicate,
     /// No placeholder in the body names it.
     Unused,
+}
+
+/// One line of a macro as it is sent, and where in it - in characters - the
+/// hidden values are.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct SentLine {
+    pub text: String,
+    pub hidden: Vec<std::ops::Range<usize>>,
+}
+
+/// A run of an expanded line: the macro's own text, or one value put in.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Piece {
+    pub text: String,
+    /// Which of the values it is, by position; `None` for the macro's text.
+    pub value: Option<usize>,
+}
+
+impl Piece {
+    fn text(text: &str) -> Piece {
+        Piece {
+            text: text.to_string(),
+            value: None,
+        }
+    }
 }
 
 /// One `{{name}}` found in a body line.
@@ -339,11 +625,21 @@ pub fn parse(xml: &str) -> Result<Vec<MacroGroup>> {
                     "param" => {
                         if let Some(m) = current_macro.as_mut() {
                             let pname = attr(&e, "name").unwrap_or_default();
-                            m.params.push(Param {
+                            let mut param = Param {
                                 prompt: attr(&e, "prompt").unwrap_or_else(|| pname.clone()),
                                 default: attr(&e, "default").unwrap_or_default(),
                                 name: pname,
-                            });
+                                own: None,
+                                secret: false,
+                            };
+                            // Unsaid, a name like a password decides: a value
+                            // hidden wrongly costs a click, one shown wrongly
+                            // is on disk in clear.
+                            param.secret = match attr(&e, "secret") {
+                                Some(v) => matches!(v.as_str(), "true" | "1" | "yes"),
+                                None => param.looks_secret(),
+                            };
+                            m.params.push(param);
                         }
                     }
                     "body" => {
@@ -535,8 +831,17 @@ pub fn to_xml(groups: &[MacroGroup]) -> String {
                 if !p.prompt.is_empty() && p.prompt != p.name {
                     out.push_str(&format!(" prompt=\"{}\"", escape(&p.prompt)));
                 }
-                if !p.default.is_empty() {
+                // A hidden value lives in the credential store - see
+                // `store_personal_secrets` - and never in the file.
+                if !p.default.is_empty() && !p.is_secret() {
                     out.push_str(&format!(" default=\"{}\"", escape(&p.default)));
+                }
+                // Said whenever the name alone would say otherwise, so a
+                // password-like name the user chose to show stays shown.
+                if p.secret {
+                    out.push_str(" secret=\"true\"");
+                } else if p.looks_secret() {
+                    out.push_str(" secret=\"false\"");
                 }
                 out.push_str("/>\n");
             }
@@ -585,6 +890,10 @@ pub const SAMPLE: &str = r#"<?xml version="1.0" encoding="utf-8"?>
   hide_command="true" keeps the body out of the macro panel, for a command
   that carries a password. Note that IRIS still echoes what it is sent, so
   the text can reach the screen and the transcript by that route.
+
+  secret="true" on a <param> hides its value: typed masked, kept in the
+  operating system's credential store instead of this file, and masked on
+  screen and in the transcript when the session echoes it.
 
   key="Ctrl+Shift+G" binds a shortcut. It needs a modifier, and it only
   fires while the terminal has focus. No macro here claims one by default.
@@ -786,7 +1095,235 @@ mod tests {
             name: name.into(),
             prompt: name.into(),
             default: "D".into(),
+            own: None,
+            secret: false,
         }
+    }
+
+    fn org_group(params: &[(&str, &str)]) -> Vec<MacroGroup> {
+        vec![MacroGroup {
+            name: "Tools".into(),
+            origin: Origin::Organization,
+            macros: vec![Macro {
+                origin: Origin::Organization,
+                name: "Dev".into(),
+                params: params
+                    .iter()
+                    .map(|(name, prompt)| Param {
+                        name: (*name).into(),
+                        prompt: (*prompt).into(),
+                        default: "shared".into(),
+                        own: None,
+                        secret: false,
+                    })
+                    .collect(),
+                body: vec!["do X(\"{{usuario}}\",\"{{senha}}\")".into()],
+                ..Macro::default()
+            }],
+        }]
+    }
+
+    #[test]
+    fn an_organization_macro_runs_with_the_users_own_value() {
+        let mut groups = org_group(&[("usuario", "Usuário")]);
+        let mut own = OwnValues::new();
+        set_own_value(&mut own, "Tools", "Dev", "usuario", Some("fulano"));
+        apply_own_values(&mut groups, &own, &Vault::default());
+        let m = &groups[0].macros[0];
+        assert_eq!(
+            m.default_values(),
+            vec![("usuario".into(), "fulano".into())]
+        );
+        assert_eq!(m.params[0].default, "shared", "the shared default is kept");
+        // Forgetting it goes back to the shared one, and leaves no table.
+        set_own_value(&mut own, "Tools", "Dev", "usuario", None);
+        assert!(own.is_empty());
+        apply_own_values(&mut groups, &own, &Vault::default());
+        assert_eq!(groups[0].macros[0].params[0].value(), "shared");
+    }
+
+    /// A credential store that is a map, so no test reaches the real one.
+    #[derive(Default)]
+    struct Vault(std::cell::RefCell<std::collections::BTreeMap<String, String>>);
+
+    impl SecretStore for Vault {
+        fn get(&self, account: &str) -> Option<String> {
+            self.0.borrow().get(account).cloned()
+        }
+        fn set(&self, account: &str, value: &str) -> Result<()> {
+            if value.is_empty() {
+                self.0.borrow_mut().remove(account);
+            } else {
+                self.0.borrow_mut().insert(account.into(), value.into());
+            }
+            Ok(())
+        }
+    }
+
+    /// The invariant: a password never reaches disk, so a hand-edited or old
+    /// settings file holding one for a password parameter is ignored - the
+    /// value comes from the credential store or from nowhere.
+    #[test]
+    fn a_password_parameter_never_takes_a_value_from_the_settings_file() {
+        let mut groups = org_group(&[("senha", "Senha"), ("tk", "API token")]);
+        let mut own = OwnValues::new();
+        set_own_value(&mut own, "Tools", "Dev", "senha", Some("hunter2"));
+        set_own_value(&mut own, "Tools", "Dev", "tk", Some("abc"));
+        let vault = Vault::default();
+        vault
+            .set(
+                &secret_account(Origin::Organization, "Tools", "Dev", "tk"),
+                "kept",
+            )
+            .unwrap();
+        for p in &mut groups[0].macros[0].params {
+            p.secret = p.looks_secret();
+        }
+        apply_own_values(&mut groups, &own, &vault);
+        let params = &groups[0].macros[0].params;
+        assert!(params.iter().all(Param::is_secret));
+        assert_eq!(params[0].own, None);
+        assert_eq!(params[1].own.as_deref(), Some("kept"));
+    }
+
+    #[test]
+    fn a_hidden_personal_value_goes_to_the_credential_store_and_comes_back() {
+        let mut groups = org_group(&[("cod", "Code")]);
+        groups[0].origin = Origin::Personal;
+        groups[0].macros[0].origin = Origin::Personal;
+        groups[0].macros[0].params[0].secret = true;
+        groups[0].macros[0].params[0].default = "s3cr3t".into();
+        let vault = Vault::default();
+        let held = store_personal_secrets(&groups, &Default::default(), &vault).unwrap();
+        let xml = to_xml(&groups);
+        assert!(!xml.contains("s3cr3t"), "{xml}");
+        assert!(xml.contains("secret=\"true\""), "{xml}");
+
+        let mut back = parse(&xml).unwrap();
+        for m in &mut back[0].macros {
+            m.origin = Origin::Personal;
+        }
+        apply_own_values(&mut back, &OwnValues::new(), &vault);
+        assert_eq!(back[0].macros[0].params[0].default, "s3cr3t");
+
+        // Unhidden, the value goes back to the file and leaves the store.
+        back[0].macros[0].params[0].secret = false;
+        store_personal_secrets(&back, &held, &vault).unwrap();
+        assert!(vault.0.borrow().is_empty());
+        assert!(to_xml(&back).contains("default=\"s3cr3t\""));
+    }
+
+    /// A hidden value outlives its macro in the store unless the save that
+    /// removed the macro removes it too - and nothing in the app could.
+    #[test]
+    fn a_deleted_or_renamed_macro_takes_its_hidden_value_with_it() {
+        let mut groups = org_group(&[("cod", "Code"), ("pw2", "Other")]);
+        groups[0].origin = Origin::Personal;
+        groups[0].macros[0].origin = Origin::Personal;
+        for p in &mut groups[0].macros[0].params {
+            p.secret = true;
+            p.default = "v".into();
+        }
+        let vault = Vault::default();
+        let held = store_personal_secrets(&groups, &Default::default(), &vault).unwrap();
+        assert_eq!(vault.0.borrow().len(), 2);
+
+        groups[0].macros[0].name = "Renamed".into();
+        groups[0].macros[0].params.remove(1);
+        let held = store_personal_secrets(&groups, &held, &vault).unwrap();
+        let kept: Vec<String> = vault.0.borrow().keys().cloned().collect();
+        assert_eq!(
+            kept,
+            [secret_account(Origin::Personal, "Tools", "Renamed", "cod")]
+        );
+
+        groups[0].macros.clear();
+        store_personal_secrets(&groups, &held, &vault).unwrap();
+        assert!(vault.0.borrow().is_empty());
+    }
+
+    #[test]
+    fn a_step_is_not_a_password() {
+        let named = |name: &str, prompt: &str| Param {
+            name: name.into(),
+            prompt: prompt.into(),
+            ..Param::default()
+        };
+        for (name, prompt) in [
+            ("passo", "Passo"),
+            ("compasso", ""),
+            ("passagem", "Passagem"),
+        ] {
+            assert!(!named(name, prompt).looks_secret(), "{name}");
+        }
+        for (name, prompt) in [
+            ("pass", ""),
+            ("db_pwd", ""),
+            ("senhaBanco", ""),
+            ("x", "API token"),
+            ("p", "Pass"),
+        ] {
+            assert!(named(name, prompt).looks_secret(), "{name} {prompt}");
+        }
+    }
+
+    #[test]
+    fn a_password_like_name_is_hidden_unless_the_file_says_otherwise() {
+        let xml = r#"<macros><group name="G"><macro name="M">
+            <param name="senha"/><param name="pwd" secret="false"/><param name="cod" secret="true"/>
+            <body>x {{senha}} {{pwd}} {{cod}}</body></macro></group></macros>"#;
+        let mut groups = parse(xml).unwrap();
+        let hidden: Vec<bool> = groups[0].macros[0]
+            .params
+            .iter()
+            .map(Param::is_secret)
+            .collect();
+        assert_eq!(hidden, [true, false, true]);
+        // And it stays what it was through a save.
+        for m in &mut groups[0].macros {
+            m.origin = Origin::Personal;
+        }
+        let back = parse(&to_xml(&groups)).unwrap();
+        let again: Vec<bool> = back[0].macros[0]
+            .params
+            .iter()
+            .map(Param::is_secret)
+            .collect();
+        assert_eq!(again, hidden);
+    }
+
+    #[test]
+    fn accounts_of_names_with_slashes_do_not_meet() {
+        assert_ne!(
+            secret_account(Origin::Personal, "a/b", "c", "p"),
+            secret_account(Origin::Personal, "a", "b/c", "p")
+        );
+        assert_ne!(
+            secret_account(Origin::Personal, "g", "m", "p"),
+            secret_account(Origin::Organization, "g", "m", "p")
+        );
+    }
+
+    #[test]
+    fn a_sent_line_knows_where_its_hidden_values_are() {
+        let mut m = with_params(&["u", "pw"], &["do L(\"{{u}}\",\"{{pw}}\")"]);
+        m.params[1].secret = true;
+        let sent = m.expand_for_sending(&[("u".into(), "ação".into()), ("pw".into(), "xy".into())]);
+        assert_eq!(sent[0].text, "do L(\"ação\",\"xy\")");
+        // In characters: `ã` is one.
+        assert_eq!(sent[0].hidden, vec![13..15]);
+        let chars: Vec<char> = sent[0].text.chars().collect();
+        assert_eq!(chars[13..15].iter().collect::<String>(), "xy");
+    }
+
+    #[test]
+    fn a_personal_macro_keeps_its_own_default() {
+        let mut groups = org_group(&[("usuario", "Usuário")]);
+        groups[0].macros[0].origin = Origin::Personal;
+        let mut own = OwnValues::new();
+        set_own_value(&mut own, "Tools", "Dev", "usuario", Some("fulano"));
+        apply_own_values(&mut groups, &own, &Vault::default());
+        assert_eq!(groups[0].macros[0].params[0].own, None);
     }
 
     fn with_params(names: &[&str], body: &[&str]) -> Macro {
@@ -903,6 +1440,35 @@ mod tests {
             m.expand(&[("a".into(), "{{b}}".into()), ("b".into(), "B".into())]),
             vec!["{{b}} B".to_string()]
         );
+    }
+
+    /// The dialog colours each value by where it came from, so the pieces
+    /// have to say it - an empty one included, which is still a place in the
+    /// command.
+    #[test]
+    fn an_expanded_line_says_which_field_each_value_came_from() {
+        let m = with_params(
+            &["user", "pass"],
+            &["do ##class(X).Exec(\"{{user}}\",\"{{pass}}\")"],
+        );
+        let values = [
+            ("user".into(), "fulano".into()),
+            ("pass".into(), String::new()),
+        ];
+        let line = &m.expand_marked(&values)[0];
+        let marked: Vec<(&str, Option<usize>)> =
+            line.iter().map(|p| (p.text.as_str(), p.value)).collect();
+        assert_eq!(
+            marked,
+            [
+                ("do ##class(X).Exec(\"", None),
+                ("fulano", Some(0)),
+                ("\",\"", None),
+                ("", Some(1)),
+                ("\")", None),
+            ]
+        );
+        assert_eq!(m.expand(&values), ["do ##class(X).Exec(\"fulano\",\"\")"]);
     }
 
     #[test]
@@ -1074,6 +1640,8 @@ mod tests {
                     name: "g".into(),
                     prompt: "Global".into(),
                     default: "CSW1".into(),
+                    own: None,
+                    secret: false,
                 }],
                 body: vec!["ZWRITE ^{{g}}".into()],
             }],

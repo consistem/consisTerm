@@ -19,6 +19,7 @@
 //! disk or the settings goes out, as a [`ThemeAction`], so a theme cannot be
 //! saved or deleted from inside a paint pass.
 
+use crate::ui::tip::Tip;
 use egui::color_picker::{color_edit_button_srgba, Alpha};
 use egui::{pos2, vec2, Color32, Grid, Rect, Rounding, Sense, Stroke, Ui};
 
@@ -27,7 +28,7 @@ use crate::config::theme::{
     GradientDirection, Theme, TitleButton, UiGradient, WindowButtonSlot as Slot, WindowButtonStyle,
 };
 use crate::i18n::{tr, tr1};
-use crate::ui::panels::{UiRequest, WARNING};
+use crate::ui::panels::{warning, UiRequest};
 use crate::ui::prefs::{self, Card, Row, RowResponse};
 
 /// Something the Themes pages asked for.
@@ -238,7 +239,7 @@ fn tile(ui: &mut Ui, theme: &Theme, selected: bool, active: bool) -> egui::Respo
     let label_height = font.size + 6.0;
     let (rect, response) =
         ui.allocate_exact_size(vec2(TILE.x, TILE.y + label_height), Sense::click());
-    let response = response.on_hover_text(if active {
+    let response = response.tip(if active {
         tr("In use").to_owned()
     } else {
         tr1("Use {}", &theme.name)
@@ -385,7 +386,7 @@ fn theme_actions(card: &mut Card<'_>, c: &mut Ctx<'_>) {
     card.buttons(|ui| {
         delete = ui
             .add_enabled(deletable, prefs::button_widget(tr("Delete")))
-            .on_hover_text(tr("Only your own themes; the built-ins cannot be deleted."))
+            .tip(tr("Only your own themes; the built-ins cannot be deleted."))
             .clicked();
         for (label, dark) in [("New from light", false), ("New from dark", true)] {
             if prefs::button(ui, tr(label)).clicked() {
@@ -395,7 +396,7 @@ fn theme_actions(card: &mut Card<'_>, c: &mut Ctx<'_>) {
         // Duplicating is the only way to edit a built-in, so it is the first
         // button and it acts on the theme the pages are on.
         copy = prefs::button(ui, tr("Duplicate"))
-            .on_hover_text(tr1("A copy of {} that you can edit.", &source.name))
+            .tip(tr1("A copy of {} that you can edit.", &source.name))
             .clicked();
     });
     if delete {
@@ -422,11 +423,9 @@ fn theme_actions(card: &mut Card<'_>, c: &mut Ctx<'_>) {
     }
 
     let made = if copy {
-        Some(duplicate(
-            c.themes,
-            &source,
-            &format!("{} copy", source.name),
-        ))
+        let name = duplicate(c.themes, &source, &format!("{} copy", source.name));
+        carry_highlight(c, &source.name, &name, false);
+        Some(name)
     } else {
         new_from.map(|dark| {
             // Built from a built-in rather than from nothing: a theme with
@@ -445,6 +444,22 @@ fn theme_actions(card: &mut Card<'_>, c: &mut Ctx<'_>) {
     }
 }
 
+/// Gives theme `to` the highlighting `from` has of its own - kept by name in
+/// the settings, see `Settings::highlight` - taking it from `from` when the
+/// theme is only being renamed. Without it a renamed theme went back to the
+/// app-wide switches, and a copy did not colour the prompt as it looked to.
+fn carry_highlight(c: &mut Ctx<'_>, from: &str, to: &str, moving: bool) {
+    let found = if moving {
+        c.settings.theme_highlight.remove(from)
+    } else {
+        c.settings.theme_highlight.get(from).copied()
+    };
+    if let Some(highlight) = found {
+        c.settings.theme_highlight.insert(to.to_string(), highlight);
+        c.changed = true;
+    }
+}
+
 /// A theme just added: the pages move onto it, and it is written and used.
 fn made_theme(c: &mut Ctx<'_>, name: String) {
     c.state.themes.selected = Some(name.clone());
@@ -457,7 +472,7 @@ fn made_theme(c: &mut Ctx<'_>, name: String) {
 
 fn themes_folder(ui: &mut Ui, c: &mut Ctx<'_>) {
     if prefs::button(ui, tr("Open folder"))
-        .on_hover_text(crate::config::themes_dir().display().to_string())
+        .tip(crate::config::themes_dir().display().to_string())
         .clicked()
     {
         c.requests
@@ -567,7 +582,7 @@ fn name_row(card: &mut Card<'_>, c: &mut Ctx<'_>) {
             .iter()
             .any(|t| t.name == draft.trim() && t.name != name);
         if taken {
-            ui.colored_label(WARNING, tr("Already in use"));
+            ui.colored_label(warning(ui), tr("Already in use"));
         }
         // Committed on Enter or on leaving the field, so every keystroke is
         // not a rename - and never to a name that is taken, which would
@@ -581,6 +596,7 @@ fn name_row(card: &mut Card<'_>, c: &mut Ctx<'_>) {
         c.themes[index].name = renamed.clone();
         state.selected = Some(renamed.clone());
         state.rename = None;
+        carry_highlight(c, &name, &renamed, true);
         c.requests
             .push(UiRequest::Theme(ThemeAction::Save(renamed.clone())));
         if name == c.settings.theme {
@@ -600,7 +616,7 @@ fn use_row(card: &mut Card<'_>, c: &mut Ctx<'_>) {
     let (mut apply, mut copy) = (false, false);
     card.buttons(|ui| {
         copy = prefs::button(ui, tr("Duplicate"))
-            .on_hover_text(tr1("A copy of {} that you can edit.", &source.name))
+            .tip(tr1("A copy of {} that you can edit.", &source.name))
             .clicked();
         if in_use {
             ui.weak(tr("In use"));
@@ -614,6 +630,7 @@ fn use_row(card: &mut Card<'_>, c: &mut Ctx<'_>) {
     }
     if copy {
         let name = duplicate(c.themes, &source, &format!("{} copy", source.name));
+        carry_highlight(c, &source.name, &name, false);
         made_theme(c, name);
     }
 }
@@ -898,6 +915,9 @@ fn button_colours() -> Vec<Section> {
                     |t| &mut t.window_buttons.close_tab,
                     |t| match t.window_buttons.style {
                         WindowButtonStyle::Stroke => t.ui_foreground,
+                        WindowButtonStyle::Classic => {
+                            t.window_buttons.icon.unwrap_or(t.ui_foreground)
+                        }
                         _ => t.window_buttons.close.unwrap_or(t.ui_foreground),
                     },
                 )
@@ -930,7 +950,18 @@ fn syntax_colours() -> Vec<Section> {
     let row = |key, title, get: fn(&mut Theme) -> Option<&mut Color32>| {
         Item::colour(key, title, get).keys(keys)
     };
-    vec![untitled(vec![
+    vec![
+        section(
+            "Highlighting",
+            vec![Item::rows("syntax_highlight", "Syntax highlighting", highlight_rows)
+                .contextual()
+                .keys(&[
+                    "syntax", "sintaxe", "objectscript", "sql", "realce", "colour", "color",
+                    "cores",
+                ])],
+        )
+        .footer("For this theme only. Kept on this computer, so a built-in theme can be switched too."),
+        untitled(vec![
         row("th_syn_label", "Label", |t| Some(&mut t.syntax_label)),
         row("th_syn_command", "Command", |t| Some(&mut t.syntax_command)),
         row("th_syn_string", "String", |t| Some(&mut t.syntax_string)),
@@ -948,7 +979,34 @@ fn syntax_colours() -> Vec<Section> {
         row("th_syn_routine", "Routine", |t| Some(&mut t.syntax_routine)),
         row("th_syn_extrinsic", "Extrinsic", |t| Some(&mut t.syntax_extrinsic)),
     ])
-    .footer("Named after the semantic token scopes of the InterSystems VS Code extension, so an editor colour customisation can be copied across field by field.")]
+    .footer("Named after the semantic token scopes of the InterSystems VS Code extension, so an editor colour customisation can be copied across field by field."),
+    ]
+}
+
+/// The theme's two switches for colouring the prompt, kept in the settings
+/// by the theme's name rather than in the theme - see `Settings::highlight`.
+fn highlight_rows(card: &mut Card<'_>, c: &mut Ctx<'_>) {
+    let Some(index) = editing(c) else {
+        return;
+    };
+    let name = c.themes[index].name.clone();
+    let mut chosen = c.settings.highlight(&name);
+    let syntax = card
+        .toggle(
+            Row::new(tr("Syntax highlighting")).hint(tr("Colours globals, strings, numbers, commands, macros and class references. A guess about the text on screen; a colour IRIS sets itself always wins.")),
+            &mut chosen.syntax,
+        )
+        .inner;
+    let sql = card
+        .toggle(
+            Row::new(tr("Colour SQL at the SQL shell's prompt")),
+            &mut chosen.sql,
+        )
+        .inner;
+    if syntax || sql {
+        *c.settings.highlight_mut(&name) = chosen;
+        c.changed = true;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -1005,7 +1063,7 @@ pub(super) fn fallback_item(
             if value.is_some()
                 && ui
                     .small_button("\u{21ba}")
-                    .on_hover_text(tr("Back to the colour the button style supplies."))
+                    .tip(tr("Back to the colour the button style supplies."))
                     .clicked()
             {
                 *value = None;
@@ -1197,7 +1255,7 @@ fn gradient_control(
             if current.is_some_and(|ends| ends != made)
                 && ui
                     .small_button("\u{21ba}")
-                    .on_hover_text(tr(
+                    .tip(tr(
                         "Back to the colours made from the background: a little lighter at one end, darker at the other.",
                     ))
                     .clicked()
@@ -1245,6 +1303,7 @@ fn button_style(ui: &mut Ui, c: &mut Ctx<'_>) {
                 WindowButtonStyle::Aqua => "Aqua",
                 WindowButtonStyle::Luna => "Luna",
                 WindowButtonStyle::Materia => "Materia",
+                WindowButtonStyle::Classic => "Classic",
             };
             (style, tr(label))
         })
@@ -1324,7 +1383,7 @@ fn order_rows(card: &mut Card<'_>, c: &mut Ctx<'_>) {
                         let grip = if editable {
                             ui.dnd_drag_source(egui::Id::new(("theme-order-grip", at)), at, grip)
                                 .response
-                                .on_hover_text(tr("Drag to move"))
+                                .tip(tr("Drag to move"))
                         } else {
                             grip(ui)
                         };
@@ -1346,25 +1405,25 @@ fn order_rows(card: &mut Card<'_>, c: &mut Ctx<'_>) {
                             }
                             None if button.is_space() => ui
                                 .label(egui::RichText::new(label).italics())
-                                .on_hover_text(tr(
+                                .tip(tr(
                                     "Empty title bar, which drags the window. Whatever is before the left space packs against the left-hand end, whatever is after the right space against the right-hand end, and anything between the two is centred.",
                                 )),
                             None => ui
                                 .add_enabled(false, egui::Checkbox::new(&mut true, label))
-                                .on_disabled_hover_text(tr("Always shown.")),
+                                .disabled_tip(tr("Always shown.")),
                         };
                         let arrows = ui
                             .horizontal(|ui| {
                                 if ui
                                     .add_enabled(at > 0, egui::Button::new("\u{2b05}").small())
-                                    .on_hover_text(tr("Move left"))
+                                    .tip(tr("Move left"))
                                     .clicked()
                                 {
                                     moved = Some((at, at - 1));
                                 }
                                 if ui
                                     .add_enabled(at < last, egui::Button::new("\u{27a1}").small())
-                                    .on_hover_text(tr("Move right"))
+                                    .tip(tr("Move right"))
                                     .clicked()
                                 {
                                     moved = Some((at, at + 1));

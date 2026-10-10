@@ -9,6 +9,10 @@ use super::*;
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
+        // Set again by the tab strip if a tab is shown this frame; one left
+        // from the last frame would be sealed against a terminal it no longer
+        // touches.
+        ctx.data_mut(|d| d.remove::<(egui::Rect, egui::Color32)>(super::tabs::shown_tab_id()));
         let theme = self.theme();
         let mut requests: Vec<UiRequest> = Vec::new();
         // What the terminal measured this frame, filled in once it has drawn.
@@ -189,6 +193,13 @@ impl eframe::App for App {
             )
             .show(ctx, |ui| {
                 terminal_rect = ui.max_rect();
+                super::tabs::seal_shown_tab(
+                    ui.ctx(),
+                    ui.layer_id(),
+                    terminal_rect + self.terminal_inset(),
+                    self.settings.bar_position,
+                    theme.background,
+                );
                 // A gradient goes under the margin as well as the grid. Laid
                 // over the grid alone, the margin round it - the resize
                 // grips' gutter, and the part of a cell the window is short
@@ -373,6 +384,9 @@ impl eframe::App for App {
         if let Some(asked) = self.pending_layout.take() {
             match asked {
                 LayoutAction::Split(index, dir) => self.split_tab(index, dir),
+                LayoutAction::SplitWithShell(index, dir, shell) => {
+                    self.split_tab_with_shell(index, dir, &shell)
+                }
                 LayoutAction::Unsplit(index) => self.remove_split(index),
                 LayoutAction::ClosePane(at) => self.close_pane(at),
             }

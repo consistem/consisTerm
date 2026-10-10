@@ -18,9 +18,9 @@ use serde::{Deserialize, Serialize};
 /// Language the interface is drawn in.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Lang {
-    #[default]
     #[serde(rename = "en")]
     En,
+    #[default]
     #[serde(rename = "pt-br")]
     PtBr,
 }
@@ -115,6 +115,19 @@ const PT_BR: &[(&str, &str)] = &[
     ("Downloading... {} of {}", "Baixando... {} de {}"),
     ("Open the release page", "Abrir a página da versão"),
     // Drop-down terminal
+    ("Drop-down terminal settings", "Configurações do terminal suspenso"),
+    ("Of the screen. Dragged away from its edge, the window goes back to the size it has as an ordinary window.", "Da tela. Arrastada para longe da borda, a janela volta ao tamanho que tem como janela comum."),
+    ("Width", "Largura"),
+    ("Of the screen, centred on its edge.", "Da tela, centralizado na borda."),
+    ("Roll-in animation", "Animação de entrada"),
+    ("How it rolls in from its edge and back out. Off, it appears and goes at once.", "Como ele desliza para dentro a partir da borda e volta. Desligado, aparece e some na hora."),
+    ("Normal", "Normal"),
+    // Settings, as regrouped.
+    ("IRIS assistance", "Assistência IRIS"),
+    ("The colours themselves are the theme's, under Themes.", "As cores em si são do tema, em Temas."),
+    ("Autocomplete and global tooltip", "Autocompletar e dica do global"),
+    ("Suggestions while typing, what a global's pieces mean, and the colouring of the line are under IRIS assistance.", "As sugestões enquanto você digita, o significado das peças de uma global e as cores da linha ficam em Assistência IRIS."),
+    ("The size and the position take effect the next time the app starts. The Settings window always reopens where it was left.", "O tamanho e a posição valem a partir da próxima vez que o aplicativo iniciar. A janela de Configurações sempre reabre onde foi deixada."),
     ("Drop-down terminal", "Terminal suspenso"),
     ("Kill a global", "Apagar uma global"),
     ("Switch namespace", "Trocar namespace"),
@@ -142,7 +155,7 @@ const PT_BR: &[(&str, &str)] = &[
     ("Empty, so the file beside the program is used: {}", "Vazio, então é usado o arquivo ao lado do programa: {}"),
     ("Report a problem", "Relatar um problema"),
     ("Website", "Site"),
-    ("A terminal for InterSystems IRIS, made for the people who work in it.", "Um terminal para o InterSystems IRIS, feito para quem trabalha nele."),
+    ("A terminal for InterSystems IRIS, made for the people who live in it.", "Um terminal para o InterSystems IRIS, feito para quem vive nele."),
     ("Version {}", "Versão {}"),
     ("Position", "Posição"),
     ("Which side of the window the title bar is on, as web browsers offer. On the left or right it is a column: the buttons across its top and the tabs listed down it, and it can be made wider or narrower by its edge.",
@@ -485,6 +498,15 @@ const PT_BR: &[(&str, &str)] = &[
     ("Run", "Executar"),
     ("Will send:", "Vai enviar:"),
     ("Hidden; this macro carries a secret.", "Oculto; esta macro carrega um segredo."),
+    ("... and {} more lines", "... e mais {} linhas"),
+    ("The underlined parts are asked for before it runs.", "As partes sublinhadas são perguntadas antes de executar."),
+    ("Shortcut: {}", "Atalho: {}"),
+    ("asked each time", "perguntado a cada vez"),
+    ("Looks like a password, so it is never kept: it is asked for each time the macro runs.", "Parece uma senha, então nunca é guardada: é perguntada a cada vez que a macro roda."),
+    ("Your value, used instead of the organization's. Kept on this computer only.", "O seu valor, usado no lugar do da organização. Guardado só neste computador."),
+    ("Back to the organization's value: {}", "Voltar ao valor da organização: {}"),
+    ("empty", "vazio"),
+    ("Provided by the organization; read-only here, except for your own values of its parameters. Duplicate it to change the rest.", "Fornecida pela organização; somente leitura aqui, exceto os seus próprios valores dos parâmetros. Duplique-a para mudar o resto."),
     ("This macro is marked as modifying data. RDB* databases are shared with the team.",
      "Esta macro está marcada como alteradora de dados. Bases RDB* são compartilhadas com a equipe."),
 
@@ -534,6 +556,7 @@ const PT_BR: &[(&str, &str)] = &[
     ("Stroked", "Traçado"),
     ("Aqua", "Aqua"),
     ("Luna", "Luna"),
+    ("Classic", "Clássico"),
     ("Terminal", "Terminal"),
     ("Chrome", "Moldura"),
     ("Base", "Base"),
@@ -619,6 +642,23 @@ const PT_BR: &[(&str, &str)] = &[
     // ERP's own `%CSWDOCGLOBAL` screen calls the column, so translating it
     // would name the same thing two ways.
     ("Looking up ^{}…", "Consultando ^{}…"),
+    ("Looking up ^{}", "Consultando ^{}"),
+    ("Still loading - {} so far", "Ainda carregando - {} até agora"),
+    ("Counting subscripts", "Contando os subscritos"),
+    ("{} subscripts - type to narrow them down", "{} subscritos - digite para filtrar"),
+    ("More than {} subscripts - type to narrow them down", "Mais de {} subscritos - digite para filtrar"),
+    ("Loading", "Carregando"),
+    ("Could not keep the hidden value: {}", "Não foi possível guardar o valor oculto: {}"),
+    ("Back to the organization's value", "Voltar ao valor da organização"),
+    ("Typed masked and kept in the operating system's credential store, never in the macro file. Masked on screen and in the transcript when the session echoes it.", "Digitado mascarado e guardado no cofre de credenciais do sistema, nunca no arquivo de macros. Mascarado na tela e na transcrição quando a sessão o ecoa."),
+    ("Hide", "Ocultar"),
+    ("Set by the organization's file.", "Definido pelo arquivo da organização."),
+    ("Your value, kept in the operating system's credential store.", "Seu valor, guardado no cofre de credenciais do sistema."),
+    ("Split with another shell", "Dividir com outro shell"),
+    ("To the right", "À direita"),
+    ("To the bottom", "Abaixo"),
+    ("{} is no longer available.", "{} não está mais disponível."),
+    ("For this theme only. Kept on this computer, so a built-in theme can be switched too.", "Só para este tema. Guardado neste computador, então um tema embutido também pode ser alterado."),
     ("Piece: {} - {}", "Piece: {} - {}"),
     ("Piece: {}", "Piece: {}"),
     // A subscript, in the vocabulary the ERP's own documentation screen uses

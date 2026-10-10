@@ -45,10 +45,14 @@ const AQUA_MAXIMIZE: &str = "#28ca42";
 const AQUA_SCROLL: &str = "#4a90d9";
 
 /// The same for Luna: the red of the XP close button, and the blue the other
-/// two were tinted with. The painter shades each into a gradient, so these are
-/// the mid-tone rather than either end of one.
-const LUNA_CLOSE: &str = "#cf4a35";
-const LUNA_BUTTON: &str = "#4b7fc4";
+/// two were tinted with, read off the middle of XP.css's own button images.
+/// The painter shades each into a gradient, so these are the mid-tone rather
+/// than either end of one.
+const LUNA_CLOSE: &str = "#e46142";
+const LUNA_BUTTON: &str = "#3b77f5";
+
+/// Windows 95 and 98's button face, the grey every control was cut from.
+const CLASSIC_FACE: &str = "#c0c0c0";
 
 /// Final Fantasy VII's materia, by what each colour equipped: red summons for
 /// the one control that ends something, yellow commands, green magic. Purple
@@ -75,14 +79,18 @@ pub enum WindowButtonStyle {
     /// Final Fantasy VII's materia: glowing orbs set in a steel socket, with
     /// the swirl inside them that made them read as stone rather than glass.
     Materia,
+    /// Windows 95 and 98: grey buttons raised by a two-pixel bevel, with a
+    /// black glyph always on.
+    Classic,
 }
 
 impl WindowButtonStyle {
-    pub const ALL: [WindowButtonStyle; 4] = [
+    pub const ALL: [WindowButtonStyle; 5] = [
         WindowButtonStyle::Stroke,
         WindowButtonStyle::Aqua,
         WindowButtonStyle::Luna,
         WindowButtonStyle::Materia,
+        WindowButtonStyle::Classic,
     ];
 
     /// Empty, or anything unrecognised, means the stroked style: a theme file
@@ -92,6 +100,7 @@ impl WindowButtonStyle {
             "aqua" => WindowButtonStyle::Aqua,
             "luna" => WindowButtonStyle::Luna,
             "materia" => WindowButtonStyle::Materia,
+            "classic" => WindowButtonStyle::Classic,
             _ => WindowButtonStyle::Stroke,
         }
     }
@@ -111,6 +120,7 @@ impl WindowButtonStyle {
             (WindowButtonStyle::Materia, WindowButtonSlot::Close) => MATERIA_RED,
             (WindowButtonStyle::Materia, WindowButtonSlot::Minimize) => MATERIA_YELLOW,
             (WindowButtonStyle::Materia, WindowButtonSlot::Maximize) => MATERIA_GREEN,
+            (WindowButtonStyle::Classic, _) => CLASSIC_FACE,
         };
         parse_hex(hex)
     }
@@ -121,6 +131,7 @@ impl WindowButtonStyle {
             WindowButtonStyle::Aqua => "aqua",
             WindowButtonStyle::Luna => "luna",
             WindowButtonStyle::Materia => "materia",
+            WindowButtonStyle::Classic => "classic",
         }
     }
 }
@@ -1389,8 +1400,102 @@ impl Theme {
             v.window_stroke.width = v.window_stroke.width.max(1.5);
             v.widgets.noninteractive.bg_stroke.color = border;
         }
+
+        // egui draws faint text - captions, hints, a disabled row - halfway
+        // from the text to `fade_out_to_color`, which is the chrome's own
+        // background. On a saturated mid-tone chrome, Luna's blue, that
+        // halfway point is nearly the background itself, and the captions
+        // could not be read. So the colour faded towards is moved off the
+        // background, towards the text, just far enough for faint text to
+        // keep a readable contrast; on most themes it already does, and
+        // nothing moves.
+        let behind = self.chrome_behind();
+        let mut target = behind;
+        for step in 0..=20 {
+            let candidate = lift(step as f32 / 20.0);
+            let faint = crate::term::palette::blend(self.ui_foreground, candidate, 0.5);
+            target = candidate;
+            if contrast(faint, behind) >= MIN_FAINT_CONTRAST {
+                break;
+            }
+        }
+        v.widgets.noninteractive.weak_bg_fill = target;
+
+        // Links - the settings' way back among them - in the accent, moved
+        // towards the text just far enough to be read on what is actually
+        // behind them: the selection colour is a fill, and Windows 98's navy as
+        // text on a dark grey, or Final Fantasy's blue on its own gradient,
+        // could not be read.
+        let accent = v.selection.bg_fill.to_opaque();
+        v.hyperlink_color = (0..=10)
+            .map(|step| accent.lerp_to_gamma(self.ui_foreground, step as f32 / 10.0))
+            .find(|&c| contrast(c, behind) >= MIN_LINK_CONTRAST)
+            .unwrap_or(self.ui_foreground);
+
+        // The warning, likewise: an orange that reads on grey and on black is
+        // lost on blue, so the first of a few warm colours that holds up
+        // against this chrome is the one used.
+        v.warn_fg_color = WARNING_CANDIDATES
+            .iter()
+            .copied()
+            .find(|&c| contrast(c, behind) >= MIN_WARNING_CONTRAST)
+            .unwrap_or_else(|| {
+                WARNING_CANDIDATES
+                    .iter()
+                    .copied()
+                    .fold(WARNING_CANDIDATES[0], |best, c| {
+                        if contrast(c, behind) > contrast(best, behind) {
+                            c
+                        } else {
+                            best
+                        }
+                    })
+            });
         v
     }
+
+    /// The colour the chrome's text actually sits on: the flat background,
+    /// or the middle of the gradient painted in its place.
+    fn chrome_behind(&self) -> Color32 {
+        match &self.ui_gradient {
+            Some(g) => crate::term::palette::blend(g.from, g.to, 0.5),
+            None => self.ui_background,
+        }
+    }
+}
+
+/// How far faint text - captions, hints, disabled rows - may fade before it
+/// stops being read: WCAG's ratio for large or incidental text.
+const MIN_FAINT_CONTRAST: f32 = 3.0;
+const MIN_WARNING_CONTRAST: f32 = 3.0;
+/// WCAG's ratio for body text, which a link is.
+const MIN_LINK_CONTRAST: f32 = 4.5;
+
+/// Warm colours a warning may be drawn in, tried in order: the orange the app
+/// has always used, then two that hold up on a mid-tone or dark chrome, then
+/// one for a light chrome.
+const WARNING_CANDIDATES: [Color32; 4] = [
+    Color32::from_rgb(220, 120, 60),
+    Color32::from_rgb(255, 204, 102),
+    Color32::from_rgb(255, 233, 168),
+    Color32::from_rgb(160, 70, 0),
+];
+
+/// The WCAG contrast ratio of two colours, from 1 (the same) to 21.
+pub fn contrast(a: Color32, b: Color32) -> f32 {
+    let luminance = |c: Color32| {
+        let channel = |v: u8| {
+            let v = f32::from(v) / 255.0;
+            if v <= 0.039_28 {
+                v / 12.92
+            } else {
+                ((v + 0.055) / 1.055).powf(2.4)
+            }
+        };
+        0.2126 * channel(c.r()) + 0.7152 * channel(c.g()) + 0.0722 * channel(c.b())
+    };
+    let (la, lb) = (luminance(a), luminance(b));
+    (la.max(lb) + 0.05) / (la.min(lb) + 0.05)
 }
 
 /// Whether a background is dark enough that egui's dark widget set suits it.
@@ -1526,7 +1631,9 @@ pub fn builtin_files() -> Vec<ThemeFile> {
             ..with_syntax(DEFAULT_SYNTAX)
         },
         // Windows XP: Luna blue chrome around the console black-and-silver,
-        // with the console's own sixteen colours.
+        // with the console's own sixteen colours. The blues, the edge and the
+        // scroll bar are XP.css's (botoxparty/XP.css), which took them off
+        // the real thing pixel by pixel.
         ThemeFile {
             name: "Windows XP".into(),
             background: "#000000".into(),
@@ -1541,12 +1648,84 @@ pub fn builtin_files() -> Vec<ThemeFile> {
             ]),
             ui_foreground: "#ffffff".into(),
             // The Luna title bar, which is what anyone naming this theme is
-            // asking for.
-            ui_background: "#0a62c8".into(),
+            // asking for: its gradient from the bright line along the top
+            // through the deep blue of most of it.
+            ui_background: "#0050ee".into(),
+            ui_gradient: "vertical".into(),
+            ui_gradient_from: "#0058ee".into(),
+            ui_gradient_to: "#003dd7".into(),
+            // The frame round an XP window, one of its six blue rims.
+            ui_border: "#0831d9".into(),
             // The Luna tiles themselves: a red close and two blue ones, each
             // shaded into a gradient by the painter.
             window_button_style: "luna".into(),
             window_button_icon: "#ffffff".into(),
+            // XP's scroll bar: a pale blue thumb on an off-white track.
+            scrollbar_handle: "#c5d5ff".into(),
+            scrollbar_track: "#f4f3ee".into(),
+            font_family: default_font_family(),
+            font_size: 14.0,
+            dark: true,
+            builtin: true,
+            ..with_syntax(DEFAULT_SYNTAX)
+        },
+        // Windows 98, by 98.css: the grey of every window and button, edged
+        // with its bevel, and the navy of the active title bar for the tab
+        // being shown - which is the window the keyboard is in.
+        ThemeFile {
+            name: "Windows 98".into(),
+            background: "#000000".into(),
+            foreground: "#c0c0c0".into(),
+            cursor: "#c0c0c0".into(),
+            selection: "#000080".into(),
+            ansi: ansi([
+                "#000000", "#800000", "#008000", "#808000", "#000080", "#800080", "#008080",
+                "#c0c0c0", "#808080", "#ff0000", "#00ff00", "#ffff00", "#0000ff", "#ff00ff",
+                "#00ffff", "#ffffff",
+            ]),
+            ui_foreground: "#000000".into(),
+            ui_background: "#c0c0c0".into(),
+            ui_border: "#808080".into(),
+            tab_selected: "#000080".into(),
+            tab_selected_text: "#ffffff".into(),
+            window_button_style: "classic".into(),
+            window_button_icon: "#000000".into(),
+            // The thumb is a button like any other; the track was a dither
+            // of grey and white, which is this grey from any distance.
+            scrollbar_handle: "#c0c0c0".into(),
+            scrollbar_track: "#dfdfdf".into(),
+            font_family: default_font_family(),
+            font_size: 14.0,
+            dark: false,
+            builtin: true,
+            ..with_syntax(DEFAULT_SYNTAX)
+        },
+        // Windows 98 had no dark mode. This is the one it would have had: the
+        // same bevels cut from a charcoal face, and the deep blue Windows 2000
+        // gave its active title bar.
+        ThemeFile {
+            name: "Windows 98 Dark".into(),
+            background: "#000000".into(),
+            foreground: "#c0c0c0".into(),
+            cursor: "#c0c0c0".into(),
+            selection: "#0a246a".into(),
+            ansi: ansi([
+                "#000000", "#800000", "#008000", "#808000", "#000080", "#800080", "#008080",
+                "#c0c0c0", "#808080", "#ff0000", "#00ff00", "#ffff00", "#0000ff", "#ff00ff",
+                "#00ffff", "#ffffff",
+            ]),
+            ui_foreground: "#e0e0e0".into(),
+            ui_background: "#2b2b2b".into(),
+            ui_border: "#5a5a5a".into(),
+            tab_selected: "#0a246a".into(),
+            tab_selected_text: "#ffffff".into(),
+            window_button_style: "classic".into(),
+            window_button_close: "#3c3c3c".into(),
+            window_button_minimize: "#3c3c3c".into(),
+            window_button_maximize: "#3c3c3c".into(),
+            window_button_icon: "#e8e8e8".into(),
+            scrollbar_handle: "#3c3c3c".into(),
+            scrollbar_track: "#1e1e1e".into(),
             font_family: default_font_family(),
             font_size: 14.0,
             dark: true,
@@ -1873,6 +2052,7 @@ mod tests {
             ("aqua", WindowButtonStyle::Aqua),
             ("luna", WindowButtonStyle::Luna),
             ("LUNA", WindowButtonStyle::Luna),
+            ("classic", WindowButtonStyle::Classic),
             ("", WindowButtonStyle::Stroke),
             ("nonsense", WindowButtonStyle::Stroke),
         ] {
@@ -1896,7 +2076,7 @@ mod tests {
     /// or one of them is painted in nothing at all.
     #[test]
     fn a_filled_style_has_three_colours() {
-        for name in ["aqua", "luna", "materia"] {
+        for name in ["aqua", "luna", "materia", "classic"] {
             let file = ThemeFile {
                 name: "T".into(),
                 window_button_style: name.into(),
@@ -2192,6 +2372,39 @@ mod tests {
         theme.ui_background = c("#101010");
         theme.dark = false;
         assert!(theme.visuals().dark_mode);
+    }
+
+    /// Captions, hints, disabled rows and warnings are read on the chrome, so
+    /// every built-in keeps them readable there - Luna's blue being the one
+    /// that once did not.
+    #[test]
+    fn faint_text_and_warnings_stay_readable_on_every_builtin_chrome() {
+        for file in builtin_files() {
+            let theme = Theme::from_file(&file);
+            let v = theme.visuals();
+            let behind = theme.chrome_behind();
+            let faint = v.weak_text_color();
+            assert!(
+                contrast(faint, behind) >= MIN_FAINT_CONTRAST - 0.05,
+                "{}: faint text at {:.2}",
+                file.name,
+                contrast(faint, behind)
+            );
+            assert!(
+                contrast(v.warn_fg_color, behind) >= MIN_WARNING_CONTRAST,
+                "{}: warning at {:.2}",
+                file.name,
+                contrast(v.warn_fg_color, behind)
+            );
+            // Windows 98 Dark's navy, as the settings' way back, could not be
+            // read on its grey.
+            assert!(
+                contrast(v.hyperlink_color, behind) >= MIN_LINK_CONTRAST,
+                "{}: link at {:.2}",
+                file.name,
+                contrast(v.hyperlink_color, behind)
+            );
+        }
     }
 
     #[test]

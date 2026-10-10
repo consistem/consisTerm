@@ -422,6 +422,78 @@ impl QuakeEdge {
     }
 }
 
+/// What a theme colours at the prompt.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Highlight {
+    /// ObjectScript: globals, strings, commands, class references.
+    pub syntax: bool,
+    /// SQL, at the SQL shell's prompt.
+    pub sql: bool,
+}
+
+impl Settings {
+    /// What `theme` colours: its own choice, or the app-wide one.
+    pub fn highlight(&self, theme: &str) -> Highlight {
+        self.theme_highlight
+            .get(theme)
+            .copied()
+            .unwrap_or(Highlight {
+                syntax: self.terminal_syntax_highlight,
+                sql: self.sql_highlight,
+            })
+    }
+
+    /// `theme`'s choice, to change - starting from the app-wide one the first
+    /// time it is given one of its own.
+    pub fn highlight_mut(&mut self, theme: &str) -> &mut Highlight {
+        let start = self.highlight(theme);
+        self.theme_highlight
+            .entry(theme.to_string())
+            .or_insert(start)
+    }
+}
+
+/// How the drop-down terminal comes in from its edge and goes back to it: a
+/// roll lasting this long, or none.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum QuakeAnimation {
+    /// It appears at once, where it ends up.
+    Off,
+    Fast,
+    #[default]
+    Normal,
+    Slow,
+}
+
+impl QuakeAnimation {
+    pub const ALL: [QuakeAnimation; 4] = [
+        QuakeAnimation::Off,
+        QuakeAnimation::Fast,
+        QuakeAnimation::Normal,
+        QuakeAnimation::Slow,
+    ];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            QuakeAnimation::Off => "Off",
+            QuakeAnimation::Fast => "Fast",
+            QuakeAnimation::Normal => "Normal",
+            QuakeAnimation::Slow => "Slow",
+        }
+    }
+
+    /// How long the roll takes, in milliseconds.
+    pub fn millis(self) -> u32 {
+        match self {
+            QuakeAnimation::Off => 0,
+            QuakeAnimation::Fast => 120,
+            QuakeAnimation::Normal => 200,
+            QuakeAnimation::Slow => 340,
+        }
+    }
+}
+
 /// Which side of the window the title bar - and the tabs in it - is on, as
 /// Vivaldi and Opera offer theirs. On the left or right the tabs are a column.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -464,9 +536,10 @@ pub const DEFAULT_QUAKE_HEIGHT: u32 = 40;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
-    /// Language the interface is drawn in. English unless asked otherwise: a
-    /// guess from the system locale would change the language of an install
-    /// that was happy, and the picker is one line into Settings.
+    /// Language the interface is drawn in. Brazilian Portuguese unless asked
+    /// otherwise, since that is what most of the people using it read; not a
+    /// guess from the system locale, which would change the language of an
+    /// install that was happy, and the picker is one line into Settings.
     pub language: crate::i18n::Lang,
     pub theme: String,
     pub font_size: f32,
@@ -474,9 +547,6 @@ pub struct Settings {
     /// invisible until hovered. Reported as missing scrollbars often enough to
     /// be worth a switch of its own.
     pub show_scrollbars: bool,
-    /// Let the pictures in Settings move. Off draws each one still, for
-    /// whoever finds motion on screen hard going.
-    pub animations: bool,
     /// Monospace family the terminal draws with. Empty means egui's bundled
     /// font. Takes precedence over the active theme's `font_family`, which
     /// stays as that theme's suggestion.
@@ -632,6 +702,8 @@ pub struct Settings {
     pub quake_edge: QuakeEdge,
     /// The drop-down terminal's height, in percent of the screen's.
     pub quake_height: u32,
+    /// Its width, in percent of the screen's, centred on the edge.
+    pub quake_width: u32,
     /// The system-wide chord that brings the drop-down terminal down and puts
     /// it away again, e.g. `F12`.
     ///
@@ -644,6 +716,20 @@ pub struct Settings {
     /// Off by default: summoned, it comes to the front like any window, and
     /// only the pin keeps it there.
     pub quake_on_top: bool,
+    /// How the drop-down terminal rolls in from its edge and back out.
+    pub quake_animation: QuakeAnimation,
+    /// Whether each theme colours ObjectScript and SQL at the prompt, by the
+    /// theme's name. Kept here rather than in the theme file, so a built-in -
+    /// whose file is the binary - can be switched as well. A theme with no
+    /// entry follows `terminal_syntax_highlight` and `sql_highlight`, which is
+    /// what every theme did when the two were app-wide.
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub theme_highlight: std::collections::BTreeMap<String, Highlight>,
+    /// The user's own values for the parameters of organization macros. See
+    /// `features::macros::apply_own_values`; never one that looks like a
+    /// password.
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub macro_values: crate::features::macros::OwnValues,
     /// Reopen at the size the window was last closed at. Off opens every
     /// launch at [`Settings::default_geometry`].
     pub save_terminal_size: bool,
@@ -724,7 +810,6 @@ impl Default for Settings {
             theme: "IRIS Dark".into(),
             font_size: 14.0,
             show_scrollbars: true,
-            animations: true,
             font_family: String::new(),
             cursor_style: CursorStyle::default(),
             cursor_blink: false,
@@ -766,8 +851,12 @@ impl Default for Settings {
             bar_position: BarPosition::default(),
             quake_edge: QuakeEdge::default(),
             quake_height: DEFAULT_QUAKE_HEIGHT,
+            quake_width: 100,
             quake_shortcut: Some("F12".into()),
             quake_on_top: false,
+            quake_animation: QuakeAnimation::default(),
+            macro_values: Default::default(),
+            theme_highlight: Default::default(),
             save_terminal_size: false,
             default_cols: DEFAULT_TERMINAL_COLS,
             default_rows: DEFAULT_TERMINAL_ROWS,
@@ -1054,6 +1143,39 @@ fn slugify(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A theme with no choice of its own colours as the app-wide switches
+    /// say - which is what every theme did before - and one given a choice
+    /// keeps it, whatever the others do.
+    #[test]
+    fn highlighting_is_per_theme_and_starts_from_the_app_wide_switches() {
+        let mut settings = Settings {
+            terminal_syntax_highlight: false,
+            sql_highlight: true,
+            ..Settings::default()
+        };
+        assert_eq!(
+            settings.highlight("Tokyo"),
+            Highlight {
+                syntax: false,
+                sql: true
+            }
+        );
+        settings.highlight_mut("Windows 98").syntax = true;
+        assert!(settings.highlight("Windows 98").syntax);
+        assert!(
+            settings.highlight("Windows 98").sql,
+            "started from the app-wide one"
+        );
+        assert!(!settings.highlight("Tokyo").syntax, "others untouched");
+        // And it survives the file.
+        let text = toml::to_string(&settings).unwrap();
+        let back: Settings = toml::from_str(&text).unwrap();
+        assert_eq!(
+            back.highlight("Windows 98"),
+            settings.highlight("Windows 98")
+        );
+    }
 
     #[test]
     fn settings_round_trip_through_toml() {

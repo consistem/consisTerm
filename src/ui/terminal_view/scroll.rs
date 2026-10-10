@@ -80,7 +80,13 @@ pub fn track_colour(theme: &Theme) -> Color32 {
 pub fn handle_colour(theme: &Theme) -> Color32 {
     use crate::config::theme::WindowButtonStyle;
     match (theme.window_buttons.style, theme.scrollbar_handle) {
-        (WindowButtonStyle::Aqua | WindowButtonStyle::Materia, Some(base)) => base,
+        (
+            WindowButtonStyle::Aqua
+            | WindowButtonStyle::Materia
+            | WindowButtonStyle::Luna
+            | WindowButtonStyle::Classic,
+            Some(base),
+        ) => base,
         (_, handle) => palette::blend(handle.unwrap_or(theme.selection), theme.foreground, 0.1),
     }
 }
@@ -169,6 +175,50 @@ fn paint_thumb(painter: &egui::Painter, thumb: Rect, theme: &Theme, active: bool
                 base
             };
             shading::aqua_capsule(painter, thumb, base, vertical);
+        }
+        // XP's thumb: pale blue, rounded, lit across its width, with a white
+        // rim and the ridged grip in its middle.
+        (WindowButtonStyle::Luna, Some(base)) => {
+            let base = if active {
+                shading::lighten(base, 0.25)
+            } else {
+                base
+            };
+            let r = thumb.shrink(1.0);
+            painter.rect_filled(r, 3.0, base);
+            let (light, deep) = (shading::lighten(base, 0.45), shading::darken(base, 0.9));
+            if vertical {
+                shading::gradient_across(painter, r.shrink(1.0), light, deep);
+            } else {
+                shading::gradient(painter, r.shrink(1.0), light, deep);
+            }
+            painter.rect_stroke(r, 3.0, Stroke::new(1.0_f32, Color32::WHITE));
+            painter.rect_stroke(
+                r.expand(0.5),
+                3.5,
+                Stroke::new(1.0_f32, shading::darken(base, 0.7)),
+            );
+            let grip = Stroke::new(1.0_f32, shading::darken(base, 0.62));
+            let c = r.center();
+            for i in -1..=1 {
+                let d = i as f32 * 2.0;
+                if vertical && r.height() > 14.0 {
+                    let half = (r.width() * 0.25).max(2.0);
+                    painter.hline(c.x - half..=c.x + half, c.y + d, grip);
+                } else if !vertical && r.width() > 14.0 {
+                    let half = (r.height() * 0.25).max(2.0);
+                    painter.vline(c.x + d, c.y - half..=c.y + half, grip);
+                }
+            }
+        }
+        // A 98 thumb is a button like the rest.
+        (WindowButtonStyle::Classic, Some(base)) => {
+            let base = if active {
+                shading::lighten(base, 0.08)
+            } else {
+                base
+            };
+            shading::classic_bevel(painter, thumb, base);
         }
         (_, handle) => {
             let base = handle.unwrap_or(theme.selection);

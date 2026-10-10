@@ -17,8 +17,15 @@ Releases are built by `.github/workflows/release.yml`, which only calls the scri
    The `version` job fails the run if the tag is not exactly `v` + the Cargo.toml version.
 3. The workflow builds Linux, macOS and Windows in parallel, then creates (or, on a rerun,
    refills) a **draft** release `v0.2.0` with all artifacts and `SHA256SUMS.txt`.
-4. Review the draft on GitHub, edit the generated notes, and press **Publish**. Nothing is
-   public until then. A version with a `-` suffix is marked as a pre-release.
+4. Review the draft on GitHub, write the highlights under **Novidades**, and press
+   **Publish**. Nothing is public until then. A version with a `-` suffix is marked as a
+   pre-release.
+
+The release notes are written in **Brazilian Portuguese**, the language most people using the
+app read. The draft opens with `packaging/release-notes.md` (a placeholder for the highlights
+and the table of downloads, with `{version}` filled in), followed by GitHub's generated list of
+changes under the Portuguese headings in `.github/release.yml`. A rerun against an existing
+draft keeps the notes as they were edited.
 
 A published release is never overwritten: rerunning against its tag fails. Bump the version.
 
@@ -33,7 +40,7 @@ everything and keeps the artifacts on the run, but drafts nothing.
 | `consisterm-<ver>-linux-x86_64.tar.gz` | the same binary as a plain tree: `bin/consisterm`, `share/applications`, `share/icons`. |
 | `consisterm-<ver>-macos-universal.dmg` | `consisTerm.app` (Apple silicon + Intel), macOS 11 or later. |
 | `consisterm-<ver>-windows-x64.exe` | the portable Windows executable. |
-| `consisterm-<ver>-windows-x64.zip` | the same executable with the README. |
+| `consisterm-<ver>-windows-x64.zip` | the same executable with the READMEs (Portuguese and English). |
 | `SHA256SUMS.txt` | checksums of all of the above. |
 
 **Linux glibc floor.** The Linux build runs on Ubuntu 22.04, so it needs glibc 2.35 or newer
@@ -73,6 +80,7 @@ Output goes to `dist/release/`. The Linux script downloads `appimagetool` unless
 ## Icons
 
 `assets/logo.png` (1024 px, transparent) is the only icon source. `assets/icon.ico` (Windows),
+`assets/icon-window.png` (the window icon the taskbar shows, cut close to the ring),
 `assets/icon-256.png` (Linux) and `assets/consisterm.icns` (macOS) are derived from it and
 committed, so a release needs no image tools. After changing the logo, regenerate them with:
 

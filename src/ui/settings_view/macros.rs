@@ -13,6 +13,7 @@
 //! personal file is edited here, and only `UiRequest::SavePersonalMacros`
 //! writes it.
 
+use crate::ui::tip::Tip;
 use egui::Ui;
 
 use super::{
@@ -21,7 +22,7 @@ use super::{
 use crate::features::macros::{Macro, MacroGroup, Origin, Param, ParamUse};
 use crate::i18n::{tr, tr1, tr2};
 use crate::ui::file_dialog;
-use crate::ui::panels::{UiRequest, WARNING};
+use crate::ui::panels::{warning, UiRequest};
 use crate::ui::prefs::{self, Card, Row};
 use crate::ui::shortcut;
 
@@ -371,7 +372,7 @@ fn group_cards(ui: &mut Ui, c: &mut Ctx<'_>) {
             // Clicking the group's name is how a group is acted on: it is what
             // "New macro" then adds to, and where the right-click menu's own
             // entries land.
-            let heading = prefs::section_link(ui, &title).on_hover_text(tr(
+            let heading = prefs::section_link(ui, &title).tip(tr(
                 "Click to add new macros here; right-click to rename the group.",
             ));
             if heading.clicked() {
@@ -381,7 +382,7 @@ fn group_cards(ui: &mut Ui, c: &mut Ctx<'_>) {
             heading.context_menu(|ui| {
                 if ui
                     .add_enabled(editable_group, egui::Button::new(tr("Rename group...")))
-                    .on_hover_text(tr(
+                    .tip(tr(
                         "Only your own groups; the organization's file is never written.",
                     ))
                     .clicked()
@@ -537,7 +538,7 @@ fn add_buttons(card: &mut Card<'_>, c: &mut Ctx<'_>) {
     let mut add = false;
     card.buttons(|ui| {
         if prefs::button(ui, tr("New group"))
-            .on_hover_text(tr("Groups are how the right-click menu is arranged."))
+            .tip(tr("Groups are how the right-click menu is arranged."))
             .clicked()
         {
             // Straight into the name field. Nothing is created until it is
@@ -548,8 +549,8 @@ fn add_buttons(card: &mut Card<'_>, c: &mut Ctx<'_>) {
         }
         add = ui
             .add_enabled(target.is_some(), prefs::button_widget(&label))
-            .on_hover_text(hint.as_str())
-            .on_disabled_hover_text(hint.as_str())
+            .tip(hint.as_str())
+            .disabled_tip(hint.as_str())
             .clicked();
     });
     if let Some((gi, _)) = target.filter(|_| add) {
@@ -571,7 +572,7 @@ fn manager_shortcut(ui: &mut Ui, c: &mut Ctx<'_>) {
 fn macros_folder(ui: &mut Ui, c: &mut Ctx<'_>) {
     let path = crate::config::personal_macros_path();
     if prefs::button(ui, tr("Open folder"))
-        .on_hover_text(path.display().to_string())
+        .tip(path.display().to_string())
         .clicked()
     {
         if let Some(folder) = path.parent() {
@@ -633,7 +634,7 @@ fn org_macros(card: &mut Card<'_>, c: &mut Ctx<'_>) {
         let mut org = settings.org_macros_path.display().to_string();
         let edit = egui::TextEdit::singleline(&mut org).desired_width(260.0);
         let edit = if status == Some(false) {
-            edit.text_color(WARNING)
+            edit.text_color(warning(ui))
         } else {
             edit
         };
@@ -666,6 +667,37 @@ pub(super) fn collect_picked_org_file(ctx: &egui::Context, c: &mut Ctx<'_>) {
     }
 }
 
+/// A line about to be sent, with its hidden values shown as dots.
+fn masked(line: &crate::features::macros::SentLine) -> String {
+    line.text
+        .chars()
+        .enumerate()
+        .map(|(at, ch)| {
+            if line.hidden.iter().any(|r| r.contains(&at)) {
+                '\u{2022}'
+            } else {
+                ch
+            }
+        })
+        .collect()
+}
+
+/// The "hide value" box beside a parameter's value. Changed only on a
+/// personal macro; an organization's says what its file says.
+fn hide_value_box(ui: &mut Ui, param: &mut Param, editable: bool) {
+    let mut on = param.is_secret();
+    let what = tr(
+        "Typed masked and kept in the operating system's credential store, never in the macro file. Masked on screen and in the transcript when the session echoes it.",
+    );
+    let response = ui
+        .add_enabled(editable, egui::Checkbox::new(&mut on, tr("Hide")))
+        .tip(what)
+        .disabled_tip(format!("{what}\n{}", tr("Set by the organization's file.")));
+    if response.changed() {
+        param.secret = on;
+    }
+}
+
 /// A copy of `source`, under a name that says it is one.
 fn copy_of(source: &Macro) -> Macro {
     let mut copy = source.clone();
@@ -674,6 +706,13 @@ fn copy_of(source: &Macro) -> Macro {
     // A shortcut belongs to one macro: two answering the same chord means the
     // one that fires is whichever the loop happens to reach last.
     copy.key = None;
+    // The user's own values become the copy's defaults: a personal macro has
+    // no other place to keep them, and they are what it was being run with.
+    for p in &mut copy.params {
+        if let Some(own) = p.own.take() {
+            p.default = own;
+        }
+    }
     copy
 }
 
@@ -836,6 +875,8 @@ fn editor() -> Vec<Section> {
             .keys(&["macro", "body", "command", "corpo", "comando"])],
         )
         .enabled(editable),
+        // Not disabled as a whole for an organization macro: the values are
+        // the user's to set, and `params_rows` disables the rest itself.
         section(
             "Parameters",
             vec![Item::rows("macro_params", "Parameters", params_rows)
@@ -848,9 +889,10 @@ fn editor() -> Vec<Section> {
                     "default",
                     "parametro",
                     "padrao",
+                    "valor",
+                    "value",
                 ])],
         )
-        .enabled(editable)
         .footer(
             "Each one becomes a field in the right-click menu, filled in before the macro is sent.",
         ),
@@ -909,8 +951,8 @@ fn editor_top(ui: &mut Ui, c: &mut Ctx<'_>) {
     if !editable(c) {
         ui.add_space(6.0);
         ui.colored_label(
-            WARNING,
-            tr("Provided by the organization; read-only here. Duplicate it to make changes."),
+            warning(ui),
+            tr("Provided by the organization; read-only here, except for your own values of its parameters. Duplicate it to change the rest."),
         );
     }
 }
@@ -970,12 +1012,16 @@ fn body_row(card: &mut Card<'_>, c: &mut Ctx<'_>) {
 /// checker's verdict under it, and the placeholders nothing declares.
 fn params_rows(card: &mut Card<'_>, c: &mut Ctx<'_>) {
     let hidden = hidden(c);
+    let editable = editable(c);
     let state = &mut c.state.macros;
     let Some(draft) = state.draft.as_mut() else {
         return;
     };
     let body = &state.body_draft;
     let mut drop_param = None;
+    // An organization macro's values, as the user changed them this frame:
+    // (parameter, new value or `None` to go back to the shared one, hidden).
+    let mut own_changes: Vec<(String, Option<String>, bool)> = Vec::new();
     card.custom(|ui| {
         // Checked against the text as it is typed, blank lines kept, so a
         // line number is the one the field shows. Blank lines carry no
@@ -992,18 +1038,83 @@ fn params_rows(card: &mut Card<'_>, c: &mut Ctx<'_>) {
         for pi in 0..draft.params.len() {
             let param = &mut draft.params[pi];
             ui.horizontal(|ui| {
-                ui.add(egui::TextEdit::singleline(&mut param.name).desired_width(90.0))
-                    .on_hover_text(tr("Name used as {{name}} in the body"));
-                ui.add(egui::TextEdit::singleline(&mut param.prompt).desired_width(150.0))
-                    .on_hover_text(tr("Prompt shown when running"));
-                ui.add(egui::TextEdit::singleline(&mut param.default).desired_width(110.0))
-                    .on_hover_text(tr("Default value"));
-                if ui
-                    .small_button("x")
-                    .on_hover_text(tr("Remove this parameter"))
-                    .clicked()
-                {
-                    drop_param = Some(pi);
+                let looked_secret = param.looks_secret();
+                ui.add_enabled_ui(editable, |ui| {
+                    ui.add(egui::TextEdit::singleline(&mut param.name).desired_width(90.0))
+                        .tip(tr("Name used as {{name}} in the body"));
+                    ui.add(egui::TextEdit::singleline(&mut param.prompt).desired_width(150.0))
+                        .tip(tr("Prompt shown when running"));
+                });
+                // Typed into a name like a password, the box ticks itself, the
+                // way a file without `secret` is read - and stays untickable.
+                if editable && !looked_secret && param.looks_secret() {
+                    param.secret = true;
+                }
+                let secret = param.is_secret();
+                if editable {
+                    ui.add(
+                        egui::TextEdit::singleline(&mut param.default)
+                            .password(secret)
+                            .desired_width(110.0),
+                    )
+                    .tip(if secret {
+                        tr("Your value, kept in the operating system's credential store.")
+                    } else {
+                        tr("Default value")
+                    });
+                    hide_value_box(ui, param, true);
+                    if ui
+                        .small_button("x")
+                        .tip(tr("Remove this parameter"))
+                        .clicked()
+                    {
+                        drop_param = Some(pi);
+                    }
+                } else {
+                    // The user's own value over the organization's default:
+                    // kept in settings.toml, or in the credential store when
+                    // hidden, and never in the shared file.
+                    let mut value = param.value().to_string();
+                    let field = ui
+                        .add(
+                            egui::TextEdit::singleline(&mut value)
+                                .hint_text(if secret { "" } else { &param.default })
+                                .password(secret)
+                                .desired_width(110.0),
+                        )
+                        .tip(if secret {
+                            tr("Your value, kept in the operating system's credential store.")
+                        } else {
+                            tr("Your value, used instead of the organization's. Kept on this computer only.")
+                        });
+                    hide_value_box(ui, param, false);
+                    if field.changed() {
+                        // Emptied, a hidden value is forgotten rather than
+                        // kept as nothing: there is no hint to show it by.
+                        let kept = value != param.default && !(secret && value.is_empty());
+                        param.own = kept.then_some(value);
+                        own_changes.push((param.name.clone(), param.own.clone(), secret));
+                    }
+                    if param.own.is_some()
+                        && ui
+                            .small_button("\u{21ba}")
+                            .tip(if secret {
+                                tr("Back to the organization's value").to_string()
+                            } else {
+                                tr1(
+                                    "Back to the organization's value: {}",
+                                    if param.default.is_empty() {
+                                        tr("empty")
+                                    } else {
+                                        &param.default
+                                    },
+                                )
+                            })
+                            .clicked()
+                    {
+                        param.own = None;
+                        own_changes.push((param.name.clone(), None, secret));
+                    }
                 }
             });
             // Updated row by row rather than cloned once above, so the verdict
@@ -1017,11 +1128,55 @@ fn params_rows(card: &mut Card<'_>, c: &mut Ctx<'_>) {
     if let Some(pi) = drop_param {
         draft.params.remove(pi);
     }
-    card.buttons(|ui| {
-        if prefs::button(ui, tr("Add parameter")).clicked() {
-            draft.params.push(Param::default());
+    if editable {
+        card.buttons(|ui| {
+            if prefs::button(ui, tr("Add parameter")).clicked() {
+                draft.params.push(Param::default());
+            }
+        });
+    }
+    if !own_changes.is_empty() {
+        // Into the list itself as well as the draft - an organization macro's
+        // draft is never committed - so the menu and the dialog use it at
+        // once, and into the settings, so it is there next time.
+        let name = draft.name.clone();
+        if let Some((gi, mi)) = state.selected {
+            if let Some(group) = c.macro_groups.get_mut(gi) {
+                let group_name = group.name.clone();
+                for (param, value, secret) in own_changes {
+                    if let Some(p) = group
+                        .macros
+                        .get_mut(mi)
+                        .and_then(|m| m.params.iter_mut().find(|p| p.name == param))
+                    {
+                        p.own = value.clone();
+                    }
+                    // A hidden one never goes to settings.toml, and any older
+                    // copy there goes.
+                    let in_file = if secret { None } else { value.as_deref() };
+                    crate::features::macros::set_own_value(
+                        &mut c.settings.macro_values,
+                        &group_name,
+                        &name,
+                        &param,
+                        in_file,
+                    );
+                    if secret {
+                        c.requests.push(UiRequest::SetMacroSecret(
+                            crate::features::macros::secret_account(
+                                Origin::Organization,
+                                &group_name,
+                                &name,
+                                &param,
+                            ),
+                            value.unwrap_or_default(),
+                        ));
+                    }
+                }
+                c.changed = true;
+            }
         }
-    });
+    }
 }
 
 fn will_send(card: &mut Card<'_>, c: &mut Ctx<'_>) {
@@ -1038,12 +1193,12 @@ fn will_send(card: &mut Card<'_>, c: &mut Ctx<'_>) {
         }
         let mut preview = draft.clone();
         preview.body = lines;
-        let expanded = preview.expand(&preview.default_values());
+        let expanded = preview.expand_for_sending(&preview.default_values());
         if expanded.is_empty() {
             ui.weak(tr("Nothing yet."));
         }
         for line in expanded {
-            ui.code(line);
+            ui.code(masked(&line));
         }
     });
 }
@@ -1061,28 +1216,28 @@ fn action_rows(card: &mut Card<'_>, c: &mut Ctx<'_>) {
     card.buttons(|ui| {
         if editable {
             save = prefs::button(ui, tr("Save"))
-                .on_hover_text(tr("Writes your personal macro file."))
+                .tip(tr("Writes your personal macro file."))
                 .clicked();
             revert = prefs::button(ui, tr("Revert"))
-                .on_hover_text(tr("Back to what is in the file."))
+                .tip(tr("Back to what is in the file."))
                 .clicked();
         }
         run = prefs::button(ui, tr("Run"))
-            .on_hover_text(tr(
+            .tip(tr(
                 "Sends it to the active session, asking for parameters and confirmation exactly as the right-click menu does.",
             ))
             .clicked();
         // Duplicating is the only way to get an organisation macro that can
         // be changed.
         copy = prefs::button(ui, tr("Duplicate"))
-            .on_hover_text(tr1("A copy of {} in your own macros.", &draft.name))
+            .tip(tr1("A copy of {} in your own macros.", &draft.name))
             .clicked();
         delete = ui
             .add_enabled(editable, prefs::button_widget(tr("Delete")))
-            .on_hover_text(tr(
+            .tip(tr(
                 "Only your own macros; the organization's file is never written.",
             ))
-            .on_disabled_hover_text(tr(
+            .disabled_tip(tr(
                 "Only your own macros; the organization's file is never written.",
             ))
             .clicked();
@@ -1453,6 +1608,27 @@ mod tests {
         assert_eq!(groups[gi].macros[mi].origin, Origin::Personal);
         assert_eq!(groups[gi].macros[mi].key, None);
         assert_eq!(groups[gi].macros[mi].body, source.body);
+    }
+
+    /// A personal macro keeps values only as defaults, which is what reaches
+    /// its file; a copy carrying the user's own value elsewhere would lose it
+    /// on the next save.
+    #[test]
+    fn a_copy_of_a_shared_macro_takes_the_users_own_values_as_its_defaults() {
+        let source = Macro {
+            origin: Origin::Organization,
+            params: vec![Param {
+                name: "usuario".into(),
+                prompt: "Usuário".into(),
+                default: "shared".into(),
+                own: Some("fulano".into()),
+                secret: false,
+            }],
+            ..Macro::default()
+        };
+        let copy = copy_of(&source);
+        assert_eq!(copy.params[0].default, "fulano");
+        assert_eq!(copy.params[0].own, None);
     }
 
     /// The body reaches the file as lines, split once on the way there rather

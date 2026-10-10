@@ -166,6 +166,12 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GH_REPO: ${{ github.repository }}
     steps:
+      # Only for the notes' template; the artifacts come from the build jobs.
+      - uses: actions/checkout@v4
+        with:
+          path: repo
+          sparse-checkout: packaging/release-notes.md
+          sparse-checkout-cone-mode: false
       - uses: actions/download-artifact@v4
         with:
           pattern: release-*
@@ -194,6 +200,10 @@ jobs:
         run: |
           tag="v$VERSION"
           title="consisTerm v$VERSION"
+          # The notes open in Portuguese, the language the people using it read;
+          # GitHub's generated list of changes follows them.
+          notes="$RUNNER_TEMP/notes.md"
+          sed "s/{version}/$VERSION/g" "$GITHUB_WORKSPACE/repo/packaging/release-notes.md" >"$notes"
           # The in-app updater on Linux takes the asset whose name contains ".AppImage"; it goes
           # up first and on its own all the same, so a hand-edited release still lists it first.
           first=(*.AppImage)
@@ -211,7 +221,8 @@ jobs:
             gh release edit "$tag" --draft --title "$title" --prerelease="$PRERELEASE"
           else
             echo "Creating draft $tag"
-            gh release create "$tag" --draft --verify-tag --title "$title" --generate-notes \
+            gh release create "$tag" --draft --verify-tag --title "$title" \
+              --notes-file "$notes" --generate-notes \
               --prerelease="$PRERELEASE"
           fi
           gh release upload "$tag" --clobber -- "${first[@]}"

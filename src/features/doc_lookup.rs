@@ -42,6 +42,12 @@ const MARK_NEXT: &str = "##CSWNXT##";
 /// One subscript that exists under a node, in the answer to a
 /// [`DocLookup::subscripts`] question.
 const MARK_SUB: &str = "##CSWSUB##";
+const MARK_COUNT: &str = "##CSWCNT##";
+
+/// How many matching subscripts the count walks at most. It writes nothing
+/// back while it walks, so it can go much further than the list - but it
+/// holds the side session while it does, and every tooltip waits behind it.
+const COUNT_CAP: usize = 200_000;
 
 /// How many existing subscripts one question lists by value before it says
 /// only which characters can come next, the way a list of global names does.
@@ -549,6 +555,9 @@ enum Question {
     /// namespace, global, the subscripts above that level as values, and what
     /// has been typed of this one.
     Subscripts(String, String, Vec<String>, SubscriptPrefix),
+    /// How many subscripts match there, asked after the list - which says
+    /// what can come next without counting what it skips over.
+    Count(String, String, Vec<String>, SubscriptPrefix),
 }
 
 /// What has been typed of a subscript, as the server is asked about it.
@@ -653,6 +662,18 @@ pub enum Existing {
     Pending(Option<Subscripts>),
 }
 
+/// How many subscripts match under a node.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Count {
+    /// This many, and whether the walk stopped at `COUNT_CAP` - at least
+    /// this many, then.
+    Ready(usize, bool),
+    /// Asked, and still being counted.
+    Pending,
+    /// Not to be had: no side session.
+    Unknown,
+}
+
 /// Whether the globals under a prefix are known.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Names {
@@ -701,6 +722,11 @@ pub struct DocLookup {
     /// What has arrived of the globals question being answered, read off the
     /// sidecar's screen before the end marker - and which question it is.
     so_far: Option<(Question, GlobalNames)>,
+    /// The same for a subscripts question: what is shown while the rest of
+    /// the list is still coming.
+    subscripts_so_far: Option<(Question, Subscripts)>,
+    /// How many subscripts each node and prefix has, when counted, and when.
+    counts: HashMap<SubscriptsKey, (Instant, usize, bool)>,
     /// Asked for, not yet sent, and when it was asked - at most one question
     /// of each kind. The clock is what keeps a sidecar that never reaches a
     /// prompt - one whose autologon is sitting on a password prompt with no
@@ -855,11 +881,56 @@ impl DocLookup {
         let wider = self.wider_subscripts(&key);
         let question = Question::Subscripts(key.0, key.1, key.2, key.3);
         if !self.asking(|q| *q == question) {
+            // A count waiting to be sent is of a prefix typed past - and,
+            // asked first, would hold this list up behind a walk of up to
+            // `COUNT_CAP` keys. Its own count is asked for once it is in.
             self.want
-                .retain(|(q, _)| !matches!(q, Question::Subscripts(..)));
+                .retain(|(q, _)| !matches!(q, Question::Subscripts(..) | Question::Count(..)));
+            self.want.push((question.clone(), Instant::now()));
+        }
+        // What has come in of this very question beats a shorter prefix's
+        // answer: it is the right list, only not all of it yet.
+        let so_far = self
+            .subscripts_so_far
+            .as_ref()
+            .filter(|(q, found)| *q == question && !found.values.is_empty())
+            .map(|(_, found)| found.clone());
+        Existing::Pending(so_far.or(wider))
+    }
+
+    /// How many subscripts exist under `^global(before...)` starting with
+    /// `prefix`, or a note that they are being counted.
+    ///
+    /// Asked only after the list for the same prefix, and queued behind it:
+    /// the list says what can be typed and is wanted first; the count only
+    /// says how much there is.
+    pub fn subscript_count(
+        &mut self,
+        namespace: &str,
+        global: &str,
+        before: &[String],
+        prefix: &SubscriptPrefix,
+    ) -> Count {
+        let key = (
+            namespace.to_string(),
+            global.to_string(),
+            before.to_vec(),
+            prefix.clone(),
+        );
+        if let Some((at, n, capped)) = self.counts.get(&key) {
+            if at.elapsed() < SUBSCRIPTS_FRESH {
+                return Count::Ready(*n, *capped);
+            }
+        }
+        if self.unavailable {
+            return Count::Unknown;
+        }
+        let question = Question::Count(key.0, key.1, key.2, key.3);
+        if !self.asking(|q| *q == question) {
+            self.want.retain(|(q, _)| !matches!(q, Question::Count(..)));
             self.want.push((question, Instant::now()));
         }
-        Existing::Pending(wider)
+        Count::Pending
     }
 
     /// What a fresh, complete answer for a shorter prefix of the same node has
@@ -941,12 +1012,26 @@ impl DocLookup {
                     Question::Structure(..) => parse_answer(&lines).map(Answer::Structure),
                     Question::Globals(..) => parse_names(&lines).map(Answer::Globals),
                     Question::Subscripts(..) => parse_subscripts(&lines).map(Answer::Subscripts),
+                    Question::Count(..) => parse_count(&lines),
                 };
                 if answer.is_some() || since.elapsed() > ANSWER_TIMEOUT {
                     let question = question.clone();
                     self.so_far = None;
+                    self.subscripts_so_far = None;
                     self.finish(question, answer);
                     moved = true;
+                } else if matches!(question, Question::Subscripts(..)) {
+                    // As with the names: what has arrived is shown, and
+                    // counted as an answer when it has grown.
+                    let found = scan_subscripts(&lines);
+                    let grown = self.subscripts_so_far.as_ref().is_none_or(|(q, known)| {
+                        q != question || known.values.len() != found.values.len()
+                    });
+                    if grown {
+                        self.subscripts_so_far = Some((question.clone(), found));
+                        self.answers += 1;
+                        moved = true;
+                    }
                 } else if matches!(question, Question::Globals(..)) {
                     // Counted as an answer when more has arrived, so a popup
                     // showing the names so far works itself out again.
@@ -966,7 +1051,9 @@ impl DocLookup {
                 // Answered meanwhile by a wider prefix's list.
                 let answered = match &question {
                     Question::Globals(ns, prefix) => self.known_globals(ns, prefix).is_some(),
-                    Question::Structure(..) | Question::Subscripts(..) => false,
+                    Question::Structure(..) | Question::Subscripts(..) | Question::Count(..) => {
+                        false
+                    }
                 };
                 if !answered {
                     self.ask(question, profile);
@@ -1058,6 +1145,18 @@ impl DocLookup {
                 self.subscripts
                     .insert((ns, global, before, prefix), (Instant::now(), found));
             }
+            (Question::Count(ns, global, before, prefix), answer) => {
+                // Unanswered is recorded as nothing counted, capped: shown as
+                // "at least 0" it would claim a node is empty.
+                let (n, capped) = match answer {
+                    Some(Answer::Count(n, capped)) => (n, capped),
+                    _ => (0, true),
+                };
+                self.counts
+                    .retain(|_, (at, _, _)| at.elapsed() < SUBSCRIPTS_FRESH);
+                self.counts
+                    .insert((ns, global, before, prefix), (Instant::now(), n, capped));
+            }
         }
     }
 
@@ -1070,6 +1169,9 @@ impl DocLookup {
             Question::Globals(ns, prefix) => build_names_query(ns, prefix),
             Question::Subscripts(ns, global, before, prefix) => {
                 build_subscripts_query(ns, global, before, prefix)
+            }
+            Question::Count(ns, global, before, prefix) => {
+                build_count_query(ns, global, before, prefix)
             }
         };
         // Everything this session has ever said, gone, so the previous
@@ -1143,6 +1245,7 @@ enum Answer {
     Structure(Vec<MapInfo>),
     Globals(GlobalNames),
     Subscripts(Subscripts),
+    Count(usize, bool),
 }
 
 /// Whether the sidecar is sitting at a bare prompt and can be typed at.
@@ -1268,13 +1371,16 @@ fn scan_names(lines: &[String]) -> (GlobalNames, bool) {
 /// The subscripts out of a [`build_subscripts_query`] answer, once its end
 /// marker has arrived.
 fn parse_subscripts(lines: &[String]) -> Option<Subscripts> {
+    let complete = lines.iter().any(|line| line.trim() == MARK_END);
+    complete.then(|| scan_subscripts(lines))
+}
+
+/// Whatever of a subscripts answer has arrived, complete or not.
+fn scan_subscripts(lines: &[String]) -> Subscripts {
     let mut found = Subscripts::default();
-    let mut complete = false;
     for line in lines {
         let line = line.trim();
-        if line == MARK_END {
-            complete = true;
-        } else if line == MARK_MORE {
+        if line == MARK_MORE {
             found.more = true;
         } else if let Some(value) = marked(line, MARK_SUB).and_then(kind_and_value) {
             found.values.push(value);
@@ -1282,7 +1388,15 @@ fn parse_subscripts(lines: &[String]) -> Option<Subscripts> {
             found.next.push(next);
         }
     }
-    complete.then_some(found)
+    found
+}
+
+/// `##CSWCNT##1234|0##`: how many, and whether the count stopped at its cap.
+fn parse_count(lines: &[String]) -> Option<Answer> {
+    lines.iter().find_map(|line| {
+        let (n, capped) = marked(line.trim(), MARK_COUNT)?.split_once('|')?;
+        Some(Answer::Count(n.trim().parse().ok()?, capped.trim() == "1"))
+    })
 }
 
 /// `N|1.5` or `S|ABC`: what the walk found, and which of the two walks found
@@ -1520,6 +1634,41 @@ fn build_subscripts_query(
     before: &[String],
     prefix: &SubscriptPrefix,
 ) -> String {
+    walk_query(namespace, global, before, prefix, Walk::List)
+}
+
+/// The lines that count the subscripts [`build_subscripts_query`] lists: the
+/// same walk to the end, up to `COUNT_CAP`, writing nothing but the total.
+fn build_count_query(
+    namespace: &str,
+    global: &str,
+    before: &[String],
+    prefix: &SubscriptPrefix,
+) -> String {
+    walk_query(namespace, global, before, prefix, Walk::Count)
+}
+
+/// What a walk over the subscripts is for.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Walk {
+    /// The first `SUBSCRIPTS_LIMIT` matches and, past them, what can come
+    /// next. Past the limit a string walk jumps over every subscript that
+    /// shares the next character with the one it is on - straight to the
+    /// first that does not - so the next characters of a node holding
+    /// millions are found in as many steps as there are characters, not
+    /// subscripts. Numbers collate by value and cannot be jumped that way.
+    List,
+    /// Every match counted, nothing listed.
+    Count,
+}
+
+fn walk_query(
+    namespace: &str,
+    global: &str,
+    before: &[String],
+    prefix: &SubscriptPrefix,
+    walk_for: Walk,
+) -> String {
     let ns = quoted(namespace);
     let mut head = format!("^{global}(");
     for value in before {
@@ -1538,22 +1687,55 @@ fn build_subscripts_query(
         SubscriptPrefix::Any => String::new(),
         SubscriptPrefix::Strings(p) | SubscriptPrefix::Numbers(p) => p.clone(),
     };
-    let found = |kind: &str| {
+    let scan = match walk_for {
+        Walk::List => SUBSCRIPTS_SCAN,
+        Walk::Count => COUNT_CAP,
+    };
+    // The jump: to the next character's last possible string, so `$ORDER`
+    // lands on the first subscript past this one's group. Only when that
+    // sorts after where the walk is - on an 8-bit instance `$C(65535)` is
+    // empty, the target is not past anything, and the walk simply goes on
+    // one by one rather than going round in a circle.
+    let jump = |n: &str| {
         format!(
-            "S cswI=cswI+1,cswY(\"{kind}\",$E(cswK,1,cswN+1))=\"\" W:cswI'>{SUBSCRIPTS_LIMIT} \"{MARK_SUB}{kind}|\"_cswK_\"##\",!"
+            " S cswJ=$E(cswK,1,{n}+1)_$C(65535) S:(cswI>{SUBSCRIPTS_LIMIT})&($L(cswK)>{n})&(cswJ]]cswK) cswK=cswJ"
         )
+    };
+    let found = |kind: &str, jumps: bool| {
+        match walk_for {
+        Walk::List => format!(
+            "S cswI=cswI+1,cswY(\"{kind}\",$E(cswK,1,cswN+1))=\"\" W:cswI'>{SUBSCRIPTS_LIMIT} \"{MARK_SUB}{kind}|\"_cswK_\"##\",!{}",
+            if jumps { jump("cswN") } else { String::new() }
+        ),
+        Walk::Count => "S cswI=cswI+1".to_string(),
+    }
+    };
+    let any_found = match walk_for {
+        Walk::List => format!(
+            "S cswT=$S(cswK=+cswK:\"N\",1:\"S\"),cswI=cswI+1,cswY(cswT,$E(cswK,1,1))=\"\" W:cswI'>{SUBSCRIPTS_LIMIT} \"{MARK_SUB}\"_cswT_\"|\"_cswK_\"##\",! I cswT=\"S\"{}",
+            jump("0")
+        ),
+        Walk::Count => "S cswI=cswI+1".to_string(),
     };
     let walk = match prefix {
         SubscriptPrefix::Any => format!(
-            "I cswOk S cswK=\"\" F  S cswK=$O({k}) Q:cswK=\"\"  Q:cswI'<{SUBSCRIPTS_SCAN}  S cswT=$S(cswK=+cswK:\"N\",1:\"S\"),cswI=cswI+1,cswY(cswT,$E(cswK,1,1))=\"\" W:cswI'>{SUBSCRIPTS_LIMIT} \"{MARK_SUB}\"_cswT_\"|\"_cswK_\"##\",!"
+            "I cswOk S cswK=\"\" F  S cswK=$O({k}) Q:cswK=\"\"  Q:cswI'<{scan}  {any_found}"
         ),
         SubscriptPrefix::Strings(_) => format!(
-            "I cswOk S cswK=$S(cswP=\"\":$O({before_space},-1),cswP=+cswP:$O({after_number},-1),1:$O({own},-1)) F  S cswK=$O({k}) Q:cswK=\"\"  Q:$E(cswK,1,cswN)'=cswP  Q:cswI'<{SUBSCRIPTS_SCAN}  {}",
-            found("S")
+            "I cswOk S cswK=$S(cswP=\"\":$O({before_space},-1),cswP=+cswP:$O({after_number},-1),1:$O({own},-1)) F  S cswK=$O({k}) Q:cswK=\"\"  Q:$E(cswK,1,cswN)'=cswP  Q:cswI'<{scan}  {}",
+            found("S", true)
         ),
         SubscriptPrefix::Numbers(_) => format!(
-            "I cswOk,cswP=+cswP S cswM=1 F  S cswLo=cswP*cswM,cswHi=cswLo+cswM,cswM=cswM*10 Q:cswM>1E20  Q:(cswP=0)&(cswM>10)  Q:cswI'<{SUBSCRIPTS_SCAN}  S cswK=$O({lo},-1),cswJ=$O({k}) Q:cswJ=\"\"  Q:cswJ'=+cswJ  F  S cswK=$O({k}) Q:cswK=\"\"  Q:cswK'=+cswK  Q:cswK'<cswHi  Q:cswI'<{SUBSCRIPTS_SCAN}  I $E(cswK,1,cswN)=cswP {}",
-            found("N")
+            "I cswOk,cswP=+cswP S cswM=1 F  S cswLo=cswP*cswM,cswHi=cswLo+cswM,cswM=cswM*10 Q:cswM>1E20  Q:(cswP=0)&(cswM>10)  Q:cswI'<{scan}  S cswK=$O({lo},-1),cswJ=$O({k}) Q:cswJ=\"\"  Q:cswJ'=+cswJ  F  S cswK=$O({k}) Q:cswK=\"\"  Q:cswK'=+cswK  Q:cswK'<cswHi  Q:cswI'<{scan}  I $E(cswK,1,cswN)=cswP {}",
+            found("N", false)
+        ),
+    };
+    let tail = match walk_for {
+        Walk::List => format!(
+            "I cswOk,cswI>{SUBSCRIPTS_LIMIT} W \"{MARK_MORE}\",! S cswT=\"\" F  S cswT=$O(cswY(cswT)) Q:cswT=\"\"  S cswX=\"\" F  S cswX=$O(cswY(cswT,cswX)) Q:cswX=\"\"  W \"{MARK_NEXT}\"_cswT_\"|\"_cswX_\"##\",!"
+        ),
+        Walk::Count => format!(
+            "W \"{MARK_COUNT}\"_cswI_\"|\"_(cswI'<{scan})_\"##\",!"
         ),
     };
     let lines = [
@@ -1564,9 +1746,7 @@ fn build_subscripts_query(
             quoted(&p)
         ),
         walk,
-        format!(
-            "I cswOk,cswI>{SUBSCRIPTS_LIMIT} W \"{MARK_MORE}\",! S cswT=\"\" F  S cswT=$O(cswY(cswT)) Q:cswT=\"\"  S cswX=\"\" F  S cswX=$O(cswY(cswT,cswX)) Q:cswX=\"\"  W \"{MARK_NEXT}\"_cswT_\"|\"_cswX_\"##\",!"
-        ),
+        tail,
         format!("W \"{MARK_END}\",!"),
     ];
     lines.join("\r") + "\r"
@@ -2182,11 +2362,32 @@ mod tests {
     fn wanted(lookup: &DocLookup) -> Option<(String, String)> {
         lookup.want.iter().find_map(|(q, _)| match q {
             Question::Structure(ns, global) => Some((ns.clone(), global.clone())),
-            Question::Globals(..) | Question::Subscripts(..) => None,
+            Question::Globals(..) | Question::Subscripts(..) | Question::Count(..) => None,
         })
     }
 
     // --- what a hover asks for ----------------------------------------------
+
+    /// Typing on past a node whose count is still waiting must not leave the
+    /// next list queued behind that count.
+    #[test]
+    fn a_count_typed_past_is_dropped_before_the_next_list() {
+        let mut lookup = DocLookup::default();
+        let any = SubscriptPrefix::Any;
+        let narrower = SubscriptPrefix::Strings("A".into());
+        let _ = lookup.subscript_count("USER", "G", &[], &any);
+        let _ = lookup.subscripts("USER", "G", &[], &narrower);
+        let queued: Vec<_> = lookup.want.iter().map(|(q, _)| q.clone()).collect();
+        assert_eq!(
+            queued,
+            [Question::Subscripts(
+                "USER".into(),
+                "G".into(),
+                vec![],
+                narrower
+            )]
+        );
+    }
 
     #[test]
     fn a_hover_records_what_it_wants_and_reports_it_as_pending() {
@@ -2430,6 +2631,63 @@ mod tests {
                 assert!(line.len() < SIDECAR_COLS as usize - 16, "{line}");
             }
         }
+    }
+
+    /// Past the limit a string walk jumps over each next character's group;
+    /// a number walk cannot, and must not try.
+    #[test]
+    fn a_long_string_walk_jumps_from_one_next_character_to_the_next() {
+        let strings =
+            build_subscripts_query("USER", "X", &[], &SubscriptPrefix::Strings("A".into()));
+        assert!(
+            strings.contains("cswJ=$E(cswK,1,cswN+1)_$C(65535)"),
+            "{strings}"
+        );
+        // Only forwards: a target that is not past the walk is never taken.
+        assert!(strings.contains("(cswJ]]cswK) cswK=cswJ"), "{strings}");
+        let any = build_subscripts_query("USER", "X", &[], &SubscriptPrefix::Any);
+        assert!(any.contains("cswJ=$E(cswK,1,0+1)_$C(65535)"), "{any}");
+        let numbers =
+            build_subscripts_query("USER", "X", &[], &SubscriptPrefix::Numbers("1".into()));
+        assert!(!numbers.contains("$C(65535)"), "{numbers}");
+    }
+
+    /// The count lists nothing - it is the walk without the writing - and
+    /// says whether it stopped at its cap.
+    #[test]
+    fn the_count_writes_one_number_and_nothing_else() {
+        for prefix in [
+            SubscriptPrefix::Any,
+            SubscriptPrefix::Strings("AB".into()),
+            SubscriptPrefix::Numbers("1".into()),
+        ] {
+            let query = build_count_query("USER", "X", &["1".into()], &prefix);
+            assert!(!query.contains(MARK_SUB), "{query}");
+            assert!(!query.contains(MARK_NEXT), "{query}");
+            assert!(!query.contains("$C(65535)"), "{query}");
+            assert!(query.contains(MARK_COUNT), "{query}");
+            assert!(query.contains(&format!("cswI'<{COUNT_CAP}")), "{query}");
+            for line in query.split('\r') {
+                assert!(line.len() < SIDECAR_COLS as usize - 16, "{line}");
+            }
+        }
+        let lines = vec!["noise".to_string(), format!("{MARK_COUNT}1234|0##")];
+        assert!(matches!(
+            parse_count(&lines),
+            Some(Answer::Count(1234, false))
+        ));
+        let capped = vec![format!("{MARK_COUNT}{COUNT_CAP}|1##")];
+        assert!(matches!(parse_count(&capped), Some(Answer::Count(n, true)) if n == COUNT_CAP));
+        assert!(parse_count(&["##CSWCNT##".to_string()]).is_none());
+    }
+
+    /// The values that have arrived are offered before the end marker: on a
+    /// node of thousands, that is most of the wait.
+    #[test]
+    fn what_has_arrived_of_a_list_is_read_before_it_ends() {
+        let lines = vec![format!("{MARK_SUB}S|AB1##"), format!("{MARK_SUB}S|AB2##")];
+        assert!(parse_subscripts(&lines).is_none());
+        assert_eq!(scan_subscripts(&lines).values.len(), 2);
     }
 
     #[test]

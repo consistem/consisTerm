@@ -1,6 +1,7 @@
 //! Writes `assets/icon-256.png` (Linux), `assets/icon.ico` (the Windows
-//! executable and the window icon) and `assets/consisterm.icns` (macOS) from
-//! `assets/logo.png`, the one master.
+//! executable, the tray and the About page), `assets/icon-window.png` (the
+//! window's own icon, which the taskbar shows) and `assets/consisterm.icns`
+//! (macOS) from `assets/logo.png`, the one master.
 //!
 //! The `.ico` and `.icns` hold PNG images rather than bitmaps: both formats
 //! allow it, Windows has read PNG entries since Vista, and it keeps a 256 px
@@ -18,16 +19,80 @@ fn png(img: &RgbaImage) -> Vec<u8> {
     out
 }
 
+/// The square of `img` round the pixels at least `alpha` opaque, grown by
+/// `margin` of its side and centred on them.
+///
+/// The logo's glow fades out over a wide margin, which is right for the logo
+/// and wrong for an icon: drawn at the size of a taskbar button or a desktop
+/// shortcut, the ring inside the glow came out smaller than every icon next
+/// to it. So an icon is cut round what can actually be seen at its size.
+fn crop(img: &RgbaImage, alpha: u8, margin: f32) -> RgbaImage {
+    let (w, h) = img.dimensions();
+    let (mut left, mut top, mut right, mut bottom) = (w, h, 0, 0);
+    for (x, y, pixel) in img.enumerate_pixels() {
+        if pixel[3] >= alpha {
+            left = left.min(x);
+            top = top.min(y);
+            right = right.max(x);
+            bottom = bottom.max(y);
+        }
+    }
+    if left > right {
+        return img.clone();
+    }
+    let side = ((right - left).max(bottom - top) as f32 * (1.0 + 2.0 * margin)).ceil() as u32;
+    let cx = (left + right) as i64 / 2;
+    let cy = (top + bottom) as i64 / 2;
+    let mut out = RgbaImage::new(side, side);
+    image::imageops::overlay(
+        &mut out,
+        img,
+        side as i64 / 2 - cx,
+        side as i64 / 2 - cy,
+    );
+    out
+}
+
+/// `img` a little brighter: each channel lifted by `gain`, toward white
+/// rather than past it. At tray size the ring reads darker than it does
+/// large, against a taskbar that is often dark itself.
+fn brighten(img: &RgbaImage, gain: f32) -> RgbaImage {
+    let mut out = img.clone();
+    for pixel in out.pixels_mut() {
+        for channel in &mut pixel.0[..3] {
+            *channel = (f32::from(*channel) * gain).round().min(255.0) as u8;
+        }
+    }
+    out
+}
+
 fn main() {
     let assets = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets");
     let master = image::open(assets.join("logo.png"))
         .expect("reading assets/logo.png")
         .into_rgba8();
-    let sized = |n: u32| image::imageops::resize(&master, n, n, FilterType::Lanczos3);
+    // Large sizes are the whole logo, glow and all, which they are big enough
+    // to show; small ones are cut close to the ring, where a glow would only
+    // be a blur taking room from it - the tray, the taskbar.
+    let small = brighten(&crop(&master, 140, 0.03), 1.12);
+    println!(
+        "logo {}px; small icons cut to {}px",
+        master.width(),
+        small.width()
+    );
+    let sized = |n: u32| {
+        let from = if n <= 64 { &small } else { &master };
+        image::imageops::resize(from, n, n, FilterType::Lanczos3)
+    };
 
     sized(256)
         .save(assets.join("icon-256.png"))
         .expect("writing icon-256.png");
+    // The window's icon, which the system scales down for the taskbar: from
+    // the close cut, at a size that stays sharp at 200%.
+    image::imageops::resize(&small, 128, 128, FilterType::Lanczos3)
+        .save(assets.join("icon-window.png"))
+        .expect("writing icon-window.png");
 
     // ICO: a directory of entries, then the images, smallest first.
     let sizes = [16u32, 24, 32, 48, 64, 128, 256];

@@ -87,13 +87,13 @@ impl App {
             cursor_style: self.settings.cursor_style,
             cursor_blink: self.settings.cursor_blink,
             scrollbar: self.settings.show_scrollbars,
-            syntax: self.settings.terminal_syntax_highlight,
+            syntax: self.settings.highlight(&self.settings.theme).syntax,
             wrap: self.settings.wrap_lines,
             copy_on_select: self.settings.copy_on_select,
             intellisense: self.settings.intellisense,
             backdrop: self.terminal_backdrop,
             wide_grid: true,
-            sql_syntax: self.settings.sql_highlight,
+            sql_syntax: self.settings.highlight(&self.settings.theme).sql,
             // Per pane, from the pane's own prompt - see `App::terminal_pane`.
             sql_mode: None,
         }

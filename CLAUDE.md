@@ -193,6 +193,11 @@ left to be rediscovered.
   is given. See `RenderOpts::wide_grid`.
 - **Every user-facing string goes through `tr`/`tr1`/`tr2`.** A bare string
   literal in a widget is a bug.
+- **Tooltips go through `ui::tip::Tip`** - `.tip(text)`, not
+  `.on_hover_text(text)`. egui 0.28 lays a tooltip out inside the size it had
+  last time and never lets it grow back, so one squeezed once wrapped a word to
+  a line for good; `Tip` gives it a floor worked out from its own text. A test
+  in `ui/tip.rs` fails the day egui fixes this, so the workaround can go.
 
 ---
 

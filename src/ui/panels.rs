@@ -15,6 +15,7 @@
 //! interrupt.
 
 use crate::ui::dialog::{self, Role};
+use crate::ui::tip::Tip;
 use egui::{Context, Ui};
 
 use crate::features::macros::Macro;
@@ -23,7 +24,11 @@ use crate::i18n::{tr, tr1, tr2};
 
 /// Colour for "this is set, but it will not do what you expect". Not from the
 /// theme: it has to stay legible as a warning in every one of them.
-pub const WARNING: egui::Color32 = egui::Color32::from_rgb(220, 120, 60);
+/// The colour a warning is drawn in: the theme's, chosen to be read on its
+/// chrome - see `Theme::visuals`.
+pub fn warning(ui: &egui::Ui) -> egui::Color32 {
+    ui.visuals().warn_fg_color
+}
 
 /// One gesture's worth of change to the terminal's font size.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -45,6 +50,11 @@ pub enum UiRequest {
     RunNative(Native, Vec<String>),
     /// Send literal lines to the active session.
     SendLines(Vec<String>),
+    /// Send a filled-in macro, masking its hidden values when they come back.
+    SendMacro(Vec<crate::features::macros::SentLine>),
+    /// Keep (or, when empty, forget) the hidden value of a parameter of an
+    /// organization macro, by its credential-store account.
+    SetMacroSecret(String, String),
     ExportText(crate::features::export::Range),
     ExportHtml(crate::features::export::Range),
     CopyRange(crate::features::export::Range),
@@ -247,6 +257,7 @@ pub fn pending_macro_dialog(ctx: &Context, state: &mut PanelState) -> Option<UiR
         // Only the parameters that reach the command, the same ones `values`
         // was built from - so the two line up index for index.
         let mut fields = Vec::with_capacity(pending.values.len());
+        let hidden = pending.source.hide_command;
         for (index, param) in pending.source.usable_params().enumerate() {
             ui.horizontal(|ui| {
                 let prompt = if param.prompt.is_empty() {
@@ -254,12 +265,26 @@ pub fn pending_macro_dialog(ctx: &Context, state: &mut PanelState) -> Option<UiR
                 } else {
                     &param.prompt
                 };
-                ui.label(prompt);
+                // In the colour its value has below, so which field goes where
+                // in the command can be read off at a glance. Not for a hidden
+                // command, which has no preview to match it to.
+                if hidden {
+                    ui.label(prompt);
+                } else {
+                    ui.label(egui::RichText::new(prompt).color(field_colour(index)));
+                }
                 if let Some((_, value)) = pending.values.get_mut(index) {
+                    // Masked when it asks for a password, here and in the
+                    // preview below: the dialog is on screen, and so may be
+                    // whoever is looking at it.
+                    // No hint for a hidden one: egui draws the hint in clear
+                    // even in a password field, and the hint is the stored value.
+                    let secret = param.is_secret();
                     let field = ui.add(
                         egui::TextEdit::singleline(value)
                             .desired_width(f32::INFINITY)
-                            .hint_text(&param.default),
+                            .hint_text(if secret { "" } else { param.value() })
+                            .password(secret),
                     );
                     if index == 0 {
                         focus_first(&field, &mut pending.focus_first);
@@ -272,20 +297,52 @@ pub fn pending_macro_dialog(ctx: &Context, state: &mut PanelState) -> Option<UiR
 
         ui.add_space(4.0);
         ui.weak(tr("Will send:"));
-        let preview = pending.source.expand(&pending.values);
         // Hidden bodies stay hidden even here: the flag exists because the
         // body carries a credential, and this dialog is on screen.
         if pending.source.hide_command {
             ui.weak(tr("Hidden; this macro carries a secret."));
         } else {
-            for line in &preview {
-                ui.code(line);
+            let focused = fields.iter().position(|f| f.has_focus());
+            let names: Vec<String> = pending
+                .source
+                .usable_params()
+                .map(|p| {
+                    if p.prompt.is_empty() {
+                        p.name.clone()
+                    } else {
+                        p.prompt.clone()
+                    }
+                })
+                .collect();
+            let secret: Vec<bool> = pending
+                .source
+                .usable_params()
+                .map(crate::features::macros::Param::is_secret)
+                .collect();
+            for line in pending.source.expand_marked(&pending.values) {
+                let line: Vec<_> = line
+                    .into_iter()
+                    .map(|mut piece| {
+                        if piece.value.is_some_and(|at| secret.get(at) == Some(&true)) {
+                            piece.text = "\u{2022}".repeat(piece.text.chars().count());
+                        }
+                        piece
+                    })
+                    .collect();
+                let job = preview_job(ui, &line, &names, focused);
+                egui::Frame::none()
+                    .fill(ui.visuals().code_bg_color)
+                    .rounding(2.0)
+                    .inner_margin(egui::Margin::symmetric(3.0, 1.0))
+                    .show(ui, |ui| {
+                        ui.add(egui::Label::new(job));
+                    });
             }
         }
 
         if pending.source.confirm {
             ui.colored_label(
-                WARNING,
+                warning(ui),
                 tr("This macro is marked as modifying data. RDB* databases are shared with the team."),
             );
         }
@@ -304,7 +361,9 @@ pub fn pending_macro_dialog(ctx: &Context, state: &mut PanelState) -> Option<UiR
             // The yes/no is there to be answered deliberately, and a second
             // Enter is deliberate in a way that finishing a field is not.
             if send.clicked() || (submitted && !pending.source.confirm) {
-                request = Some(UiRequest::SendLines(preview.clone()));
+                request = Some(UiRequest::SendMacro(
+                    pending.source.expand_for_sending(&pending.values),
+                ));
                 close = true;
             } else if submitted {
                 send.request_focus();
@@ -319,6 +378,61 @@ pub fn pending_macro_dialog(ctx: &Context, state: &mut PanelState) -> Option<UiR
         state.pending = None;
     }
     request
+}
+
+/// The colour of the `index`th field's label and of its value in the preview.
+///
+/// Mid-tones that read on a dark dialog and a light one alike; a theme's own
+/// colours are no help here, since nothing says two of them differ enough.
+pub fn field_colour(index: usize) -> egui::Color32 {
+    const COLOURS: [egui::Color32; 6] = [
+        egui::Color32::from_rgb(0x3d, 0x9b, 0xf0),
+        egui::Color32::from_rgb(0xe0, 0x8a, 0x1e),
+        egui::Color32::from_rgb(0x2b, 0xb3, 0x6b),
+        egui::Color32::from_rgb(0xc0, 0x5c, 0xd0),
+        egui::Color32::from_rgb(0xe0, 0x4f, 0x5f),
+        egui::Color32::from_rgb(0x1f, 0xa8, 0xb0),
+    ];
+    COLOURS[index % COLOURS.len()]
+}
+
+/// One line of the preview: the macro's text plain, each value in its field's
+/// colour, underlined - and lit behind while its field has the keyboard. An
+/// empty value is shown as the field's name between angle quotes, faint, so
+/// where it goes is visible before anything is typed; what is sent there is
+/// still nothing.
+fn preview_job(
+    ui: &egui::Ui,
+    line: &[crate::features::macros::Piece],
+    names: &[String],
+    focused: Option<usize>,
+) -> egui::text::LayoutJob {
+    let font = egui::TextStyle::Monospace.resolve(ui.style());
+    let plain = egui::TextFormat::simple(font.clone(), ui.visuals().text_color());
+    let mut job = egui::text::LayoutJob::default();
+    for piece in line {
+        let Some(at) = piece.value else {
+            job.append(&piece.text, 0.0, plain.clone());
+            continue;
+        };
+        let colour = field_colour(at);
+        let mut format = egui::TextFormat {
+            underline: egui::Stroke::new(1.0_f32, colour),
+            ..egui::TextFormat::simple(font.clone(), colour)
+        };
+        if focused == Some(at) {
+            format.background = colour.gamma_multiply(0.25);
+        }
+        if piece.text.is_empty() {
+            let name = names.get(at).map_or("", String::as_str);
+            format.color = colour.gamma_multiply(0.6);
+            format.italics = true;
+            job.append(&format!("\u{2039}{name}\u{203a}"), 0.0, format);
+        } else {
+            job.append(&piece.text, 0.0, format);
+        }
+    }
+    job
 }
 
 /// An IRIS helper waiting for its fields to be filled in.
@@ -395,7 +509,7 @@ pub fn pending_native_dialog(ctx: &Context, state: &mut PanelState) -> Option<Ui
             // sits on either desktop.
             ui.add_space(12.0);
             if dialog::button(ui, tr("Reset"), Role::Plain)
-                .on_hover_text(tr("Back to the fields this helper starts with."))
+                .tip(tr("Back to the fields this helper starts with."))
                 .clicked()
             {
                 pending.values = native.default_values();
@@ -483,7 +597,7 @@ pub fn usage_report_dialog(ctx: &Context, state: &mut PanelState) -> Option<UiRe
                     dismissed = true;
                 }
                 if dialog::button(ui, tr("Don't ask again"), Role::Plain)
-                    .on_hover_text(tr("Settings, About, still sends it whenever you want."))
+                    .tip(tr("Settings, About, still sends it whenever you want."))
                     .clicked()
                 {
                     request = Some(UiRequest::StopAskingUsageReport);
@@ -525,7 +639,7 @@ pub fn update_dialog(ctx: &Context, state: &mut crate::app::UpdateState) -> bool
             }
             if let Some(error) = state.error.as_ref() {
                 ui.add_space(4.0);
-                ui.colored_label(WARNING, error);
+                ui.colored_label(warning(ui), error);
                 // The way out when the app cannot get the file itself. On a
                 // network whose proxy demands NTLM the download can never
                 // succeed - ureq speaks only Basic - and the browser, which
@@ -572,7 +686,7 @@ pub fn update_dialog(ctx: &Context, state: &mut crate::app::UpdateState) -> bool
             dialog::actions(ui, |ui| {
                 if state.staged.is_some() {
                     if dialog::button(ui, tr("Restart and update"), Role::Suggested)
-                        .on_hover_text(tr(
+                        .tip(tr(
                             "Puts the new version in place and starts it. Closes straight away, without asking about connected sessions - this is the close you just asked for. Each of them is sent HALT on the way out.",
                         ))
                         .clicked()
@@ -629,6 +743,8 @@ mod tests {
                 name: "g".into(),
                 prompt: "Global".into(),
                 default: "CSW1".into(),
+                own: None,
+                secret: false,
             }],
             body: vec!["ZWRITE ^{{g}}".into()],
             ..Macro::default()

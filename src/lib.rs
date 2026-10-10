@@ -24,9 +24,11 @@ pub const APP_NAME: &str = "consisTerm";
 /// otherwise shows with a generic one.
 pub const APP_ID: &str = "br.com.consistem.consisterm";
 
-// Função para processar a imagem do ícone
+/// The window's own icon - what the taskbar shows. Cut close to the ring, not
+/// the `.ico`'s large image, whose glow left the ring smaller than every icon
+/// beside it.
 fn load_icon() -> egui::IconData {
-    let image = image::load_from_memory(include_bytes!("../assets/icon.ico"))
+    let image = image::load_from_memory(include_bytes!("../assets/icon-window.png"))
         .expect("Falha ao carregar a imagem do ícone")
         .into_rgba8();
 

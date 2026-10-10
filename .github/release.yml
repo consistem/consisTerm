@@ -1,0 +1,14 @@
+# Headings for the list of changes GitHub generates for each release, in
+# Portuguese like the rest of the notes (packaging/release-notes.md). A pull
+# request goes under the first category it has a label for; one with none goes
+# under "Outras mudanças".
+changelog:
+  categories:
+    - title: Novidades
+      labels: [enhancement, feature]
+    - title: Correções
+      labels: [bug, fix]
+    - title: Documentação
+      labels: [documentation]
+    - title: Outras mudanças
+      labels: ["*"]

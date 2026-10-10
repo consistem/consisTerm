@@ -24,16 +24,12 @@ impl App {
     /// `keep_out` in [`chrome::resize_grips`] - so the two now disagree in the
     /// terminal's favour whatever the arithmetic works out to.
     ///
-    /// Nothing is held back at the top - the tab strip is there, not the
-    /// terminal.
+    /// Nothing is held back on the side the title bar is on - the bar is
+    /// there, not the window's edge - and with the bar at the bottom, a strip
+    /// held back there sat between the shown tab and the terminal it is meant
+    /// to run on into.
     pub(super) fn terminal_inset(&self) -> egui::Margin {
-        let gutter = chrome::RESIZE_GRAB + 1.0;
-        egui::Margin {
-            left: gutter,
-            right: gutter,
-            top: 0.0,
-            bottom: gutter,
-        }
+        inset_for(self.settings.bar_position)
     }
 
     /// Draws one pane - a tab's own notes and its terminal - and carries out
@@ -208,6 +204,14 @@ impl App {
                 }
                 ContextAction::SplitBottom => {
                     self.pending_layout = Some(LayoutAction::Split(at.tab, SplitDir::Bottom));
+                }
+                ContextAction::SplitWithShell(shell, right) => {
+                    let dir = if right {
+                        SplitDir::Right
+                    } else {
+                        SplitDir::Bottom
+                    };
+                    self.pending_layout = Some(LayoutAction::SplitWithShell(at.tab, dir, shell));
                 }
                 ContextAction::Unsplit => {
                     self.pending_layout = Some(LayoutAction::Unsplit(at.tab));
@@ -655,4 +659,40 @@ fn describe_hover<'a>(
         &piece.piece_text,
         piece.offset,
     )
+}
+
+/// The terminal's margin against the window's edges, none against the bar.
+fn inset_for(bar: crate::config::BarPosition) -> egui::Margin {
+    use crate::config::BarPosition;
+    let gutter = chrome::RESIZE_GRAB + 1.0;
+    let edge = |side: BarPosition| if bar == side { 0.0 } else { gutter };
+    egui::Margin {
+        left: edge(BarPosition::Left),
+        right: edge(BarPosition::Right),
+        top: edge(BarPosition::Top),
+        bottom: edge(BarPosition::Bottom),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_terminal_meets_the_bar_with_no_strip_between_them() {
+        use crate::config::BarPosition;
+        let gutter = chrome::RESIZE_GRAB + 1.0;
+        for bar in BarPosition::ALL {
+            let m = inset_for(bar);
+            let toward_bar = match bar {
+                BarPosition::Top => m.top,
+                BarPosition::Bottom => m.bottom,
+                BarPosition::Left => m.left,
+                BarPosition::Right => m.right,
+            };
+            assert_eq!(toward_bar, 0.0, "{bar:?}");
+            // The other three keep the resize grip off the text.
+            assert_eq!(m.left + m.right + m.top + m.bottom, 3.0 * gutter, "{bar:?}");
+        }
+    }
 }

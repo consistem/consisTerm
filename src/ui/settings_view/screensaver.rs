@@ -10,6 +10,7 @@
 //! changes the same way. The monitor shows the setting itself, not a draft of
 //! it, and Preview runs that over the whole window.
 
+use crate::ui::tip::Tip;
 use std::sync::mpsc::Receiver;
 use std::time::Duration;
 
@@ -19,7 +20,7 @@ use super::{section, untitled, Category, Ctx, Item, Page, Section};
 use crate::features::screensaver::{Config, DvdContent, Kind, LogoContent};
 use crate::i18n::tr;
 use crate::ui::file_dialog;
-use crate::ui::panels::{UiRequest, WARNING};
+use crate::ui::panels::UiRequest;
 use crate::ui::prefs::{self, Card, Row};
 use crate::ui::screensaver_view::SaverView;
 use crate::ui::shading::{darken, gradient};
@@ -193,7 +194,7 @@ fn logo_text(card: &mut Card<'_>, c: &mut Ctx<'_>) {
     card.row(Row::new(tr("Text")).subtitle(note), |ui| {
         changed |= ui
             .color_edit_button_srgb(&mut saver.logo_colour)
-            .on_hover_text(tr("Text colour"))
+            .tip(tr("Text colour"))
             .changed();
         changed |= ui
             .add(
@@ -256,7 +257,7 @@ fn logo_image(card: &mut Card<'_>, c: &mut Ctx<'_>) {
             .desired_width(220.0)
             .hint_text(tr("A PNG or GIF file"));
         let edit = if warning.is_some() {
-            edit.text_color(WARNING)
+            edit.text_color(crate::ui::panels::warning(ui))
         } else {
             edit
         };
@@ -371,7 +372,7 @@ fn monitor_top(ui: &mut Ui, c: &mut Ctx<'_>) {
                 config.kind != Kind::None,
                 prefs::button_widget(tr("Preview")),
             )
-            .on_hover_text(tr(
+            .tip(tr(
                 "Runs it over the whole window now, until the next key or movement.",
             ))
             .clicked();

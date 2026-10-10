@@ -14,6 +14,7 @@
 //! Deliberately free of egui, apart from [`bar`]: [`find`] is the part worth
 //! testing, and it is testable only if it can be called without a window.
 
+use crate::ui::tip::Tip;
 use egui::{Key, Ui};
 
 use crate::config::theme::Theme;
@@ -260,22 +261,18 @@ pub fn bar(ui: &mut Ui, search: &mut Search, theme: &Theme) -> Option<Action> {
 
         if ui
             .small_button("<")
-            .on_hover_text(tr("Previous match (Shift+Enter)"))
+            .tip(tr("Previous match (Shift+Enter)"))
             .clicked()
         {
             step_forward = Some(false);
         }
-        if ui
-            .small_button(">")
-            .on_hover_text(tr("Next match (Enter)"))
-            .clicked()
-        {
+        if ui.small_button(">").tip(tr("Next match (Enter)")).clicked() {
             step_forward = Some(true);
         }
 
         if ui
             .selectable_label(search.case_sensitive, tr("Aa"))
-            .on_hover_text(tr("Match upper and lower case exactly"))
+            .tip(tr("Match upper and lower case exactly"))
             .clicked()
         {
             search.case_sensitive = !search.case_sensitive;

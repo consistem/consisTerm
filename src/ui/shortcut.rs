@@ -9,10 +9,11 @@
 //!
 //! [`picker`] is the field it is set in, shared by the two places that set one.
 
+use crate::ui::tip::Tip;
 use egui::{Key, Modifiers, Ui};
 
 use crate::i18n::{tr, tr1};
-use crate::ui::panels::WARNING;
+use crate::ui::panels::warning;
 
 /// Modifiers the app keeps for itself, and the keys they are used with.
 ///
@@ -233,7 +234,7 @@ pub fn picker_in(
         };
         if ui
             .selectable_label(*capture, label)
-            .on_hover_text(tr(
+            .tip(tr(
                 "Press the combination and it is filled in here. Esc cancels, Backspace clears it.",
             ))
             .clicked()
@@ -270,7 +271,7 @@ pub fn picker_in(
         match parse_in(key, scope) {
             None => {
                 ui.colored_label(
-                    WARNING,
+                    warning(ui),
                     match scope {
                         Scope::App => tr(
                             "Not understood, so it will not fire. Needs a modifier, like Ctrl+Shift+G.",
@@ -284,7 +285,7 @@ pub fn picker_in(
             Some((modifiers, parsed)) => {
                 if let Some(used_for) = is_reserved(modifiers, parsed) {
                     ui.colored_label(
-                        WARNING,
+                        warning(ui),
                         tr1("The app already uses this for {}; add Shift.", used_for),
                     );
                 }

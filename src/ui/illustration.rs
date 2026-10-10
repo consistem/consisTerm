@@ -6,8 +6,10 @@
 //! at whatever scale the window is at, its words go through [`tr`] like any
 //! other, and there is no file to ship or to fall out of step with the
 //! interface. A scene is a function of one number, how far through its loop it
-//! is, so a still one - with animations switched off - is the same drawing at
-//! the moment that explains it best.
+//! is, so a still one is the same drawing at the moment that explains it best.
+//!
+//! The title bar's picture is not a scene but a preview: the layout the
+//! settings beside it are set to, redrawn as they change.
 //!
 //! A scene asks for its next frame only while it is on screen. An idle window
 //! with no Settings open costs nothing, which `app/frame.rs` depends on.
@@ -31,15 +33,12 @@ pub enum Scene {
     Shells,
     /// A key pressed and the terminal coming down from the top of the screen.
     DropDown,
-    /// The title bar moving round the window, the tabs a column at the sides.
-    TitleBar,
 }
 
 impl Scene {
     /// How long one loop takes. Long enough to read what is typed.
     fn period(self) -> f64 {
         match self {
-            Scene::TitleBar => 8.0,
             Scene::Shells => 6.0,
             _ => 7.0,
         }
@@ -53,13 +52,19 @@ impl Scene {
             Scene::Macros => 0.66,
             Scene::Shells => 0.5,
             Scene::DropDown => 0.5,
-            Scene::TitleBar => 0.4,
         }
     }
 }
 
 /// Draws `scene` across the width it is given, moving when `animate` is set.
 pub fn show(ui: &mut Ui, scene: Scene, animate: bool) {
+    show_with_key(ui, scene, animate, None);
+}
+
+/// [`show`], with the key the scene presses written on its key cap: the
+/// shortcut actually set, so the picture does not promise one that is not.
+/// `None` for no shortcut, and the picture then presses no key.
+pub fn show_with_key(ui: &mut Ui, scene: Scene, animate: bool, key: Option<&str>) {
     let width = ui.available_width().min(420.0);
     let size = Vec2::new(width, (width * 0.46).round());
     // Centred in the row, with the card's padding round it.
@@ -87,8 +92,222 @@ pub fn show(ui: &mut Ui, scene: Scene, animate: bool) {
         Scene::Autocomplete => autocomplete(&painter, rect, &ink, t),
         Scene::Macros => macros(&painter, rect, &ink, t),
         Scene::Shells => shells(&painter, rect, &ink, t),
-        Scene::DropDown => drop_down(&painter, rect, &ink, t),
-        Scene::TitleBar => title_bar(&painter, rect, &ink, t),
+        Scene::DropDown => drop_down(&painter, rect, &ink, t, key),
+    }
+}
+
+/// What the title bar is set to, as far as a picture of it can show.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct BarLayout {
+    pub position: crate::config::BarPosition,
+    /// The tabs share the buttons' row - along the top or bottom only.
+    pub tabs_in_bar: bool,
+    pub fixed_tabs: bool,
+    pub close_left: bool,
+    /// The title bar's own scale, which makes the bar thicker.
+    pub scale: f32,
+}
+
+impl BarLayout {
+    pub fn of(settings: &crate::config::Settings) -> BarLayout {
+        BarLayout {
+            position: settings.bar_position,
+            tabs_in_bar: settings.tabs_in_title_bar,
+            fixed_tabs: settings.tab_width == crate::config::TabWidth::Fixed,
+            close_left: settings.tab_close_side == crate::config::TabCloseSide::Left,
+            scale: settings.title_bar_scale,
+        }
+    }
+}
+
+/// A window laid out as `layout` says: where the bar is, whether the tabs
+/// share its row, how wide they are and which end their cross is at.
+pub fn title_bar_preview(ui: &mut Ui, layout: BarLayout) {
+    let width = ui.available_width().min(420.0);
+    let size = Vec2::new(width, (width * 0.46).round());
+    let (outer, _) =
+        ui.allocate_exact_size(Vec2::new(ui.available_width(), size.y), Sense::hover());
+    let rect = Rect::from_center_size(outer.center(), size);
+    if !ui.is_rect_visible(rect) {
+        return;
+    }
+    let ink = Ink::of(ui);
+    let painter = ui.painter_at(rect);
+    let window = Rect::from_center_size(
+        rect.center(),
+        Vec2::new(rect.height() * 1.6, rect.height() * 0.92),
+    );
+    paint_layout(&painter, window, &ink, layout);
+}
+
+fn paint_layout(painter: &Painter, window: Rect, ink: &Ink, layout: BarLayout) {
+    use crate::config::BarPosition;
+    painter.rect_filled(window, Rounding::same(6.0), ink.screen);
+    let row = (window.height() * 0.13 * layout.scale.clamp(1.0, 2.0)).max(10.0);
+    let names = ["IRIS", "USER", "%SYS"];
+    // A prompt on the screen, so it reads as a terminal and the bar as round it.
+    let mono_font = FontId::monospace((window.height() * 0.08).clamp(7.0, 11.0));
+    let prompt = |screen: Rect| {
+        painter.text(
+            screen.min + Vec2::new(8.0, 6.0),
+            Align2::LEFT_TOP,
+            "USER>",
+            mono_font.clone(),
+            ink.weak,
+        );
+    };
+    match layout.position {
+        BarPosition::Left | BarPosition::Right => {
+            let column = window.width() * 0.3;
+            let left = layout.position == BarPosition::Left;
+            let bar = if left {
+                Rect::from_min_size(window.min, Vec2::new(column, window.height()))
+            } else {
+                Rect::from_min_size(
+                    window.right_top() - Vec2::new(column, 0.0),
+                    Vec2::new(column, window.height()),
+                )
+            };
+            painter.rect_filled(bar, Rounding::same(6.0), ink.chrome);
+            dots(
+                painter,
+                Rect::from_min_size(bar.min, Vec2::new(column, row)),
+                ink,
+                !left,
+            );
+            for (i, name) in names.iter().enumerate() {
+                let tab = Rect::from_min_size(
+                    bar.min + Vec2::new(4.0, row + 2.0 + i as f32 * (row + 2.0)),
+                    Vec2::new(column - 8.0, row),
+                );
+                paint_tab(painter, tab, name, i == 0, layout.close_left, ink);
+            }
+            let screen = if left {
+                Rect::from_min_max(Pos2::new(bar.right(), window.top()), window.max)
+            } else {
+                Rect::from_min_max(window.min, Pos2::new(bar.left(), window.bottom()))
+            };
+            prompt(screen);
+        }
+        BarPosition::Top | BarPosition::Bottom => {
+            let top = layout.position == BarPosition::Top;
+            let rows = if layout.tabs_in_bar { 1.0 } else { 2.0 };
+            let thick = row * rows;
+            let bar = if top {
+                Rect::from_min_size(window.min, Vec2::new(window.width(), thick))
+            } else {
+                Rect::from_min_size(
+                    window.left_bottom() - Vec2::new(0.0, thick),
+                    Vec2::new(window.width(), thick),
+                )
+            };
+            painter.rect_filled(bar, Rounding::same(6.0), ink.chrome);
+            // The buttons' row, and the tabs' - one and the same when the tabs
+            // share it, in which case the buttons take its right-hand end.
+            let (buttons_row, tabs_row) = if layout.tabs_in_bar {
+                (bar, bar)
+            } else {
+                let first = Rect::from_min_size(bar.min, Vec2::new(bar.width(), row));
+                let second = first.translate(Vec2::new(0.0, row));
+                // The buttons stay on the outer edge of the window.
+                if top {
+                    (first, second)
+                } else {
+                    (second, first)
+                }
+            };
+            let buttons_w = dots(painter, buttons_row, ink, true);
+            if !layout.tabs_in_bar {
+                // The session line between the buttons.
+                painter.text(
+                    buttons_row.left_center() + Vec2::new(8.0, 0.0),
+                    Align2::LEFT_CENTER,
+                    "IRIS · 1234 · 100x30",
+                    FontId::proportional(row * 0.5),
+                    ink.weak,
+                );
+            }
+            let end = if layout.tabs_in_bar {
+                tabs_row.right() - buttons_w - 4.0
+            } else {
+                tabs_row.right() - 4.0
+            };
+            let start = tabs_row.left() + 4.0;
+            let shared = (end - start) / names.len() as f32;
+            let mut x = start;
+            for (i, name) in names.iter().enumerate() {
+                let w = if layout.fixed_tabs {
+                    (shared * 0.62).min(70.0)
+                } else {
+                    shared
+                };
+                let tab = Rect::from_min_size(
+                    Pos2::new(x, tabs_row.top() + 2.0),
+                    Vec2::new(w - 2.0, tabs_row.height() - 4.0),
+                );
+                paint_tab(painter, tab, name, i == 0, layout.close_left, ink);
+                x += w;
+            }
+            let screen = if top {
+                Rect::from_min_max(Pos2::new(window.left(), bar.bottom()), window.max)
+            } else {
+                Rect::from_min_max(window.min, Pos2::new(window.right(), bar.top()))
+            };
+            prompt(screen);
+        }
+    }
+}
+
+/// The window buttons as three dots at the end of `row`, the right-hand one
+/// when `right`. Returns the width they take.
+fn dots(painter: &Painter, row: Rect, ink: &Ink, right: bool) -> f32 {
+    let r = (row.height() * 0.14).clamp(2.0, 3.5);
+    let gap = r * 3.6;
+    for i in 0..3 {
+        let x = if right {
+            row.right() - 8.0 - i as f32 * gap
+        } else {
+            row.left() + 8.0 + i as f32 * gap
+        };
+        painter.circle_filled(Pos2::new(x, row.center().y), r, ink.weak);
+    }
+    16.0 + 2.0 * gap
+}
+
+/// One tab: filled when it is the one shown, its name, and on the shown one
+/// the cross at whichever end the setting puts it.
+fn paint_tab(
+    painter: &Painter,
+    tab: Rect,
+    name: &str,
+    selected: bool,
+    close_left: bool,
+    ink: &Ink,
+) {
+    if selected {
+        painter.rect_filled(tab, Rounding::same(3.0), ink.screen);
+    } else {
+        painter.rect_filled(tab, Rounding::same(3.0), faded(ink.popup, 0.6));
+    }
+    let font = FontId::proportional((tab.height() * 0.5).clamp(6.0, 11.0));
+    painter.text(
+        tab.center(),
+        Align2::CENTER_CENTER,
+        name,
+        font,
+        if selected { ink.text } else { ink.weak },
+    );
+    if selected {
+        let arm = (tab.height() * 0.14).clamp(1.5, 3.0);
+        let x = if close_left {
+            tab.left() + 4.0 + arm
+        } else {
+            tab.right() - 4.0 - arm
+        };
+        let c = Pos2::new(x, tab.center().y);
+        let stroke = Stroke::new(1.0_f32, ink.accent);
+        painter.line_segment([c + Vec2::new(-arm, -arm), c + Vec2::new(arm, arm)], stroke);
+        painter.line_segment([c + Vec2::new(-arm, arm), c + Vec2::new(arm, -arm)], stroke);
     }
 }
 
@@ -513,7 +732,7 @@ fn shells(painter: &Painter, rect: Rect, ink: &Ink, t: f32) {
     }
 }
 
-fn drop_down(painter: &Painter, rect: Rect, ink: &Ink, t: f32) {
+fn drop_down(painter: &Painter, rect: Rect, ink: &Ink, t: f32, key: Option<&str>) {
     // The desktop, with an ordinary window on it the terminal comes down over.
     painter.rect_filled(rect, Rounding::same(6.0), ink.chrome);
     let other = Rect::from_min_size(
@@ -526,25 +745,24 @@ fn drop_down(painter: &Painter, rect: Rect, ink: &Ink, t: f32) {
         ink.popup,
         Stroke::new(1.0_f32, ink.line),
     );
-    // The key: down for a moment on the way in and on the way out.
-    let pressed = (0.06..0.12).contains(&t) || (0.62..0.68).contains(&t);
-    let key = Rect::from_min_size(
-        rect.right_bottom() - Vec2::new(46.0, 30.0),
-        Vec2::new(36.0, 22.0),
-    );
-    painter.rect(
-        key.translate(Vec2::new(0.0, if pressed { 2.0 } else { 0.0 })),
-        Rounding::same(4.0),
-        if pressed { ink.accent } else { ink.screen },
-        Stroke::new(1.0_f32, ink.line),
-    );
-    painter.text(
-        key.center() + Vec2::new(0.0, if pressed { 2.0 } else { 0.0 }),
-        Align2::CENTER_CENTER,
-        "F12",
-        FontId::proportional(10.0),
-        if pressed { ink.accent_text } else { ink.text },
-    );
+    // The key: down for a moment on the way in and on the way out, and as
+    // wide as the chord written on it.
+    if let Some(label) = key {
+        let pressed = (0.06..0.12).contains(&t) || (0.62..0.68).contains(&t);
+        let font = FontId::proportional(10.0);
+        let colour = if pressed { ink.accent_text } else { ink.text };
+        let text = painter.layout_no_wrap(label.to_string(), font, colour);
+        let size = Vec2::new((text.size().x + 16.0).max(36.0), 22.0);
+        let cap = Rect::from_min_size(rect.right_bottom() - size - Vec2::new(10.0, 8.0), size)
+            .translate(Vec2::new(0.0, if pressed { 2.0 } else { 0.0 }));
+        painter.rect(
+            cap,
+            Rounding::same(4.0),
+            if pressed { ink.accent } else { ink.screen },
+            Stroke::new(1.0_f32, ink.line),
+        );
+        painter.galley(cap.center() - text.size() / 2.0, text, colour);
+    }
     let down = ease(t, 0.1, 0.32) * (1.0 - ease(t, 0.66, 0.86));
     if down > 0.0 {
         let height = rect.height() * 0.45;
@@ -564,63 +782,6 @@ fn drop_down(painter: &Painter, rect: Rect, ink: &Ink, t: f32) {
     }
 }
 
-fn title_bar(painter: &Painter, rect: Rect, ink: &Ink, t: f32) {
-    // Top, right, bottom, left: a quarter of the loop each, with the move
-    // between two of them in the last fifth of the quarter.
-    let sides = [0usize, 1, 2, 3];
-    let quarter = (t * 4.0).floor() as usize % 4;
-    let into = (t * 4.0).fract();
-    let k = ease(into, 0.8, 1.0);
-    let from = sides[quarter];
-    let to = sides[(quarter + 1) % 4];
-    let window = Rect::from_center_size(
-        rect.center(),
-        Vec2::new(rect.height() * 1.5, rect.height() * 0.9),
-    );
-    painter.rect_filled(window, Rounding::same(6.0), ink.screen);
-    for (side, alpha) in [(from, 1.0 - k), (to, k)] {
-        if alpha <= 0.0 {
-            continue;
-        }
-        bar_on(painter, window, side, ink, alpha);
-    }
-}
-
-/// The bar of a window against `side` - 0 top, 1 right, 2 bottom, 3 left -
-/// with its tabs: a row along the top or bottom, a column down a side.
-fn bar_on(painter: &Painter, window: Rect, side: usize, ink: &Ink, alpha: f32) {
-    let thick = window.height() * 0.16;
-    let column = window.width() * 0.3;
-    let bar = match side {
-        0 => Rect::from_min_size(window.min, Vec2::new(window.width(), thick)),
-        2 => Rect::from_min_size(
-            window.left_bottom() - Vec2::new(0.0, thick),
-            Vec2::new(window.width(), thick),
-        ),
-        1 => Rect::from_min_size(
-            window.right_top() - Vec2::new(column, 0.0),
-            Vec2::new(column, window.height()),
-        ),
-        _ => Rect::from_min_size(window.min, Vec2::new(column, window.height())),
-    };
-    painter.rect_filled(bar, Rounding::same(6.0), faded(ink.chrome, alpha));
-    for i in 0..3 {
-        let tab = if side.is_multiple_of(2) {
-            Rect::from_min_size(
-                bar.min + Vec2::new(6.0 + i as f32 * window.width() * 0.22, 3.0),
-                Vec2::new(window.width() * 0.2, thick - 6.0),
-            )
-        } else {
-            Rect::from_min_size(
-                bar.min + Vec2::new(4.0, thick + i as f32 * thick * 0.9),
-                Vec2::new(column - 8.0, thick * 0.75),
-            )
-        };
-        let fill = if i == 0 { ink.accent } else { ink.popup };
-        painter.rect_filled(tab, Rounding::same(3.0), faded(fill, alpha));
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -634,7 +795,6 @@ mod tests {
             Scene::Macros,
             Scene::Shells,
             Scene::DropDown,
-            Scene::TitleBar,
         ] {
             for animate in [false, true] {
                 let _ = ctx.run(egui::RawInput::default(), |ctx| {
@@ -654,12 +814,39 @@ mod tests {
                             Scene::Autocomplete => autocomplete(&painter, rect, &ink, t),
                             Scene::Macros => macros(&painter, rect, &ink, t),
                             Scene::Shells => shells(&painter, rect, &ink, t),
-                            Scene::DropDown => drop_down(&painter, rect, &ink, t),
-                            Scene::TitleBar => title_bar(&painter, rect, &ink, t),
+                            Scene::DropDown => {
+                                drop_down(&painter, rect, &ink, t, Some("Ctrl+Shift+F12"));
+                                drop_down(&painter, rect, &ink, t, None);
+                            }
                         }
                     }
                 });
             });
+        }
+    }
+
+    #[test]
+    fn the_title_bar_preview_draws_every_layout_the_settings_can_make() {
+        use crate::config::BarPosition;
+        let ctx = egui::Context::default();
+        for position in BarPosition::ALL {
+            for tabs_in_bar in [false, true] {
+                for fixed_tabs in [false, true] {
+                    for close_left in [false, true] {
+                        let layout = BarLayout {
+                            position,
+                            tabs_in_bar,
+                            fixed_tabs,
+                            close_left,
+                            scale: 1.5,
+                        };
+                        let _ = ctx.run(egui::RawInput::default(), |ctx| {
+                            egui::CentralPanel::default()
+                                .show(ctx, |ui| title_bar_preview(ui, layout));
+                        });
+                    }
+                }
+            }
         }
     }
 

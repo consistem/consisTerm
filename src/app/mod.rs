@@ -104,6 +104,10 @@ pub struct App {
     /// ever surprise the user. Restarting picks up an edit.
     pub servers: crate::config::ServerList,
     pub macro_groups: Vec<MacroGroup>,
+    /// The credential-store accounts the personal macros' hidden values were
+    /// in at the last load or save, so the next save can forget the ones no
+    /// longer used - see `macros::store_personal_secrets`.
+    pub personal_secrets: std::collections::BTreeSet<String>,
     /// The rectangles the terminal panes drew into this frame.
     ///
     /// Collected so the window's resize grips can keep off them: a grip is in a
@@ -348,10 +352,12 @@ impl App {
             vocabulary.harvest_line(command);
         }
 
+        let macro_groups = load_macros(&settings).groups;
         let mut app = App {
             new_tab_profile: default_profile,
             closed_tabs: Vec::new(),
-            macro_groups: load_macros(&settings).groups,
+            personal_secrets: macros::personal_secret_accounts(&macro_groups),
+            macro_groups,
             pane_rects: Vec::new(),
             queued: Vec::new(),
             pinch: 1.0,
@@ -446,7 +452,9 @@ fn load_macros(settings: &Settings) -> macros::LoadReport {
     // exactly as shipped, so a change to the bundled set reaches an install
     // that has never edited the file.
     macros::ensure_personal_file(&personal);
-    macros::load_all(settings.org_macros().as_deref(), &personal)
+    let mut report = macros::load_all(settings.org_macros().as_deref(), &personal);
+    macros::apply_own_values(&mut report.groups, &settings.macro_values, &macros::Keyring);
+    report
 }
 
 /// The profile for whatever the launcher's tray menu is set to open.

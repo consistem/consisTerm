@@ -9,7 +9,14 @@
 use egui::{Align2, Color32, Context, Rect, RichText};
 
 use crate::config::Theme;
-use crate::features::autocomplete::{Popup, MAX_SHOWN};
+use crate::features::autocomplete::{Loading, Popup, MAX_SHOWN};
+use crate::i18n::tr;
+
+/// The narrowest the popup is drawn, in columns of the terminal.
+const MIN_COLUMNS: f32 = 24.0;
+
+/// How wide a hint may make the popup before it wraps, in columns.
+const HINT_COLUMNS: f32 = 56.0;
 
 /// Draws `popup` just below `caret`, the cursor's cell on screen.
 ///
@@ -66,6 +73,25 @@ pub fn show(ctx: &Context, popup: &Popup, caret: Rect, theme: &Theme, tab_uid: u
                 .show(ui, |ui| {
                     ui.spacing_mut().item_spacing.y = 0.0;
                     let size = caret.height() * 0.75;
+                    // Not as narrow as the suggestions: a subscript's values
+                    // can be "1" and "2", and a popup that narrow wrapped the
+                    // hint over it a word to a line. A few dozen columns, or
+                    // the hint's own width if that is less, within the room
+                    // left to the right of the word.
+                    let hint_width = popup.hint.as_ref().map_or(0.0, |hint| {
+                        ui.fonts(|f| {
+                            f.layout_no_wrap(
+                                hint.clone(),
+                                egui::FontId::proportional(size * 0.85),
+                                Color32::WHITE,
+                            )
+                            .size()
+                            .x
+                        })
+                    });
+                    let wanted = (caret.width() * MIN_COLUMNS)
+                        .max(hint_width.min(caret.width() * HINT_COLUMNS) + 8.0);
+                    ui.set_min_width(wanted.min(screen.right() - left - 16.0).max(0.0));
                     if let Some(hint) = &popup.hint {
                         egui::Frame::none()
                             .inner_margin(egui::Margin::symmetric(4.0, 1.0))
@@ -125,8 +151,61 @@ pub fn show(ctx: &Context, popup: &Popup, caret: Rect, theme: &Theme, tab_uid: u
                                 }
                             }
                         });
+                    // Under the list: how many there are, and whether
+                    // anything is still on its way.
+                    if popup.status.is_some() || popup.loading != Loading::No {
+                        egui::Frame::none()
+                            .inner_margin(egui::Margin::symmetric(4.0, 1.0))
+                            .show(ui, |ui| {
+                                ui.horizontal(|ui| {
+                                    let faint = theme.foreground.gamma_multiply(0.6);
+                                    let text = match (&popup.status, popup.loading) {
+                                        (Some(status), _) => status.clone(),
+                                        (None, _) => tr("Loading").to_string(),
+                                    };
+                                    ui.label(RichText::new(text).size(size * 0.8).color(faint));
+                                    if popup.loading != Loading::No {
+                                        loading_dots(ui, size * 0.8, faint);
+                                    }
+                                });
+                            });
+                    }
                 });
         });
+}
+
+/// How long each of the three dots stays the last one lit.
+const DOT_STEP: f64 = 0.3;
+
+/// Three dots lit one after another and then all put out - the row a
+/// terminal has always shown for "still working" - drawn at text size and
+/// asking for a frame only when the next one comes on.
+fn loading_dots(ui: &mut egui::Ui, size: f32, colour: Color32) {
+    let time = ui.input(|i| i.time);
+    let lit = loading_phase(time);
+    let r = (size * 0.13).max(1.5);
+    let (rect, _) = ui.allocate_exact_size(egui::vec2(size * 1.6, size), egui::Sense::hover());
+    for i in 0..3 {
+        let centre = egui::pos2(
+            rect.left() + r + i as f32 * (rect.width() - 2.0 * r) / 2.0,
+            rect.center().y + size * 0.2,
+        );
+        let on = i < lit;
+        let fill = if on {
+            colour
+        } else {
+            colour.gamma_multiply(0.2)
+        };
+        ui.painter().circle_filled(centre, r, fill);
+    }
+    let next = DOT_STEP - time % DOT_STEP;
+    ui.ctx()
+        .request_repaint_after(std::time::Duration::from_secs_f64(next));
+}
+
+/// How many of the three dots are lit at `time`: 1, 2, 3, then none.
+fn loading_phase(time: f64) -> usize {
+    ((time / DOT_STEP).floor() as usize) % 4
 }
 
 /// The colour a suggestion is drawn in: the colour it will have on the line
@@ -143,5 +222,18 @@ fn kind_of(candidate: &crate::features::autocomplete::Candidate) -> crate::term:
         Category::Routine => Kind::Routine,
         Category::Entry => Kind::Extrinsic,
         Category::Subscript => Kind::Number,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_dots_come_on_one_at_a_time_and_then_all_go_out() {
+        let phases: Vec<usize> = (0..8)
+            .map(|n| loading_phase(n as f64 * DOT_STEP + 0.01))
+            .collect();
+        assert_eq!(phases, [0, 1, 2, 3, 0, 1, 2, 3]);
     }
 }
