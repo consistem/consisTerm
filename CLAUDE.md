@@ -119,6 +119,7 @@ one of these holds part of `impl App`; the state itself lives in `mod.rs`.
 | `pane.rs` | drawing one terminal pane — the hot path |
 | `edit.rs` | acting on the line being typed, and on the selection |
 | `menu.rs` | the menu bar, the shortcuts, and the `UiRequest`s they raise |
+| `status.rs` | the footer message, and the offer it can carry and set aside |
 | `window.rs` | style, font, geometry, the close confirmation |
 | `updates.rs` | checking for and installing a newer release |
 

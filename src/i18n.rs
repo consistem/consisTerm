@@ -948,6 +948,8 @@ const PT_BR: &[(&str, &str)] = &[
     ("Which settings you use differently from a fresh install, and how many profiles, macros and themes you have - never server addresses, user names, paths or commands. It is put into an e-mail in your own mail program, addressed to whoever is named here, and nothing is sent until you send it.",
      "Quais configurações você usa diferente de uma instalação nova, e quantos perfis, macros e temas você tem - nunca endereços de servidor, nomes de usuário, caminhos ou comandos. O relatório é colocado num e-mail no seu próprio programa de e-mail, endereçado a quem estiver indicado aqui, e nada é enviado até que você o envie."),
     ("Help decide what to keep", "Ajude a decidir o que manter"),
+    ("Help decide what to keep: send a usage report?", "Ajude a decidir o que manter: enviar um relatório de uso?"),
+    ("Review...", "Revisar..."),
     ("Sending this report says which options you use differently from a fresh install, so the ones nobody uses can go and the ones everybody changes can become the default. It is put into an e-mail in your own mail program, for you to send.",
      "Este relatório diz quais opções você usa diferente de uma instalação nova, para que as que ninguém usa possam sair e as que todos mudam possam virar o padrão. Ele é colocado num e-mail no seu próprio programa de e-mail, para você enviar."),
     ("What is sent", "O que é enviado"),

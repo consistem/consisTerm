@@ -193,11 +193,18 @@ impl App {
         if let Err(e) = self.settings.save() {
             log::warn!("could not record the version that started: {e:#}");
         }
+        // In the footer rather than a dialog: the first thing after an update
+        // is getting back to work, and a window in the way of that is the
+        // wrong moment to ask for a favour.
         if updated && self.settings.ask_usage_report {
-            self.panels.usage = Some(crate::ui::panels::UsageOffer {
+            let offer = crate::ui::panels::UsageOffer {
                 report: self.usage_report(),
                 email: self.settings.usage_report_email.clone(),
-            });
+            };
+            self.status.offer(
+                tr("Help decide what to keep: send a usage report?").to_owned(),
+                super::status::Action::ReviewUsageReport(offer),
+            );
         }
     }
 

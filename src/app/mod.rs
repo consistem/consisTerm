@@ -37,6 +37,7 @@ mod frame;
 mod layout;
 mod menu;
 mod pane;
+mod status;
 mod tab;
 mod tabs;
 mod updates;
@@ -164,10 +165,8 @@ pub struct App {
     /// session is gone, and its profile, namespace and screen are what is left
     /// to open it again with.
     closed_tabs: Vec<SavedTab>,
-    status: Option<String>,
-    /// When the message in the footer went up, so it can be taken down again
-    /// once `status_timeout_secs` has passed.
-    status_at: Option<std::time::Instant>,
+    /// The message in the footer, timed out after `status_timeout_secs`.
+    status: status::Footer,
     /// What the update thread has told us so far, and what the dialog is
     /// showing. Every field is `None` on a build that has never checked.
     updates: UpdateState,
@@ -376,8 +375,7 @@ impl App {
             terminal_size: (FALLBACK_COLS, FALLBACK_ROWS),
             minimized: false,
             view_size: (FALLBACK_COLS as usize, FALLBACK_ROWS as usize),
-            status: None,
-            status_at: None,
+            status: status::Footer::default(),
             updates: UpdateState::default(),
             font_family: String::new(),
             font_request: String::new(),

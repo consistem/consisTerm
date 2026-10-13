@@ -170,16 +170,28 @@ impl eframe::App for App {
             }
         }
 
-        if let Some(status) = self.status.clone() {
+        if let Some(status) = self.status.text().map(str::to_owned) {
+            let action = self.status.action().map(|a| a.label());
+            let (mut act, mut dismiss) = (false, false);
             egui::TopBottomPanel::bottom("status").show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     ui.label(status);
-                    if ui.small_button(tr("dismiss")).clicked() {
-                        self.status = None;
-                        self.status_at = None;
+                    if let Some(label) = action {
+                        act = ui.small_button(label).clicked();
                     }
+                    dismiss = ui.small_button(tr("dismiss")).clicked();
                 });
             });
+            if act {
+                match self.status.take_action() {
+                    Some(super::status::Action::ReviewUsageReport(offer)) => {
+                        self.panels.usage = Some(offer);
+                    }
+                    None => {}
+                }
+            } else if dismiss {
+                self.status.clear();
+            }
         }
 
         // Where the find bar floats, filled in once the central panel knows how

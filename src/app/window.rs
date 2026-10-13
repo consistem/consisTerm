@@ -365,8 +365,7 @@ impl App {
     }
 
     pub(super) fn set_status(&mut self, text: impl Into<String>) {
-        self.status = Some(text.into());
-        self.status_at = Some(std::time::Instant::now());
+        self.status.set(text.into());
     }
 
     /// Takes the footer message down once it has had its time, and asks for the
@@ -377,18 +376,20 @@ impl App {
     /// all.
     pub(super) fn expire_status(&mut self, ctx: &Context) {
         let seconds = self.settings.status_timeout_secs;
-        if seconds == 0 || self.status.is_none() {
+        if seconds == 0 || !self.status.is_shown() {
             return;
         }
-        let life = std::time::Duration::from_secs(u64::from(seconds));
-        let Some(at) = self.status_at else {
-            return;
-        };
-        match life.checked_sub(at.elapsed()) {
-            Some(left) if !left.is_zero() => ctx.request_repaint_after(left),
-            _ => {
-                self.status = None;
-                self.status_at = None;
+        match self
+            .status
+            .left(std::time::Duration::from_secs(u64::from(seconds)))
+        {
+            Some(left) => ctx.request_repaint_after(left),
+            None => {
+                self.status.clear();
+                // An offer set aside comes back now, and its own time starts.
+                if self.status.is_shown() {
+                    ctx.request_repaint();
+                }
             }
         }
     }
