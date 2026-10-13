@@ -1,0 +1,1044 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 193" width="840" height="386" role="img" aria-label="Um erro, Analisar com o Claude no menu do botão direito, e uma aba do Claude respondendo sobre ele">
+<style>text{white-space:pre;dominant-baseline:alphabetic}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace}.sans{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}</style>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="visible;hidden" keyTimes="0;0.0333" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="400,179 400,190 403.08,187.14 407.48,186.7" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0333;0.0417" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="399.4506,178.76807 399.4506,189.76807 402.53058,186.90807 406.9306,186.46806" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0417;0.0500" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="393.5625,176.28235 393.5625,187.28235 396.6425,184.42235 401.0425,183.98235" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0500;0.0583" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="381.94156,171.37646 381.94156,182.37646 385.02155,179.51646 389.42157,179.07646" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0583;0.0667" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="365.48355,164.42856 365.48355,175.42856 368.56354,172.56856 372.96356,172.12856" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0667;0.0750" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="345.0842,155.81679 345.0842,166.81679 348.16418,163.95679 352.5642,163.51678" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0750;0.0833" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="321.63928,145.91931 321.63928,156.91931 324.71927,154.05931 329.1193,153.61931" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0833;0.0917" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="296.04456,135.11426 296.04456,146.11426 299.12454,143.25426 303.52457,142.81425" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0917;0.1000" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="269.1958,123.77981 269.1958,134.77982 272.2758,131.91982 276.6758,131.47981" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1000;0.1083" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="241.9887,112.29409 241.9887,123.29409 245.0687,120.43409 249.46869,119.99409" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1083;0.1167" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="215.31908,101.03527 215.31908,112.03527 218.39908,109.17527 222.79907,108.73527" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1167;0.1250" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="190.08264,90.38148 190.08264,101.38148 193.16264,98.52148 197.56264,98.081474" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1250;0.1333" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="167.17516,80.71088 167.17516,91.71088 170.25516,88.850876 174.65515,88.41087" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1333;0.1417" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="147.49243,72.401634 147.49243,83.401634 150.57243,80.54163 154.97243,80.10163" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1417;0.1500" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="131.93018,65.83189 131.93018,76.83189 135.01018,73.971886 139.41017,73.53188" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1500;0.1583" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="121.384155,61.379784 121.384155,72.37978 124.46416,69.51978 128.86415,69.07978" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1583;0.1667" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="116.75012,59.423485 116.75012,70.423485 119.830124,67.563484 124.230125,67.12348" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1667;0.1833" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="116.61157,59.364998 116.61157,70.365 119.691574,67.505 124.091576,67.064995" fill="#005c80" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1833;0.1917" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="63.364998" width="148" height="45" rx="4" fill="#232323" fill-opacity="0.035" stroke="#232323" stroke-opacity="0.035" stroke-width="1"/>
+<text class="sans" x="128.61157" y="80.461006" font-size="13" textLength="39.00446" lengthAdjust="spacingAndGlyphs" fill="#3a3a3a" fill-opacity="0.035">Copiar</text>
+<text class="sans" x="128.61157" y="99.961006" font-size="13" textLength="132.33273" lengthAdjust="spacingAndGlyphs" fill="#3a3a3a" fill-opacity="0.035">Analisar com o Claude</text>
+<polygon points="116.61157,59.364998 116.61157,70.365 119.691574,67.505 124.091576,67.064995" fill="#005c80" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1917;0.2000" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="63.364998" width="148" height="45" rx="4" fill="#272727" fill-opacity="0.337" stroke="#272727" stroke-opacity="0.337" stroke-width="1"/>
+<text class="sans" x="128.61157" y="80.461006" font-size="13" textLength="39.00446" lengthAdjust="spacingAndGlyphs" fill="#525252" fill-opacity="0.337">Copiar</text>
+<text class="sans" x="128.61157" y="99.961006" font-size="13" textLength="132.33273" lengthAdjust="spacingAndGlyphs" fill="#525252" fill-opacity="0.337">Analisar com o Claude</text>
+<polygon points="116.61157,59.364998 116.61157,70.365 119.691574,67.505 124.091576,67.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2000;0.2083" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="63.364998" width="148" height="45" rx="4" fill="#343434" fill-opacity="0.741" stroke="#343434" stroke-opacity="0.741" stroke-width="1"/>
+<text class="sans" x="128.61157" y="80.461006" font-size="13" textLength="39.00446" lengthAdjust="spacingAndGlyphs" fill="#787878" fill-opacity="0.741">Copiar</text>
+<text class="sans" x="128.61157" y="99.961006" font-size="13" textLength="132.33273" lengthAdjust="spacingAndGlyphs" fill="#787878" fill-opacity="0.741">Analisar com o Claude</text>
+<polygon points="116.61157,59.364998 116.61157,70.365 119.691574,67.505 124.091576,67.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2083;0.2167" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="63.364998" width="148" height="45" rx="4" fill="#3b3b3b" fill-opacity="0.992" stroke="#3b3b3b" stroke-opacity="0.992" stroke-width="1"/>
+<text class="sans" x="128.61157" y="80.461006" font-size="13" textLength="39.00446" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c" fill-opacity="0.992">Copiar</text>
+<text class="sans" x="128.61157" y="99.961006" font-size="13" textLength="132.33273" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c" fill-opacity="0.992">Analisar com o Claude</text>
+<polygon points="116.61157,59.364998 116.61157,70.365 119.691574,67.505 124.091576,67.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2167;0.2750" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="63.364998" width="148" height="45" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="128.61157" y="80.461006" font-size="13" textLength="39.00446" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Copiar</text>
+<text class="sans" x="128.61157" y="99.961006" font-size="13" textLength="132.33273" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Analisar com o Claude</text>
+<polygon points="116.61157,59.364998 116.61157,70.365 119.691574,67.505 124.091576,67.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2750;0.3667" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="63.364998" width="148" height="45" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="128.61157" y="80.461006" font-size="13" textLength="39.00446" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Copiar</text>
+<rect x="122.61158" y="85.865" width="144" height="19.5" rx="3" fill="#005c80"/>
+<text class="sans" x="128.61157" y="99.961006" font-size="13" textLength="132.33273" lengthAdjust="spacingAndGlyphs" fill="#c0deff">Analisar com o Claude</text>
+<polygon points="116.61157,59.364998 116.61157,70.365 119.691574,67.505 124.091576,67.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.3667;0.4000" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="63.364998" width="148" height="45" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="128.61157" y="80.461006" font-size="13" textLength="39.00446" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Copiar</text>
+<rect x="122.61158" y="85.865" width="144" height="19.5" rx="3" fill="#005c80"/>
+<text class="sans" x="128.61157" y="99.961006" font-size="13" textLength="132.33273" lengthAdjust="spacingAndGlyphs" fill="#c0deff">Analisar com o Claude</text>
+<polygon points="116.61157,59.364998 116.61157,70.365 119.691574,67.505 124.091576,67.064995" fill="#005c80" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.4000;0.4083" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="63.364998" width="148" height="45" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="128.61157" y="80.461006" font-size="13" textLength="39.00446" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Copiar</text>
+<rect x="122.61158" y="85.865" width="144" height="19.5" rx="3" fill="#005c80"/>
+<text class="sans" x="128.61157" y="99.961006" font-size="13" textLength="132.33273" lengthAdjust="spacingAndGlyphs" fill="#c0deff">Analisar com o Claude</text>
+<polygon points="116.61157,59.364998 116.61157,70.365 119.691574,67.505 124.091576,67.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.4083;0.4167" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="63.364998" width="148" height="45" rx="4" fill="#373737" fill-opacity="0.812" stroke="#373737" stroke-opacity="0.812" stroke-width="1"/>
+<text class="sans" x="128.61157" y="80.461006" font-size="13" textLength="39.00446" lengthAdjust="spacingAndGlyphs" fill="#7e7e7e" fill-opacity="0.812">Copiar</text>
+<rect x="122.61158" y="85.865" width="144" height="19.5" rx="3" fill="#005373" fill-opacity="0.812"/>
+<text class="sans" x="128.61157" y="99.961006" font-size="13" textLength="132.33273" lengthAdjust="spacingAndGlyphs" fill="#abc6e3" fill-opacity="0.812">Analisar com o Claude</text>
+<polygon points="116.61157,59.364998 116.61157,70.365 119.691574,67.505 124.091576,67.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.4167;0.4250" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run()</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="287.75797" lengthAdjust="spacingAndGlyphs" fill="#eb695f">&lt;UNDEFINED&gt;zRun+7^Utils.Base.1 *args</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="63.364998" width="148" height="45" rx="4" fill="#2a2a2a" fill-opacity="0.416" stroke="#2a2a2a" stroke-opacity="0.416" stroke-width="1"/>
+<text class="sans" x="128.61157" y="80.461006" font-size="13" textLength="39.00446" lengthAdjust="spacingAndGlyphs" fill="#5a5a5a" fill-opacity="0.416">Copiar</text>
+<rect x="122.61158" y="85.865" width="144" height="19.5" rx="3" fill="#003d53" fill-opacity="0.416"/>
+<text class="sans" x="128.61157" y="99.961006" font-size="13" textLength="132.33273" lengthAdjust="spacingAndGlyphs" fill="#7a8c9f" fill-opacity="0.416">Analisar com o Claude</text>
+<polygon points="116.61157,59.364998 116.61157,70.365 119.691574,67.505 124.091576,67.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.4250;0.4917" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.4917;0.5000" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">p</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5000;0.5083" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="23.757969" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5083;0.5167" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="31.757969" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por </text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5167;0.5250" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por q</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5250;0.5333" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="55.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5333;0.5417" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="63.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que </text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5417;0.5500" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="71.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que a</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5500;0.5583" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="87.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que arg</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5583;0.5667" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="95.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5667;0.5750" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="103.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args </text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5750;0.5833" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="119.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args es</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5833;0.5917" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="127.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args est</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5917;0.6000" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="135.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.6000;0.6083" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="151.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está i</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.6083;0.6167" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="159.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está in</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.6167;0.6250" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="175.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está inde</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.6250;0.6333" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indef</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.6333;0.6417" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="191.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefi</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.6417;0.6500" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="207.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefini</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.6500;0.6583" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="215.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinid</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.6583;0.6667" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="223.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.6667;0.7250" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.7250;0.7333" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#002f3a" fill-opacity="0.043">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#3a3a3a" fill-opacity="0.043">zRun+7 lê args, mas Run foi chamado</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.7333;0.7417" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#003545" fill-opacity="0.259">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#4a4a4a" fill-opacity="0.259">zRun+7 lê args, mas Run foi chamado</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.7417;0.7500" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#00465f" fill-opacity="0.561">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#686868" fill-opacity="0.561">zRun+7 lê args, mas Run foi chamado</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.7500;0.7583" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005575" fill-opacity="0.843">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#808080" fill-opacity="0.843">zRun+7 lê args, mas Run foi chamado</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.7583;0.7667" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c7f" fill-opacity="0.996">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#8b8b8b" fill-opacity="0.996">zRun+7 lê args, mas Run foi chamado</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.7667;0.7750" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">zRun+7 lê args, mas Run foi chamado</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.7750;0.7833" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">zRun+7 lê args, mas Run foi chamado</text>
+<text class="mono" x="23.51594" y="99.20297" font-size="13" textLength="239.75797" lengthAdjust="spacingAndGlyphs" fill="#3a3a3a" fill-opacity="0.043">sem ele. Passe por referência:</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.7833;0.7917" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">zRun+7 lê args, mas Run foi chamado</text>
+<text class="mono" x="23.51594" y="99.20297" font-size="13" textLength="239.75797" lengthAdjust="spacingAndGlyphs" fill="#4a4a4a" fill-opacity="0.259">sem ele. Passe por referência:</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.7917;0.8000" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">zRun+7 lê args, mas Run foi chamado</text>
+<text class="mono" x="23.51594" y="99.20297" font-size="13" textLength="239.75797" lengthAdjust="spacingAndGlyphs" fill="#686868" fill-opacity="0.561">sem ele. Passe por referência:</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.8000;0.8083" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">zRun+7 lê args, mas Run foi chamado</text>
+<text class="mono" x="23.51594" y="99.20297" font-size="13" textLength="239.75797" lengthAdjust="spacingAndGlyphs" fill="#808080" fill-opacity="0.843">sem ele. Passe por referência:</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.8083;0.8167" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">zRun+7 lê args, mas Run foi chamado</text>
+<text class="mono" x="23.51594" y="99.20297" font-size="13" textLength="239.75797" lengthAdjust="spacingAndGlyphs" fill="#8b8b8b" fill-opacity="0.996">sem ele. Passe por referência:</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.8167;0.8250" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">zRun+7 lê args, mas Run foi chamado</text>
+<text class="mono" x="23.51594" y="99.20297" font-size="13" textLength="239.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">sem ele. Passe por referência:</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.8250;0.8333" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">zRun+7 lê args, mas Run foi chamado</text>
+<text class="mono" x="23.51594" y="99.20297" font-size="13" textLength="239.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">sem ele. Passe por referência:</text>
+<text class="mono" x="23.51594" y="118.05297" font-size="13" textLength="263.75797" lengthAdjust="spacingAndGlyphs" fill="#2f3f4f" fill-opacity="0.043">do ##class(Utils.Base).Run(.args)</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.8333;0.8417" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">zRun+7 lê args, mas Run foi chamado</text>
+<text class="mono" x="23.51594" y="99.20297" font-size="13" textLength="239.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">sem ele. Passe por referência:</text>
+<text class="mono" x="23.51594" y="118.05297" font-size="13" textLength="263.75797" lengthAdjust="spacingAndGlyphs" fill="#33587f" fill-opacity="0.259">do ##class(Utils.Base).Run(.args)</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.8417;0.8500" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">zRun+7 lê args, mas Run foi chamado</text>
+<text class="mono" x="23.51594" y="99.20297" font-size="13" textLength="239.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">sem ele. Passe por referência:</text>
+<text class="mono" x="23.51594" y="118.05297" font-size="13" textLength="263.75797" lengthAdjust="spacingAndGlyphs" fill="#457eba" fill-opacity="0.561">do ##class(Utils.Base).Run(.args)</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.8500;0.8583" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">zRun+7 lê args, mas Run foi chamado</text>
+<text class="mono" x="23.51594" y="99.20297" font-size="13" textLength="239.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">sem ele. Passe por referência:</text>
+<text class="mono" x="23.51594" y="118.05297" font-size="13" textLength="263.75797" lengthAdjust="spacingAndGlyphs" fill="#539be8" fill-opacity="0.843">do ##class(Utils.Base).Run(.args)</text>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.8583;0.8667" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">zRun+7 lê args, mas Run foi chamado</text>
+<text class="mono" x="23.51594" y="99.20297" font-size="13" textLength="239.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">sem ele. Passe por referência:</text>
+<text class="mono" x="23.51594" y="118.05297" font-size="13" textLength="263.75797" lengthAdjust="spacingAndGlyphs" fill="#5aa9fe" fill-opacity="0.996">do ##class(Utils.Base).Run(.args)</text>
+</g>
+<g visibility="visible"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible" keyTimes="0;0.8667" dur="8s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#535353">IRIS</text>
+<rect x="108.799995" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="138.7" y="16.891006" font-size="13.7994995" textLength="41.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Claude</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">&gt;</text>
+<text class="mono" x="23.51594" y="42.65297" font-size="13" textLength="231.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">por que args está indefinido?</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#005c80">●</text>
+<text class="mono" x="23.51594" y="80.352974" font-size="13" textLength="279.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">zRun+7 lê args, mas Run foi chamado</text>
+<text class="mono" x="23.51594" y="99.20297" font-size="13" textLength="239.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">sem ele. Passe por referência:</text>
+<text class="mono" x="23.51594" y="118.05297" font-size="13" textLength="263.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">do ##class(Utils.Base).Run(.args)</text>
+</g>
+</svg>

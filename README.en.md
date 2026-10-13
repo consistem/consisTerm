@@ -46,7 +46,7 @@ and it asks for structure only, never for a record's value. The first hover on
 a global is the only one that ever waits.
 
 <p align="center">
-  <img src="docs/images/global-tooltip.png" alt="The pointer over the third piece of a zwrite line; a tooltip names the property, its type and its allowed values" width="100%">
+  <img src="docs/images/en/global-tooltip.svg" alt="The pointer over a piece of a zwrite line; a tooltip names the property and its values" width="100%">
   <br><sub>Hover a piece of a global and read what it means.</sub>
 </p>
 
@@ -64,8 +64,8 @@ subscripts that actually exist there right now. Up/Down choose, Tab accepts,
 Esc closes.
 
 <p align="center">
-  <img src="docs/images/autocomplete.png" alt="Typing inside ^GLOBAL( shows a list of existing subscripts with the subscript's name above them" width="100%">
-  <br><sub>Real subscripts from the database, named by the global's documentation.</sub>
+  <img src="docs/images/en/autocomplete.svg" alt="Typing inside ^mtemp( narrows a list of the subscripts that exist" width="100%">
+  <br><sub>The subscripts that exist, narrowed as you type.</sub>
 </p>
 
 ## Send it to Claude
@@ -77,7 +77,7 @@ much to hand over: everything, the last 10 commands, the last 5, or just the
 selection.
 
 <p align="center">
-  <img src="docs/images/claude.png" alt="A Claude Code tab beside an IRIS session, answering a question about an error in the output" width="100%">
+  <img src="docs/images/en/claude.svg" alt="An error, Analyze with Claude from the right-click menu, and a Claude tab answering about it" width="100%">
   <br><sub>An error on screen, and a tab that already knows about it.</sub>
 </p>
 
@@ -98,8 +98,8 @@ in one place. A template ships in
 [`packaging/org-macros.xml`](packaging/org-macros.xml).
 
 <p align="center">
-  <img src="docs/images/macros.png" alt="The right-click menu of the terminal showing Organisation and Personal macro groups" width="100%">
-  <br><sub>The team's macros and your own, side by side.</sub>
+  <img src="docs/images/en/macros.svg" alt="A macro chosen from the right-click menu, its parameter filled in, and the line sent" width="100%">
+  <br><sub>A macro from the menu, its parameter asked for, and the line sent.</sub>
 </p>
 
 ## Every shell in one window
@@ -112,7 +112,7 @@ to edit after that. *Open consisTerm here* in Explorer's folder menu opens one
 in that folder.
 
 <p align="center">
-  <img src="docs/images/shells.png" alt="Tabs for an IRIS session, PowerShell and Git Bash in one window" width="100%">
+  <img src="docs/images/en/shells.svg" alt="IRIS, PowerShell and Git Bash opening in tabs of one window" width="100%">
   <br><sub>IRIS, PowerShell and Git Bash in the same window.</sub>
 </p>
 

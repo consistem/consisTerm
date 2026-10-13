@@ -1,0 +1,728 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 193" width="840" height="386" role="img" aria-label="The pointer over a piece of a zwrite line; a tooltip names the property and its values">
+<style>text{white-space:pre;dominant-baseline:alphabetic}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace}.sans{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}</style>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="visible;hidden" keyTimes="0;0.0571" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="400,177 400,188 403.08,185.14 407.48,184.7" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0571;0.0667" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="399.55502,176.8048 399.55502,187.8048 402.635,184.9448 407.03503,184.50479" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0667;0.0762" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="397.6294,175.96004 397.6294,186.96004 400.70938,184.10004 405.1094,183.66003" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0762;0.0857" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="394.27472,174.48839 394.27472,185.48839 397.3547,182.62839 401.75473,182.18839" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0857;0.0952" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="389.59305,172.4346 389.59305,183.4346 392.67303,180.5746 397.07306,180.1346" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0952;0.1048" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="383.68646,169.84346 383.68646,180.84346 386.76645,177.98346 391.16647,177.54346" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1048;0.1143" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="376.65704,166.75974 376.65704,177.75974 379.73703,174.89973 384.13705,174.45973" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1143;0.1238" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="368.6069,163.22823 368.6069,174.22823 371.6869,171.36823 376.0869,170.92822" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1238;0.1333" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="359.63803,159.2937 359.63803,170.2937 362.71802,167.4337 367.11804,166.9937" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1333;0.1429" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="349.85257,155.00093 349.85257,166.00093 352.93256,163.14093 357.33258,162.70093" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1429;0.1524" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="339.35257,150.39471 339.35257,161.39471 342.43256,158.53471 346.83258,158.09471" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1524;0.1619" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="328.24014,145.51982 328.24014,156.51982 331.32013,153.65982 335.72015,153.21982" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1619;0.1714" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="316.6173,140.42104 316.6173,151.42104 319.6973,148.56104 324.09732,148.12103" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1714;0.1810" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="304.58618,135.14313 304.58618,146.14313 307.66617,143.28313 312.0662,142.84312" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1810;0.1905" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="292.2488,129.73087 292.2488,140.73087 295.3288,137.87086 299.72882,137.43086" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1905;0.2000" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="279.70734,124.22908 279.70734,135.22908 282.78732,132.36908 287.18735,131.92908" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2000;0.2095" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="267.06372,118.682495 267.06372,129.6825 270.1437,126.822495 274.54373,126.38249" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2095;0.2190" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="254.42015,113.1359 254.42015,124.1359 257.50015,121.2759 261.90015,120.8359" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2190;0.2286" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="241.87865,107.6341 241.87865,118.6341 244.95865,115.7741 249.35864,115.3341" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2286;0.2381" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="229.54129,102.221855 229.54129,113.221855 232.62129,110.361855 237.02129,109.92185" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2381;0.2476" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="217.51016,96.94395 217.51016,107.94395 220.59016,105.08395 224.99016,104.64394" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2476;0.2571" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="205.88733,91.84515 205.88733,102.84515 208.96733,99.98515 213.36732,99.54515" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2571;0.2667" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="194.77487,86.97025 194.77487,97.97025 197.85487,95.11025 202.25487,94.67025" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2667;0.2762" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="184.27489,82.364044 184.27489,93.364044 187.35489,90.50404 191.75488,90.06404" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2762;0.2857" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="174.48943,78.07128 174.48943,89.07128 177.56943,86.21128 181.96942,85.77128" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2857;0.2952" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="165.52057,74.13676 165.52057,85.13676 168.60057,82.27676 173.00056,81.836754" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2952;0.3048" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="157.4704,70.60524 157.4704,81.60524 160.5504,78.74524 164.9504,78.30524" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.3048;0.3143" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="150.44102,67.52154 150.44102,78.52154 153.52103,75.66154 157.92102,75.221535" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.3143;0.3238" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="144.53444,64.9304 144.53444,75.9304 147.61444,73.0704 152.01443,72.630394" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.3238;0.3333" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="139.85278,62.876602 139.85278,73.8766 142.93279,71.0166 147.33278,70.5766" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.3333;0.3429" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="136.49811,61.404953 136.49811,72.40495 139.57811,69.54495 143.9781,69.10495" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.3429;0.3524" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="134.57248,60.56021 134.57248,71.56021 137.65248,68.70021 142.05247,68.26021" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.3524;0.3905" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="134.1275,60.364998 134.1275,71.365 137.2075,68.505 141.6075,68.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.3905;0.4000" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="#002f3e" fill-opacity="0.169"/>
+<polygon points="134.1275,60.364998 134.1275,71.365 137.2075,68.505 141.6075,68.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.4000;0.4095" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="#003f56" fill-opacity="0.443"/>
+<polygon points="134.1275,60.364998 134.1275,71.365 137.2075,68.505 141.6075,68.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.4095;0.4571" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="#004763" fill-opacity="0.600"/>
+<polygon points="134.1275,60.364998 134.1275,71.365 137.2075,68.505 141.6075,68.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.4571;0.4667" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="#004763" fill-opacity="0.600"/>
+<rect x="123.369545" y="73.79" width="123.99999" height="45" rx="4" fill="#262626" fill-opacity="0.141" stroke="#262626" stroke-opacity="0.141" stroke-width="1"/>
+<text class="sans" x="131.36954" y="90.88601" font-size="13" textLength="103.14808" lengthAdjust="spacingAndGlyphs" fill="#3f3f3f" fill-opacity="0.141">State · %String(2)</text>
+<text class="sans" x="131.36954" y="110.38601" font-size="13" textLength="107.80464" lengthAdjust="spacingAndGlyphs" fill="#3f3f3f" fill-opacity="0.141">Values: SP, RJ, MG</text>
+<polygon points="134.1275,60.364998 134.1275,71.365 137.2075,68.505 141.6075,68.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.4667;0.4762" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="#004763" fill-opacity="0.600"/>
+<rect x="123.369545" y="73.79" width="123.99999" height="45" rx="4" fill="#2f2f2f" fill-opacity="0.584" stroke="#2f2f2f" stroke-opacity="0.584" stroke-width="1"/>
+<text class="sans" x="131.36954" y="90.88601" font-size="13" textLength="103.14808" lengthAdjust="spacingAndGlyphs" fill="#6a6a6a" fill-opacity="0.584">State · %String(2)</text>
+<text class="sans" x="131.36954" y="110.38601" font-size="13" textLength="107.80464" lengthAdjust="spacingAndGlyphs" fill="#6a6a6a" fill-opacity="0.584">Values: SP, RJ, MG</text>
+<polygon points="134.1275,60.364998 134.1275,71.365 137.2075,68.505 141.6075,68.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.4762;0.4857" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="#004763" fill-opacity="0.600"/>
+<rect x="123.369545" y="73.79" width="123.99999" height="45" rx="4" fill="#3a3a3a" fill-opacity="0.957" stroke="#3a3a3a" stroke-opacity="0.957" stroke-width="1"/>
+<text class="sans" x="131.36954" y="90.88601" font-size="13" textLength="103.14808" lengthAdjust="spacingAndGlyphs" fill="#898989" fill-opacity="0.957">State · %String(2)</text>
+<text class="sans" x="131.36954" y="110.38601" font-size="13" textLength="107.80464" lengthAdjust="spacingAndGlyphs" fill="#898989" fill-opacity="0.957">Values: SP, RJ, MG</text>
+<polygon points="134.1275,60.364998 134.1275,71.365 137.2075,68.505 141.6075,68.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="visible"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.4857;0.8952" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="#004763" fill-opacity="0.600"/>
+<rect x="123.369545" y="73.79" width="123.99999" height="45" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="131.36954" y="90.88601" font-size="13" textLength="103.14808" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">State · %String(2)</text>
+<text class="sans" x="131.36954" y="110.38601" font-size="13" textLength="107.80464" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Values: SP, RJ, MG</text>
+<polygon points="134.1275,60.364998 134.1275,71.365 137.2075,68.505 141.6075,68.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.8952;0.9048" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="#00455f" fill-opacity="0.553"/>
+<rect x="123.369545" y="73.79" width="123.99999" height="45" rx="4" fill="#3a3a3a" fill-opacity="0.918" stroke="#3a3a3a" stroke-opacity="0.918" stroke-width="1"/>
+<text class="sans" x="131.36954" y="90.88601" font-size="13" textLength="103.14808" lengthAdjust="spacingAndGlyphs" fill="#868686" fill-opacity="0.918">State · %String(2)</text>
+<text class="sans" x="131.36954" y="110.38601" font-size="13" textLength="107.80464" lengthAdjust="spacingAndGlyphs" fill="#868686" fill-opacity="0.918">Values: SP, RJ, MG</text>
+<polygon points="134.1275,60.364998 134.1275,71.365 137.2075,68.505 141.6075,68.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.9048;0.9143" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="#003749" fill-opacity="0.306"/>
+<rect x="123.369545" y="73.79" width="123.99999" height="45" rx="4" fill="#2d2d2d" fill-opacity="0.514" stroke="#2d2d2d" stroke-opacity="0.514" stroke-width="1"/>
+<text class="sans" x="131.36954" y="90.88601" font-size="13" textLength="103.14808" lengthAdjust="spacingAndGlyphs" fill="#646464" fill-opacity="0.514">State · %String(2)</text>
+<text class="sans" x="131.36954" y="110.38601" font-size="13" textLength="107.80464" lengthAdjust="spacingAndGlyphs" fill="#646464" fill-opacity="0.514">Values: SP, RJ, MG</text>
+<polygon points="134.1275,60.364998 134.1275,71.365 137.2075,68.505 141.6075,68.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.9143;0.9238" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="#002d35" fill-opacity="0.059"/>
+<rect x="123.369545" y="73.79" width="123.99999" height="45" rx="4" fill="#262626" fill-opacity="0.094" stroke="#262626" stroke-opacity="0.094" stroke-width="1"/>
+<text class="sans" x="131.36954" y="90.88601" font-size="13" textLength="103.14808" lengthAdjust="spacingAndGlyphs" fill="#3a3a3a" fill-opacity="0.094">State · %String(2)</text>
+<text class="sans" x="131.36954" y="110.38601" font-size="13" textLength="107.80464" lengthAdjust="spacingAndGlyphs" fill="#3a3a3a" fill-opacity="0.094">Values: SP, RJ, MG</text>
+<polygon points="134.1275,60.364998 134.1275,71.365 137.2075,68.505 141.6075,68.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible" keyTimes="0;0.9238" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="79.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">zw ^CLI(1)</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="183.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">^CLI(1)="Maria^SP^1985"</text>
+<text class="mono" x="8" y="80.352974" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="123.369545" y="48.94" width="17.515938" height="18.850002" rx="2" fill="none"/>
+<polygon points="134.1275,60.364998 134.1275,71.365 137.2075,68.505 141.6075,68.064995" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+</svg>

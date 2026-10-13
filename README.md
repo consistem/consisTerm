@@ -46,7 +46,7 @@ só a estrutura, nunca o valor de um registro. Só a primeira consulta de cada
 global espera.
 
 <p align="center">
-  <img src="docs/images/global-tooltip.png" alt="O ponteiro sobre a terceira peça de uma linha de zwrite; um tooltip mostra a propriedade, o tipo e os valores permitidos" width="100%">
+  <img src="docs/images/global-tooltip.svg" alt="O ponteiro sobre uma peça de uma linha de zwrite; um tooltip mostra a propriedade e seus valores" width="100%">
   <br><sub>Passe o mouse numa peça da global e leia o que ela significa.</sub>
 </p>
 
@@ -63,8 +63,8 @@ documentação da global e oferece suas constantes, seus valores listados e os
 subscritos que existem ali agora. Cima/Baixo escolhem, Tab aceita, Esc fecha.
 
 <p align="center">
-  <img src="docs/images/autocomplete.png" alt="Digitando dentro de ^GLOBAL( aparece a lista de subscritos existentes com o nome do subscrito acima" width="100%">
-  <br><sub>Subscritos reais do banco, nomeados pela documentação da global.</sub>
+  <img src="docs/images/autocomplete.svg" alt="Digitando dentro de ^mtemp( a lista de subscritos existentes vai se estreitando" width="100%">
+  <br><sub>Os subscritos que existem, filtrados enquanto você digita.</sub>
 </p>
 
 ## Envie para o Claude
@@ -75,7 +75,7 @@ espera a sua pergunta — nada é perguntado por você. Escolha quanto enviar:
 tudo, os últimos 10 comandos, os últimos 5 ou só a seleção.
 
 <p align="center">
-  <img src="docs/images/claude.png" alt="Uma aba do Claude Code ao lado de uma sessão IRIS, respondendo sobre um erro na saída" width="100%">
+  <img src="docs/images/claude.svg" alt="Um erro, Analisar com o Claude no menu do botão direito, e uma aba do Claude respondendo sobre ele" width="100%">
   <br><sub>Um erro na tela, e uma aba que já sabe dele.</sub>
 </p>
 
@@ -96,8 +96,8 @@ inteira tem os mesmos comandos, mantidos num lugar só. Há um modelo em
 [`packaging/org-macros.xml`](packaging/org-macros.xml).
 
 <p align="center">
-  <img src="docs/images/macros.png" alt="O menu do botão direito do terminal com os grupos de macros da Organização e Pessoais" width="100%">
-  <br><sub>As macros da equipe e as suas, lado a lado.</sub>
+  <img src="docs/images/macros.svg" alt="Uma macro escolhida no menu do botão direito, o parâmetro preenchido e a linha enviada" width="100%">
+  <br><sub>Uma macro do menu, o parâmetro pedido e a linha enviada.</sub>
 </p>
 
 ## Todos os shells numa janela só
@@ -110,7 +110,7 @@ para editar depois. *Abrir consisTerm aqui*, no menu de pastas do Explorer,
 abre um naquela pasta.
 
 <p align="center">
-  <img src="docs/images/shells.png" alt="Abas de uma sessão IRIS, do PowerShell e do Git Bash na mesma janela" width="100%">
+  <img src="docs/images/shells.svg" alt="IRIS, PowerShell e Git Bash abrindo em abas da mesma janela" width="100%">
   <br><sub>IRIS, PowerShell e Git Bash na mesma janela.</sub>
 </p>
 

@@ -1,0 +1,650 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 193" width="840" height="386" role="img" aria-label="A macro chosen from the right-click menu, its parameter filled in, and the line sent">
+<style>text{white-space:pre;dominant-baseline:alphabetic}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace}.sans{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}</style>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="visible;hidden" keyTimes="0;0.0381" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="400,179 400,190 403.08,187.14 407.48,186.7" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0381;0.0476" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="397.6129,177.8335 397.6129,188.8335 400.6929,185.9735 405.09293,185.5335" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0476;0.0571" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="389.18884,173.71686 389.18884,184.71686 392.26883,181.85686 396.66885,181.41685" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0571;0.0667" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="375.52057,167.0375 375.52057,178.0375 378.60056,175.1775 383.00058,174.7375" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0667;0.0762" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="357.47852,158.2208 357.47852,169.2208 360.5585,166.3608 364.95853,165.92079" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0762;0.0857" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="335.93307,147.69206 335.93307,158.69206 339.01306,155.83206 343.4131,155.39206" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0857;0.0952" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="311.75467,135.87666 311.75467,146.87666 314.83466,144.01666 319.23468,143.57666" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.0952;0.1048" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="285.81366,123.199936 285.81366,134.19994 288.89365,131.33994 293.29367,130.89993" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1048;0.1143" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="258.98053,110.08723 258.98053,121.08723 262.06052,118.22723 266.46054,117.787224" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1143;0.1238" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="232.12563,96.9639 232.12563,107.9639 235.20563,105.1039 239.60562,104.663895" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1238;0.1333" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="206.11934,84.25526 206.11934,95.25526 209.19934,92.395256 213.59933,91.95525" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1333;0.1429" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="181.8321,72.38669 181.8321,83.38669 184.91211,80.52669 189.3121,80.086685" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1429;0.1524" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="160.13435,61.783516 160.13435,72.783516 163.21436,69.923515 167.61435,69.48351" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1524;0.1619" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="141.89645,52.8711 141.89645,63.8711 144.97646,61.0111 149.37645,60.571102" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1619;0.1714" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="127.98883,46.074783 127.98883,57.074783 131.06883,54.214783 135.46883,53.774784" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1714;0.1810" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="119.28186,41.8199 119.28186,52.8199 122.36186,49.9599 126.76186,49.5199" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.1810;0.2095" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#005c80" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2095;0.2190" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="44.515" width="59.999992" height="45" rx="4" fill="#252525" fill-opacity="0.239" stroke="#252525" stroke-opacity="0.239" stroke-width="1"/>
+<text class="sans" x="128.61157" y="61.611008" font-size="13" textLength="30.342552" lengthAdjust="spacingAndGlyphs" fill="#474747" fill-opacity="0.239">Copy</text>
+<rect x="122.61158" y="67.015" width="55.999992" height="19.5" rx="3" fill="#003344" fill-opacity="0.239"/>
+<text class="sans" x="128.61157" y="81.11101" font-size="13" textLength="43.727028" lengthAdjust="spacingAndGlyphs" fill="#5f6c7a" fill-opacity="0.239">Macros</text>
+<rect x="182.61157" y="44.515" width="126" height="64.5" rx="4" fill="none"/>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#005c80" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2190;0.2286" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="44.515" width="59.999992" height="45" rx="4" fill="#333333" fill-opacity="0.698" stroke="#333333" stroke-opacity="0.698" stroke-width="1"/>
+<text class="sans" x="128.61157" y="61.611008" font-size="13" textLength="30.342552" lengthAdjust="spacingAndGlyphs" fill="#747474" fill-opacity="0.698">Copy</text>
+<rect x="122.61158" y="67.015" width="55.999992" height="19.5" rx="3" fill="#004d6a" fill-opacity="0.698"/>
+<text class="sans" x="128.61157" y="81.11101" font-size="13" textLength="43.727028" lengthAdjust="spacingAndGlyphs" fill="#9eb6d1" fill-opacity="0.698">Macros</text>
+<rect x="182.61157" y="44.515" width="126" height="64.5" rx="4" fill="none"/>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2286;0.2381" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="44.515" width="59.999992" height="45" rx="4" fill="#3c3c3c" fill-opacity="0.992" stroke="#3c3c3c" stroke-opacity="0.992" stroke-width="1"/>
+<text class="sans" x="128.61157" y="61.611008" font-size="13" textLength="30.342552" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c" fill-opacity="0.992">Copy</text>
+<rect x="122.61158" y="67.015" width="55.999992" height="19.5" rx="3" fill="#005b7f" fill-opacity="0.992"/>
+<text class="sans" x="128.61157" y="81.11101" font-size="13" textLength="43.727028" lengthAdjust="spacingAndGlyphs" fill="#c0defe" fill-opacity="0.992">Macros</text>
+<rect x="182.61157" y="44.515" width="126" height="64.5" rx="4" fill="none"/>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2381;0.2857" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="44.515" width="59.999992" height="45" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="128.61157" y="61.611008" font-size="13" textLength="30.342552" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Copy</text>
+<rect x="122.61158" y="67.015" width="55.999992" height="19.5" rx="3" fill="#005c80"/>
+<text class="sans" x="128.61157" y="81.11101" font-size="13" textLength="43.727028" lengthAdjust="spacingAndGlyphs" fill="#c0deff">Macros</text>
+<rect x="182.61157" y="44.515" width="126" height="64.5" rx="4" fill="none"/>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2857;0.2952" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="44.515" width="59.999992" height="45" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="128.61157" y="61.611008" font-size="13" textLength="30.342552" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Copy</text>
+<rect x="122.61158" y="67.015" width="55.999992" height="19.5" rx="3" fill="#005c80"/>
+<text class="sans" x="128.61157" y="81.11101" font-size="13" textLength="43.727028" lengthAdjust="spacingAndGlyphs" fill="#c0deff">Macros</text>
+<rect x="182.61157" y="44.515" width="126" height="64.5" rx="4" fill="#232323" fill-opacity="0.055" stroke="#232323" stroke-opacity="0.055" stroke-width="1"/>
+<text class="sans" x="190.61157" y="61.611008" font-size="13" textLength="73.41213" lengthAdjust="spacingAndGlyphs" fill="#3b3b3b" fill-opacity="0.055">Show global</text>
+<text class="sans" x="190.61157" y="81.11101" font-size="13" textLength="110.33274" lengthAdjust="spacingAndGlyphs" fill="#3b3b3b" fill-opacity="0.055">Switch namespace</text>
+<text class="sans" x="190.61157" y="100.61101" font-size="13" textLength="67.41213" lengthAdjust="spacingAndGlyphs" fill="#3b3b3b" fill-opacity="0.055">Kill a global</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.2952;0.3048" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="44.515" width="59.999992" height="45" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="128.61157" y="61.611008" font-size="13" textLength="30.342552" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Copy</text>
+<rect x="122.61158" y="67.015" width="55.999992" height="19.5" rx="3" fill="#005c80"/>
+<text class="sans" x="128.61157" y="81.11101" font-size="13" textLength="43.727028" lengthAdjust="spacingAndGlyphs" fill="#c0deff">Macros</text>
+<rect x="182.61157" y="44.515" width="126" height="64.5" rx="4" fill="#272727" fill-opacity="0.325" stroke="#272727" stroke-opacity="0.325" stroke-width="1"/>
+<text class="sans" x="190.61157" y="61.611008" font-size="13" textLength="73.41213" lengthAdjust="spacingAndGlyphs" fill="#505050" fill-opacity="0.325">Show global</text>
+<text class="sans" x="190.61157" y="81.11101" font-size="13" textLength="110.33274" lengthAdjust="spacingAndGlyphs" fill="#505050" fill-opacity="0.325">Switch namespace</text>
+<text class="sans" x="190.61157" y="100.61101" font-size="13" textLength="67.41213" lengthAdjust="spacingAndGlyphs" fill="#505050" fill-opacity="0.325">Kill a global</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.3048;0.3143" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="44.515" width="59.999992" height="45" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="128.61157" y="61.611008" font-size="13" textLength="30.342552" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Copy</text>
+<rect x="122.61158" y="67.015" width="55.999992" height="19.5" rx="3" fill="#005c80"/>
+<text class="sans" x="128.61157" y="81.11101" font-size="13" textLength="43.727028" lengthAdjust="spacingAndGlyphs" fill="#c0deff">Macros</text>
+<rect x="182.61157" y="44.515" width="126" height="64.5" rx="4" fill="#333333" fill-opacity="0.675" stroke="#333333" stroke-opacity="0.675" stroke-width="1"/>
+<text class="sans" x="190.61157" y="61.611008" font-size="13" textLength="73.41213" lengthAdjust="spacingAndGlyphs" fill="#727272" fill-opacity="0.675">Show global</text>
+<text class="sans" x="190.61157" y="81.11101" font-size="13" textLength="110.33274" lengthAdjust="spacingAndGlyphs" fill="#727272" fill-opacity="0.675">Switch namespace</text>
+<text class="sans" x="190.61157" y="100.61101" font-size="13" textLength="67.41213" lengthAdjust="spacingAndGlyphs" fill="#727272" fill-opacity="0.675">Kill a global</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.3143;0.3238" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="44.515" width="59.999992" height="45" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="128.61157" y="61.611008" font-size="13" textLength="30.342552" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Copy</text>
+<rect x="122.61158" y="67.015" width="55.999992" height="19.5" rx="3" fill="#005c80"/>
+<text class="sans" x="128.61157" y="81.11101" font-size="13" textLength="43.727028" lengthAdjust="spacingAndGlyphs" fill="#c0deff">Macros</text>
+<rect x="182.61157" y="44.515" width="126" height="64.5" rx="4" fill="#3b3b3b" fill-opacity="0.945" stroke="#3b3b3b" stroke-opacity="0.945" stroke-width="1"/>
+<text class="sans" x="190.61157" y="61.611008" font-size="13" textLength="73.41213" lengthAdjust="spacingAndGlyphs" fill="#878787" fill-opacity="0.945">Show global</text>
+<text class="sans" x="190.61157" y="81.11101" font-size="13" textLength="110.33274" lengthAdjust="spacingAndGlyphs" fill="#878787" fill-opacity="0.945">Switch namespace</text>
+<text class="sans" x="190.61157" y="100.61101" font-size="13" textLength="67.41213" lengthAdjust="spacingAndGlyphs" fill="#878787" fill-opacity="0.945">Kill a global</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.3238;0.4095" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="44.515" width="59.999992" height="45" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="128.61157" y="61.611008" font-size="13" textLength="30.342552" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Copy</text>
+<rect x="122.61158" y="67.015" width="55.999992" height="19.5" rx="3" fill="#005c80"/>
+<text class="sans" x="128.61157" y="81.11101" font-size="13" textLength="43.727028" lengthAdjust="spacingAndGlyphs" fill="#c0deff">Macros</text>
+<rect x="182.61157" y="44.515" width="126" height="64.5" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="190.61157" y="61.611008" font-size="13" textLength="73.41213" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Show global</text>
+<text class="sans" x="190.61157" y="81.11101" font-size="13" textLength="110.33274" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Switch namespace</text>
+<text class="sans" x="190.61157" y="100.61101" font-size="13" textLength="67.41213" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Kill a global</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.4095;0.5048" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="44.515" width="59.999992" height="45" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="128.61157" y="61.611008" font-size="13" textLength="30.342552" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Copy</text>
+<rect x="122.61158" y="67.015" width="55.999992" height="19.5" rx="3" fill="#005c80"/>
+<text class="sans" x="128.61157" y="81.11101" font-size="13" textLength="43.727028" lengthAdjust="spacingAndGlyphs" fill="#c0deff">Macros</text>
+<rect x="182.61157" y="44.515" width="126" height="64.5" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="190.61157" y="61.611008" font-size="13" textLength="73.41213" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Show global</text>
+<rect x="184.61157" y="67.015" width="122" height="19.5" rx="3" fill="#005c80"/>
+<text class="sans" x="190.61157" y="81.11101" font-size="13" textLength="110.33274" lengthAdjust="spacingAndGlyphs" fill="#c0deff">Switch namespace</text>
+<text class="sans" x="190.61157" y="100.61101" font-size="13" textLength="67.41213" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Kill a global</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5048;0.5333" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="44.515" width="59.999992" height="45" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="128.61157" y="61.611008" font-size="13" textLength="30.342552" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Copy</text>
+<rect x="122.61158" y="67.015" width="55.999992" height="19.5" rx="3" fill="#005c80"/>
+<text class="sans" x="128.61157" y="81.11101" font-size="13" textLength="43.727028" lengthAdjust="spacingAndGlyphs" fill="#c0deff">Macros</text>
+<rect x="182.61157" y="44.515" width="126" height="64.5" rx="4" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="190.61157" y="61.611008" font-size="13" textLength="73.41213" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Show global</text>
+<rect x="184.61157" y="67.015" width="122" height="19.5" rx="3" fill="#005c80"/>
+<text class="sans" x="190.61157" y="81.11101" font-size="13" textLength="110.33274" lengthAdjust="spacingAndGlyphs" fill="#c0deff">Switch namespace</text>
+<text class="sans" x="190.61157" y="100.61101" font-size="13" textLength="67.41213" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">Kill a global</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#005c80" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5333;0.5429" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="44.515" width="59.999992" height="45" rx="4" fill="#3b3b3b" fill-opacity="0.965" stroke="#3b3b3b" stroke-opacity="0.965" stroke-width="1"/>
+<text class="sans" x="128.61157" y="61.611008" font-size="13" textLength="30.342552" lengthAdjust="spacingAndGlyphs" fill="#898989" fill-opacity="0.965">Copy</text>
+<rect x="122.61158" y="67.015" width="55.999992" height="19.5" rx="3" fill="#005b7e" fill-opacity="0.965"/>
+<text class="sans" x="128.61157" y="81.11101" font-size="13" textLength="43.727028" lengthAdjust="spacingAndGlyphs" fill="#bcd9fa" fill-opacity="0.965">Macros</text>
+<rect x="182.61157" y="44.515" width="126" height="64.5" rx="4" fill="#3b3b3b" fill-opacity="0.965" stroke="#3b3b3b" stroke-opacity="0.965" stroke-width="1"/>
+<text class="sans" x="190.61157" y="61.611008" font-size="13" textLength="73.41213" lengthAdjust="spacingAndGlyphs" fill="#898989" fill-opacity="0.965">Show global</text>
+<rect x="184.61157" y="67.015" width="122" height="19.5" rx="3" fill="#005b7e" fill-opacity="0.965"/>
+<text class="sans" x="190.61157" y="81.11101" font-size="13" textLength="110.33274" lengthAdjust="spacingAndGlyphs" fill="#bcd9fa" fill-opacity="0.965">Switch namespace</text>
+<text class="sans" x="190.61157" y="100.61101" font-size="13" textLength="67.41213" lengthAdjust="spacingAndGlyphs" fill="#898989" fill-opacity="0.965">Kill a global</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#005c80" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5429;0.5524" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="44.515" width="59.999992" height="45" rx="4" fill="#303030" fill-opacity="0.608" stroke="#303030" stroke-opacity="0.608" stroke-width="1"/>
+<text class="sans" x="128.61157" y="61.611008" font-size="13" textLength="30.342552" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c" fill-opacity="0.608">Copy</text>
+<rect x="122.61158" y="67.015" width="55.999992" height="19.5" rx="3" fill="#004863" fill-opacity="0.608"/>
+<text class="sans" x="128.61157" y="81.11101" font-size="13" textLength="43.727028" lengthAdjust="spacingAndGlyphs" fill="#92a9c2" fill-opacity="0.608">Macros</text>
+<rect x="182.61157" y="44.515" width="126" height="64.5" rx="4" fill="#303030" fill-opacity="0.608" stroke="#303030" stroke-opacity="0.608" stroke-width="1"/>
+<text class="sans" x="190.61157" y="61.611008" font-size="13" textLength="73.41213" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c" fill-opacity="0.608">Show global</text>
+<rect x="184.61157" y="67.015" width="122" height="19.5" rx="3" fill="#004863" fill-opacity="0.608"/>
+<text class="sans" x="190.61157" y="81.11101" font-size="13" textLength="110.33274" lengthAdjust="spacingAndGlyphs" fill="#92a9c2" fill-opacity="0.608">Switch namespace</text>
+<text class="sans" x="190.61157" y="100.61101" font-size="13" textLength="67.41213" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c" fill-opacity="0.608">Kill a global</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5524;0.5619" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="120.61158" y="44.515" width="59.999992" height="45" rx="4" fill="#252525" fill-opacity="0.161" stroke="#252525" stroke-opacity="0.161" stroke-width="1"/>
+<text class="sans" x="128.61157" y="61.611008" font-size="13" textLength="30.342552" lengthAdjust="spacingAndGlyphs" fill="#414141" fill-opacity="0.161">Copy</text>
+<rect x="122.61158" y="67.015" width="55.999992" height="19.5" rx="3" fill="#00303d" fill-opacity="0.161"/>
+<text class="sans" x="128.61157" y="81.11101" font-size="13" textLength="43.727028" lengthAdjust="spacingAndGlyphs" fill="#525d68" fill-opacity="0.161">Macros</text>
+<rect x="182.61157" y="44.515" width="126" height="64.5" rx="4" fill="#252525" fill-opacity="0.161" stroke="#252525" stroke-opacity="0.161" stroke-width="1"/>
+<text class="sans" x="190.61157" y="61.611008" font-size="13" textLength="73.41213" lengthAdjust="spacingAndGlyphs" fill="#414141" fill-opacity="0.161">Show global</text>
+<rect x="184.61157" y="67.015" width="122" height="19.5" rx="3" fill="#00303d" fill-opacity="0.161"/>
+<text class="sans" x="190.61157" y="81.11101" font-size="13" textLength="110.33274" lengthAdjust="spacingAndGlyphs" fill="#525d68" fill-opacity="0.161">Switch namespace</text>
+<text class="sans" x="190.61157" y="100.61101" font-size="13" textLength="67.41213" lengthAdjust="spacingAndGlyphs" fill="#414141" fill-opacity="0.161">Kill a global</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5619;0.5714" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="94.5" y="84.54" width="231" height="49.010002" rx="6" fill="#2d2d2d" fill-opacity="0.012" stroke="#2d2d2d" stroke-opacity="0.012" stroke-width="1"/>
+<text class="sans" x="104.5" y="104.88601" font-size="13" textLength="69.33274" lengthAdjust="spacingAndGlyphs" fill="#2d2d2d" fill-opacity="0.012">Namespace</text>
+<rect x="104.5" y="107.16" width="211" height="18.849998" rx="3" fill="#000000" fill-opacity="0.012" stroke="#002d2d" stroke-opacity="0.012" stroke-width="1"/>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5714;0.5810" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="94.5" y="84.54" width="231" height="49.010002" rx="6" fill="#272727" fill-opacity="0.325" stroke="#272727" stroke-opacity="0.325" stroke-width="1"/>
+<text class="sans" x="104.5" y="104.88601" font-size="13" textLength="69.33274" lengthAdjust="spacingAndGlyphs" fill="#333333" fill-opacity="0.325">Namespace</text>
+<rect x="104.5" y="107.16" width="211" height="18.849998" rx="3" fill="#090909" fill-opacity="0.325" stroke="#00384b" stroke-opacity="0.325" stroke-width="1"/>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5810;0.5905" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="94.5" y="84.54" width="231" height="49.010002" rx="6" fill="#363636" fill-opacity="0.780" stroke="#363636" stroke-opacity="0.780" stroke-width="1"/>
+<text class="sans" x="104.5" y="104.88601" font-size="13" textLength="69.33274" lengthAdjust="spacingAndGlyphs" fill="#4a4a4a" fill-opacity="0.780">Namespace</text>
+<rect x="104.5" y="107.16" width="211" height="18.849998" rx="3" fill="#0a0a0a" fill-opacity="0.780" stroke="#005170" stroke-opacity="0.780" stroke-width="1"/>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.5905;0.6381" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="94.5" y="84.54" width="231" height="49.010002" rx="6" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="104.5" y="104.88601" font-size="13" textLength="69.33274" lengthAdjust="spacingAndGlyphs" fill="#535353">Namespace</text>
+<rect x="104.5" y="107.16" width="211" height="18.849998" rx="3" fill="#0a0a0a" stroke="#005c80" stroke-width="1"/>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="visible"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.6381;0.6667" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="94.5" y="84.54" width="231" height="49.010002" rx="6" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="104.5" y="104.88601" font-size="13" textLength="69.33274" lengthAdjust="spacingAndGlyphs" fill="#535353">Namespace</text>
+<rect x="104.5" y="107.16" width="211" height="18.849998" rx="3" fill="#0a0a0a" stroke="#005c80" stroke-width="1"/>
+<text class="mono" x="110.5" y="120.64798" font-size="13" textLength="7.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">D</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.6667;0.7048" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="94.5" y="84.54" width="231" height="49.010002" rx="6" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="104.5" y="104.88601" font-size="13" textLength="69.33274" lengthAdjust="spacingAndGlyphs" fill="#535353">Namespace</text>
+<rect x="104.5" y="107.16" width="211" height="18.849998" rx="3" fill="#0a0a0a" stroke="#005c80" stroke-width="1"/>
+<text class="mono" x="110.5" y="120.64798" font-size="13" textLength="15.75797" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">DE</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.7048;0.7524" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="94.5" y="84.54" width="231" height="49.010002" rx="6" fill="#3c3c3c" stroke="#3c3c3c" stroke-width="1"/>
+<text class="sans" x="104.5" y="104.88601" font-size="13" textLength="69.33274" lengthAdjust="spacingAndGlyphs" fill="#535353">Namespace</text>
+<rect x="104.5" y="107.16" width="211" height="18.849998" rx="3" fill="#0a0a0a" stroke="#005c80" stroke-width="1"/>
+<text class="mono" x="110.5" y="120.64798" font-size="13" textLength="23.757969" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">DEV</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.7524;0.7619" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="94.5" y="84.54" width="231" height="49.010002" rx="6" fill="#3c3c3c" fill-opacity="0.980" stroke="#3c3c3c" stroke-opacity="0.980" stroke-width="1"/>
+<text class="sans" x="104.5" y="104.88601" font-size="13" textLength="69.33274" lengthAdjust="spacingAndGlyphs" fill="#535353" fill-opacity="0.980">Namespace</text>
+<rect x="104.5" y="107.16" width="211" height="18.849998" rx="3" fill="#0a0a0a" fill-opacity="0.980" stroke="#005b7f" stroke-opacity="0.980" stroke-width="1"/>
+<text class="mono" x="110.5" y="120.64798" font-size="13" textLength="23.757969" lengthAdjust="spacingAndGlyphs" fill="#8a8a8a" fill-opacity="0.980">DEV</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.7619;0.7714" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="94.5" y="84.54" width="231" height="49.010002" rx="6" fill="#313131" fill-opacity="0.651" stroke="#313131" stroke-opacity="0.651" stroke-width="1"/>
+<text class="sans" x="104.5" y="104.88601" font-size="13" textLength="69.33274" lengthAdjust="spacingAndGlyphs" fill="#434343" fill-opacity="0.651">Namespace</text>
+<rect x="104.5" y="107.16" width="211" height="18.849998" rx="3" fill="#0b0b0b" fill-opacity="0.651" stroke="#004a67" stroke-opacity="0.651" stroke-width="1"/>
+<text class="mono" x="110.5" y="120.64798" font-size="13" textLength="23.757969" lengthAdjust="spacingAndGlyphs" fill="#707070" fill-opacity="0.651">DEV</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden" keyTimes="0;0.7714;0.7810" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<rect x="94.5" y="84.54" width="231" height="49.010002" rx="6" fill="#252525" fill-opacity="0.200" stroke="#252525" stroke-opacity="0.200" stroke-width="1"/>
+<text class="sans" x="104.5" y="104.88601" font-size="13" textLength="69.33274" lengthAdjust="spacingAndGlyphs" fill="#2d2d2d" fill-opacity="0.200">Namespace</text>
+<rect x="104.5" y="107.16" width="211" height="18.849998" rx="3" fill="#0a0a0a" fill-opacity="0.200" stroke="#00313e" stroke-opacity="0.200" stroke-width="1"/>
+<text class="mono" x="110.5" y="120.64798" font-size="13" textLength="23.757969" lengthAdjust="spacingAndGlyphs" fill="#444444" fill-opacity="0.200">DEV</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+<g visibility="hidden"><animate attributeName="visibility" calcMode="discrete" values="hidden;visible" keyTimes="0;0.7810" dur="7s" repeatCount="indefinite"/>
+<rect x="0" y="0" width="420" height="193" rx="0" fill="none"/>
+<rect x="0" y="0" width="420" height="193" rx="6" fill="#1b1b1b"/>
+<path d="M0 25.089998H420Q420 25.089998 420 25.089998V187Q420 193 414 193H6Q0 193 0 187V25.089998Q0 25.089998 0 25.089998Z" fill="#0a0a0a"/>
+<rect x="8" y="0" width="100.799995" height="25.089998" rx="0" fill="#0a0a0a"/>
+<text class="sans" x="47.899998" y="16.891006" font-size="13.7994995" textLength="20.91793" lengthAdjust="spacingAndGlyphs" fill="#8c8c8c">IRIS</text>
+<circle cx="410" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="400" cy="12.544999" r="2.5" fill="#535353"/>
+<circle cx="390" cy="12.544999" r="2.5" fill="#535353"/>
+<text class="mono" x="8" y="42.65297" font-size="13" textLength="39.75797" lengthAdjust="spacingAndGlyphs" fill="#535353">USER&gt;</text>
+<text class="mono" x="46.78985" y="42.65297" font-size="13" textLength="63.75797" lengthAdjust="spacingAndGlyphs" fill="#5aaaff">ZN "DEV"</text>
+<text class="mono" x="8" y="61.50297" font-size="13" textLength="31.757969" lengthAdjust="spacingAndGlyphs" fill="#535353">DEV&gt;</text>
+<polygon points="116.61157,40.515 116.61157,51.515 119.691574,48.655 124.091576,48.215" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+</g>
+</svg>

@@ -783,6 +783,9 @@ fn drop_down(painter: &Painter, rect: Rect, ink: &Ink, t: f32, key: Option<&str>
 }
 
 #[cfg(test)]
+mod svg;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
