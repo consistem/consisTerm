@@ -227,13 +227,66 @@ fn proxy_user() -> String {
         .unwrap_or_default()
 }
 
-/// The proxy to reach the internet through, as `host:port`.
+/// The proxy to reach the internet through, as `host:port` - with no
+/// credentials in it, so it can be shown and logged.
 ///
 /// Read rather than configured: the machines this runs on are handed their
 /// proxy by policy, and a second place to configure it is a second place for it
 /// to be wrong. The *credentials* are configured, because there is nowhere to
-/// read those from - see `proxy_credentials`.
+/// read those from - see `proxy_credentials` - unless the variable carries
+/// them itself, and then they are kept out of everything this returns.
 pub fn system_proxy() -> Option<String> {
+    read_system_proxy().map(|raw| ProxyAddress::parse(&raw).shown())
+}
+
+/// A proxy URL taken apart: where it is, and the credentials written into it.
+///
+/// `HTTPS_PROXY=http://user:password@host:3128` is a common way to hand every
+/// tool on a machine the proxy and its password at once, and the address came
+/// out of here with the password in it - onto the settings page, into the
+/// updater's error messages and into the log.
+#[derive(Clone, Debug, PartialEq)]
+struct ProxyAddress {
+    /// `http://`, `socks5://` and the like, as it was written; empty when it
+    /// was not.
+    scheme: String,
+    /// `host:port`.
+    host: String,
+    credentials: Option<(String, String)>,
+}
+
+impl ProxyAddress {
+    fn parse(raw: &str) -> ProxyAddress {
+        let raw = raw.trim().trim_end_matches('/');
+        let (scheme, rest) = match raw.split_once("://") {
+            Some((scheme, rest)) => (format!("{scheme}://"), rest),
+            None => (String::new(), raw),
+        };
+        // The way ureq reads it: credentials end at the last `@`, the user at
+        // the first `:`, so a password may hold either.
+        let (credentials, host) = match rest.rsplit_once('@') {
+            Some((userinfo, host)) => {
+                let (user, password) = userinfo.split_once(':').unwrap_or((userinfo, ""));
+                (Some((user.to_string(), password.to_string())), host)
+            }
+            None => (None, rest),
+        };
+        ProxyAddress {
+            scheme,
+            host: host.trim().to_string(),
+            credentials,
+        }
+    }
+
+    /// The address with the credentials left out.
+    fn shown(&self) -> String {
+        format!("{}{}", self.scheme, self.host)
+    }
+}
+
+/// The proxy setting exactly as the system has it, credentials and all. Never
+/// to be shown: see [`ProxyAddress`].
+fn read_system_proxy() -> Option<String> {
     for key in ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy"] {
         if let Ok(value) = std::env::var(key) {
             if !value.trim().is_empty() {
@@ -297,17 +350,29 @@ fn download_agent() -> ureq::Agent {
     )
 }
 
-/// The proxy as ureq wants to be told about it: `user:password@host:port`.
+/// The proxy as ureq wants to be told about it:
+/// `scheme://user:password@host:port`.
+///
+/// The credentials set in Settings win over any the system's URL carries: they
+/// are the ones the user can see and change, and a field that changes nothing
+/// is what was reported. They go after the scheme - put in front of it, ureq
+/// reads `user:password@http` as the scheme and drops the proxy altogether.
 ///
 /// The shape matters more than it looks. ureq splits the credentials off at the
 /// *last* `@` and the username off at the *first* `:`, so a password holding
 /// either character survives - which real ones do. A username holding one
 /// would not, and there is nothing this can do about that: the format has no
 /// escaping.
-fn proxy_spec(host: &str, credentials: Option<(String, String)>) -> String {
-    match credentials {
-        Some((user, password)) => format!("{}:{}@{}", user.trim(), password, host.trim()),
-        None => host.trim().to_string(),
+fn proxy_spec(address: &ProxyAddress, credentials: Option<(String, String)>) -> String {
+    match credentials.or_else(|| address.credentials.clone()) {
+        Some((user, password)) => format!(
+            "{}{}:{}@{}",
+            address.scheme,
+            user.trim(),
+            password,
+            address.host
+        ),
+        None => address.shown(),
     }
 }
 
@@ -315,19 +380,19 @@ fn proxy_spec(host: &str, credentials: Option<(String, String)>) -> String {
 /// machine's own proxy.
 fn build_agent(builder: ureq::AgentBuilder) -> ureq::Agent {
     let mut builder = builder.user_agent(USER_AGENT);
-    if let Some(host) = system_proxy() {
+    if let Some(address) = read_system_proxy().map(|raw| ProxyAddress::parse(&raw)) {
         // Credentials go in the URL, which is how ureq is told about them; they
         // reach the proxy as a `Proxy-Authorization: Basic` header. Only Basic
         // - ureq cannot do NTLM, and neither can the `curl.exe` Windows ships
         // - so a proxy offering only NTLM is one this cannot get past, and the
         // dialog says so rather than failing quietly.
-        let spec = proxy_spec(&host, proxy_credentials(&proxy_user()));
+        let spec = proxy_spec(&address, proxy_credentials(&proxy_user()));
         match ureq::Proxy::new(&spec) {
             Ok(proxy) => builder = builder.proxy(proxy),
             // A malformed proxy setting is worth a line in the log, not a
             // failed update check: the connection may well work without one.
             // Logged without the spec, which would carry the password.
-            Err(e) => log::warn!("ignoring the system proxy {host:?}: {e}"),
+            Err(e) => log::warn!("ignoring the system proxy {:?}: {e}", address.shown()),
         }
     }
     builder.build()
@@ -685,14 +750,52 @@ mod tests {
     /// a truncated password to the proxy and report a plain `407`.
     #[test]
     fn proxy_credentials_survive_the_characters_passwords_have_in_them() {
-        assert_eq!(proxy_spec("host:3128", None), "host:3128");
+        assert_eq!(
+            proxy_spec(&ProxyAddress::parse("host:3128"), None),
+            "host:3128"
+        );
 
-        let spec = proxy_spec(" host:3128 ", Some(("someone".into(), "p@ss:w0rd".into())));
+        let spec = proxy_spec(
+            &ProxyAddress::parse(" host:3128 "),
+            Some(("someone".into(), "p@ss:w0rd".into())),
+        );
         assert_eq!(spec, "someone:p@ss:w0rd@host:3128");
         let parsed = ureq::Proxy::new(&spec).expect("ureq should accept this");
         // Reading the parsed fields back is the only way to be sure ureq took
         // it the way it was meant: what reaches the proxy is built from these.
         assert!(format!("{parsed:?}").contains("p@ss:w0rd"));
+    }
+
+    /// The case reported: a proxy variable carrying a password, which was
+    /// shown on the settings page as it was written.
+    #[test]
+    fn a_password_in_the_proxy_variable_is_never_shown() {
+        let address = ProxyAddress::parse("http://someone:p@ss:w0rd@proxy.example:3128/");
+        assert_eq!(address.shown(), "http://proxy.example:3128");
+        assert_eq!(
+            address.credentials,
+            Some(("someone".into(), "p@ss:w0rd".into()))
+        );
+        assert_eq!(
+            ProxyAddress::parse("proxy.example:3128").shown(),
+            "proxy.example:3128"
+        );
+    }
+
+    /// The system's credentials still reach the proxy when Settings has none,
+    /// and Settings' replace them when it has - and either way the result is
+    /// something ureq accepts, which credentials put before the scheme were
+    /// not.
+    #[test]
+    fn the_settings_credentials_win_over_the_ones_in_the_proxy_variable() {
+        let address = ProxyAddress::parse("http://env-user:env-pass@proxy.example:3128");
+        let from_env = proxy_spec(&address, None);
+        assert_eq!(from_env, "http://env-user:env-pass@proxy.example:3128");
+        let from_settings = proxy_spec(&address, Some(("me".into(), "mine".into())));
+        assert_eq!(from_settings, "http://me:mine@proxy.example:3128");
+        for spec in [from_env, from_settings] {
+            ureq::Proxy::new(&spec).expect("ureq should accept this");
+        }
     }
 
     /// The copy that replaced `std::io::copy` has to report as it goes, not
