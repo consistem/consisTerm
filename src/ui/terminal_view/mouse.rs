@@ -76,10 +76,11 @@ fn word_at(grid: &Grid, line: usize, col: usize) -> Option<Selection> {
 }
 
 /// What a frame's worth of mouse activity asked the caller to do.
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub(super) struct MouseOutcome {
     pub(super) copy_selection: bool,
     pub(super) cursor_move: Option<i64>,
+    pub(super) open_link: Option<String>,
     pub(super) font_delta: f32,
     pub(super) font_scale: Option<f32>,
 }
@@ -205,6 +206,18 @@ pub(super) fn handle_mouse(
     // moved past its threshold, so pressing and releasing without moving never
     // started one, and the old selection stayed on screen still holding Ctrl+C.
     if response.clicked() {
+        // Ctrl+click on a web address opens it, as in every other terminal -
+        // and does nothing else: the selection is left alone, and IRIS's
+        // cursor is not walked over to an address it has no use for.
+        let ctrl = ui.input(|i| i.modifiers.command);
+        if let Some(pos) = response.interact_pointer_pos().filter(|_| ctrl) {
+            let (line, col) = pos_to_cell(pos);
+            if let Some(found) = link::link_at(grid, line, col) {
+                outcome.open_link = Some(found.url);
+                return outcome;
+            }
+        }
+
         state.selection = None;
 
         // Clicking inside the line being typed puts IRIS's cursor there. Only

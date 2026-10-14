@@ -14,7 +14,7 @@ use crate::features::macros::{Macro, MacroGroup};
 use crate::features::natives::Native;
 use crate::i18n::tr;
 use crate::term::cell::{Cell, Color};
-use crate::term::{lineedit, palette, syntax, Attrs, Grid};
+use crate::term::{lineedit, link, palette, syntax, Attrs, Grid};
 
 // Split by what each part answers for; the widget itself, its public
 // types and the frame's entry point stay here.
@@ -380,6 +380,8 @@ pub struct RenderResult {
     /// Columns to move IRIS's cursor by, after a click inside the line being
     /// typed. Negative is left.
     pub cursor_move: Option<i64>,
+    /// A web address Ctrl+clicked, for the caller to hand to the browser.
+    pub open_link: Option<String>,
     /// Font size change requested by Ctrl + mouse wheel over this pane, in
     /// whole steps.
     pub font_delta: f32,
@@ -712,6 +714,42 @@ pub fn show(
         painter.extend(shapes.drain(..));
     });
 
+    // The address under the pointer is underlined, so it reads as something to
+    // click, and with Ctrl held the pointer says it will be followed. Not
+    // during a drag, which is selecting text and not pointing at it.
+    let hovered_link = response
+        .hover_pos()
+        .filter(|_| !response.dragged())
+        .and_then(|pos| {
+            let offset = mouse::column_at(pos.x, rect.left(), cell.x, mode.view_cols);
+            let last = grid.cols.saturating_sub(1);
+            let (line, col) = mouse::resolve(pos, rect, cell, top, mode, &segments, offset, last);
+            link::link_at(grid, line, col)
+        });
+    if let Some(found) = &hovered_link {
+        if ui.input(|i| i.modifiers.command) {
+            ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+        }
+        for (screen_row, segment) in segments.iter().enumerate() {
+            for &(line, start, end) in &found.spans {
+                // What of the span this display row shows, in its own columns.
+                let from = start.max(segment.start);
+                let to = end.min(segment.start + view_cols);
+                if line != segment.line || from >= to {
+                    continue;
+                }
+                let y = rect.top() + (screen_row + 1) as f32 * cell.y - 1.0;
+                painter.line_segment(
+                    [
+                        Pos2::new(glyph_x(rect.left(), from - segment.start, cell), y),
+                        Pos2::new(glyph_x(rect.left(), to - segment.start, cell), y),
+                    ],
+                    Stroke::new(1.0_f32, theme.foreground),
+                );
+            }
+        }
+    }
+
     if let Some((screen_row, _, col)) = cursor_at {
         // Inverted in insert mode, and moved clear of the background if the
         // inverse would have landed on it.
@@ -1021,6 +1059,7 @@ pub fn show(
         context_action,
         copy_selection: mouse.copy_selection,
         cursor_move: mouse.cursor_move,
+        open_link: mouse.open_link,
         font_delta: mouse.font_delta,
         font_scale: mouse.font_scale,
         cols: grid_cols,

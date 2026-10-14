@@ -158,6 +158,11 @@ impl App {
         if let Some(columns) = result.cursor_move {
             self.move_cursor(at, columns);
         }
+        if let Some(url) = result.open_link {
+            if let Err(e) = crate::features::usage::open(&url) {
+                self.set_status(tr1("Could not open the link: {}", &format!("{e:#}")));
+            }
+        }
 
         if let Some(action) = result.context_action {
             use terminal_view::ContextAction;

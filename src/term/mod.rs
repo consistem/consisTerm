@@ -19,6 +19,7 @@
 //! - [`lineedit`] finds the prompt and the line being typed on it, which is how
 //!   history, recall and the namespace in the tab name are all read off the
 //!   screen rather than tracked.
+//! - [`link`] finds a web address under the pointer, for Ctrl+click to open.
 //!
 //! [`Cell`]: cell::Cell
 
@@ -26,6 +27,7 @@ pub mod cell;
 pub mod encoding;
 pub mod grid;
 pub mod lineedit;
+pub mod link;
 pub mod palette;
 pub mod parser;
 pub mod sql;

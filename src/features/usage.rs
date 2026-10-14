@@ -254,7 +254,7 @@ fn percent(text: &str) -> String {
 }
 
 /// Hands a link to whatever the system opens that kind of link with - for a
-/// `mailto:`, the default mail program.
+/// `mailto:`, the default mail program, and for a web address the browser.
 #[cfg(windows)]
 pub fn open(url: &str) -> Result<()> {
     use windows_sys::Win32::UI::Shell::ShellExecuteW;

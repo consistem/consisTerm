@@ -173,6 +173,7 @@ const PT_BR: &[(&str, &str)] = &[
     ("Another program already uses that shortcut. Choose another one.", "Outro programa já usa esse atalho. Escolha outro."),
     ("Downloading... {}", "Baixando... {}"),
     ("Could not download the update: {}", "Não foi possível baixar a atualização: {}"),
+    ("Could not open the link: {}", "Não foi possível abrir o link: {}"),
     ("Or fetch it yourself:", "Ou baixe você mesmo:"),
     ("open the download", "abrir o download"),
     ("Save it next to the running program, then replace the program with it.",
