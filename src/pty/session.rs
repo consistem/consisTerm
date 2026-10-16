@@ -369,6 +369,15 @@ impl Session {
         }
     }
 
+    /// Whether the far side answers a resize by repainting the screen.
+    ///
+    /// A pseudoconsole does, every time; a Telnet server is told the new size
+    /// and says nothing back, so there is no repaint to wait for before the
+    /// next one. See [`crate::term::Grid::awaiting_repaint`].
+    pub fn repaints_on_resize(&self) -> bool {
+        matches!(self, Session::Pty(_))
+    }
+
     pub fn size(&self) -> (u16, u16) {
         match self {
             Session::Pty(s) => s.size(),

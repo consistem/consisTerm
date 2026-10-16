@@ -658,17 +658,11 @@ fn draw_sections(ui: &mut Ui, page: &Page, c: &mut Ctx<'_>, view: &mut View) {
         if items.is_empty() {
             continue;
         }
-        match section.heading {
-            Some(heading) => prefs::section(ui, tr(heading)),
-            None => ui.add_space(10.0),
-        }
         let enabled = section.enabled.is_none_or(|enabled| enabled(c));
-        ui.add_enabled_ui(enabled, |ui| {
-            prefs::card(ui, index, |card| {
-                for item in items {
-                    draw_item(card, page, item, c, view);
-                }
-            });
+        prefs::titled_card(ui, section.heading.map(tr), enabled, index, |card| {
+            for item in items {
+                draw_item(card, page, item, c, view);
+            }
         });
         if let Some(footer) = section.footer {
             prefs::footer(ui, tr(footer));

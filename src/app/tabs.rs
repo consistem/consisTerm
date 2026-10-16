@@ -848,7 +848,14 @@ const TAB_CLOSE_GAP: f32 = 6.0;
 /// this when the tabs are in it, or the buttons ahead of them would be centred
 /// on a row the tabs then make taller.
 pub(super) fn tab_height(ui: &egui::Ui) -> f32 {
-    ui.spacing().interact_size.y + 4.0
+    match crate::ui::skin::Kit::of(ui.ctx()) {
+        // A skin's tab, grown with the title bar scale as a widget is.
+        Some(kit) => {
+            let scale = (ui.spacing().interact_size.y / 18.0).max(1.0);
+            (kit.metrics().tab_height * kit.u() * scale).round()
+        }
+        None => ui.spacing().interact_size.y + 4.0,
+    }
 }
 
 /// One tab, drawn the way elementary's Files and Terminal draw theirs: the
@@ -964,7 +971,16 @@ fn tab_pill(
     let base = tab_height(ui);
     // A row's full height, so the tab runs from top to bottom of its bar; a
     // column's tabs are each one tab tall.
-    let height = height.unwrap_or_else(|| ui.available_height().max(base));
+    // Under a skin the row is the title bar's, which the tab fits rather
+    // than stretches; without one a tab is at least a tab tall.
+    let skinned = crate::ui::skin::Kit::of(ui.ctx()).is_some();
+    let height = height.unwrap_or_else(|| {
+        if skinned {
+            ui.available_height()
+        } else {
+            ui.available_height().max(base)
+        }
+    });
     let close_side = base - 8.0;
     let pad = 8.0;
     let font = egui::TextStyle::Button.resolve(ui.style());
@@ -1004,6 +1020,21 @@ fn tab_pill(
         )
     });
 
+    if let Some(kit) = crate::ui::skin::Kit::of(ui.ctx()) {
+        if ui.is_rect_visible(rect) {
+            skinned_tab(
+                ui,
+                &kit,
+                rect,
+                &response,
+                selected,
+                galley,
+                close.as_ref(),
+                close_rect,
+            );
+        }
+        return (response, close);
+    }
     if ui.is_rect_visible(rect) {
         let visuals = ui.visuals();
         if selected {
@@ -1060,6 +1091,62 @@ fn tab_pill(
         }
     }
     (response, close)
+}
+
+/// One tab as the skin draws a tab: its frame, the name in the skin's ink,
+/// and the cross as a small pixel mark, on a button of its own while the
+/// pointer is over it.
+#[allow(clippy::too_many_arguments)] // the parts of one tab `tab_pill` has already worked out
+fn skinned_tab(
+    ui: &egui::Ui,
+    kit: &crate::ui::skin::Kit,
+    rect: egui::Rect,
+    response: &egui::Response,
+    selected: bool,
+    galley: std::sync::Arc<egui::Galley>,
+    close: Option<&egui::Response>,
+    close_rect: egui::Rect,
+) {
+    use crate::ui::skin::{prim, St};
+    let style = kit.style();
+    let st = St {
+        on: selected,
+        hovered: response.hovered(),
+        ..St::default()
+    };
+    let painter = ui.painter();
+    painter.extend(style.tab(kit, rect, st));
+    // The shown tab stands two pixels taller, and its name with it.
+    let lift = if selected { 2.0 * kit.u() } else { 0.0 };
+    let at = rect.center() - galley.size() / 2.0 - egui::vec2(0.0, lift);
+    // Over the page's text colour the galley was laid out in: the tab's own
+    // ink, as the tab is the skin's - a user's page text need not read on it.
+    painter.galley_with_override_text_color(
+        egui::pos2(at.x.round(), at.y.round()),
+        galley,
+        style.tab_text(kit, st),
+    );
+    if let Some(close) = close {
+        let square = egui::Rect::from_center_size(
+            close_rect.center() - egui::vec2(0.0, lift),
+            egui::Vec2::splat((close_rect.width().min(16.0 * kit.u())).round()),
+        );
+        if close.hovered() {
+            painter.extend(style.button(
+                kit,
+                square,
+                St {
+                    hovered: true,
+                    pressed: close.is_pointer_button_down_on(),
+                    ..St::default()
+                },
+            ));
+        }
+        const CROSS: [&str; 6] = ["##..##", ".####.", "..##..", "..##..", ".####.", "##..##"];
+        let at = prim::centred(square, &CROSS, kit.ppp);
+        let ink = style.tab_text(kit, st);
+        painter.extend(prim::sprite(at, &CROSS, &[('#', ink)], kit.ppp));
+    }
 }
 
 /// Where the tab being dragged belongs, given the left and right edge of every

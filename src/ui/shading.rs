@@ -234,6 +234,12 @@ pub fn set_backdrop(ctx: &egui::Context, gradient: Option<crate::config::theme::
     ctx.data_mut(|d| d.insert_temp(backdrop_id(), gradient));
 }
 
+/// The chrome gradient [`set_backdrop`] last recorded, if any.
+pub fn backdrop(ctx: &egui::Context) -> Option<crate::config::theme::UiGradient> {
+    ctx.data(|d| d.get_temp::<Option<crate::config::theme::UiGradient>>(backdrop_id()))
+        .flatten()
+}
+
 /// Paints the chrome gradient, if the theme has one, behind everything in the
 /// window being drawn. The panels are left unfilled under a gradient (see
 /// `Theme::visuals`), so this is what shows through them.

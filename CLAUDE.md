@@ -29,7 +29,10 @@ the build panics rather than failing cleanly. The toolchain is GNU
 (`x86_64-pc-windows-gnu`), not MSVC, which is why there is no `.pdb` and why a
 profiler cannot symbolize a build (see **Profiling**).
 
-Everything CI runs, and what you must run before claiming a change works:
+What you must run before claiming a change works. Nothing on GitHub runs it
+on a push or a pull request: the `test` job of `release.yml` runs it only on a
+release tag, and builds nothing until it passes - so between releases this is
+the only check there is.
 
 ```bash
 cargo fmt --all -- --check

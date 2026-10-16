@@ -33,9 +33,17 @@ pub fn show<R>(
     contents: impl FnOnce(&mut Ui) -> R,
 ) {
     veil(ctx, id);
-    let frame = egui::Frame::window(&ctx.style())
-        .rounding(Rounding::same(12.0))
-        .inner_margin(Margin::symmetric(22.0, 18.0));
+    let kit = crate::ui::skin::Kit::of(ctx);
+    // Under a skin a dialog is one of the skin's windows: its frame from the
+    // skin, a title bar of its own, and the body padded inside.
+    let frame = match &kit {
+        Some(kit) => {
+            egui::Frame::window(&ctx.style()).inner_margin(crate::ui::chrome::window_margin(kit))
+        }
+        None => egui::Frame::window(&ctx.style())
+            .rounding(Rounding::same(12.0))
+            .inner_margin(Margin::symmetric(22.0, 18.0)),
+    };
     let shown = egui::Window::new(title)
         .id(egui::Id::new(id))
         .title_bar(false)
@@ -51,6 +59,17 @@ pub fn show<R>(
             ui.ctx()
                 .data_mut(|d| d.insert_temp(buttons_id(), Vec::<egui::Rect>::new()));
             ui.set_min_width(320.0);
+            if let Some(kit) = &kit {
+                skinned_title(ui, kit, title, open);
+                egui::Frame::none()
+                    .fill(crate::ui::skin::page_fill(kit))
+                    .inner_margin(Margin::symmetric(10.0, 10.0))
+                    .show(ui, |ui| {
+                        ui.spacing_mut().item_spacing.y = 8.0;
+                        contents(ui);
+                    });
+                return;
+            }
             ui.spacing_mut().item_spacing.y = 8.0;
             ui.vertical_centered(|ui| {
                 ui.label(RichText::new(title).strong().size(16.0));
@@ -78,6 +97,30 @@ pub fn show<R>(
     if ctx.input(|i| i.key_pressed(Key::Escape)) {
         *open = false;
     }
+}
+
+/// A skin's title bar across the top of a dialog: the title, and the close
+/// button that answers the dialog the way Esc does.
+fn skinned_title(ui: &mut Ui, kit: &crate::ui::skin::Kit, title: &str, open: &mut bool) {
+    crate::ui::chrome::skinned_bar(ui, kit, |ui| {
+        ui.horizontal(|ui| {
+            let size = kit.metrics().title_button * kit.u();
+            ui.add(egui::Label::new(title).selectable(false));
+            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click());
+                let st = crate::ui::skin::St::of(&response);
+                ui.painter().extend(kit.style().title_button(
+                    kit,
+                    rect,
+                    crate::ui::skin::Glyph::Close,
+                    st,
+                ));
+                if response.clicked() {
+                    *open = false;
+                }
+            });
+        });
+    });
 }
 
 /// Dims the whole window and swallows clicks, so nothing behind a dialog can
@@ -150,6 +193,18 @@ pub fn actions(ui: &mut Ui, buttons: impl FnOnce(&mut Ui)) {
 
 /// A dialog button: rounded, roomy, and filled for the roles that are filled.
 pub fn button(ui: &mut Ui, text: &str, role: Role) -> Response {
+    if let Some(kit) = crate::ui::skin::Kit::of(ui.ctx()) {
+        // The skin's own button, the answer drawn as the default one; a
+        // destructive answer is a plain button, as it was on every desktop
+        // the skins come from.
+        let response = crate::ui::skin::button(ui, &kit, text, role == Role::Suggested);
+        let rect = response.rect;
+        ui.ctx().data_mut(|d| {
+            d.get_temp_mut_or_default::<Vec<egui::Rect>>(buttons_id())
+                .push(rect)
+        });
+        return response;
+    }
     let fill = match role {
         Role::Plain => None,
         Role::Suggested => Some(ui.visuals().selection.bg_fill),

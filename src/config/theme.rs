@@ -82,15 +82,23 @@ pub enum WindowButtonStyle {
     /// Windows 95 and 98: grey buttons raised by a two-pixel bevel, with a
     /// black glyph always on.
     Classic,
+    /// The classic Mac OS: square boxes outlined in one pixel of ink on
+    /// paper, as system.css draws a window's close and zoom boxes.
+    System,
+    /// The Super Nintendo: snes.css's pixel-lined buttons in its colours,
+    /// lit from the top left.
+    Snes,
 }
 
 impl WindowButtonStyle {
-    pub const ALL: [WindowButtonStyle; 5] = [
+    pub const ALL: [WindowButtonStyle; 7] = [
         WindowButtonStyle::Stroke,
         WindowButtonStyle::Aqua,
         WindowButtonStyle::Luna,
         WindowButtonStyle::Materia,
         WindowButtonStyle::Classic,
+        WindowButtonStyle::System,
+        WindowButtonStyle::Snes,
     ];
 
     /// Empty, or anything unrecognised, means the stroked style: a theme file
@@ -101,6 +109,8 @@ impl WindowButtonStyle {
             "luna" => WindowButtonStyle::Luna,
             "materia" => WindowButtonStyle::Materia,
             "classic" => WindowButtonStyle::Classic,
+            "system" => WindowButtonStyle::System,
+            "snes" => WindowButtonStyle::Snes,
             _ => WindowButtonStyle::Stroke,
         }
     }
@@ -111,7 +121,10 @@ impl WindowButtonStyle {
     /// to the widget colours.
     pub fn default_colour(self, slot: WindowButtonSlot) -> Option<Color32> {
         let hex = match (self, slot) {
-            (WindowButtonStyle::Stroke, _) => return None,
+            (
+                WindowButtonStyle::Stroke | WindowButtonStyle::System | WindowButtonStyle::Snes,
+                _,
+            ) => return None,
             (WindowButtonStyle::Aqua, WindowButtonSlot::Close) => AQUA_CLOSE,
             (WindowButtonStyle::Aqua, WindowButtonSlot::Minimize) => AQUA_MINIMIZE,
             (WindowButtonStyle::Aqua, WindowButtonSlot::Maximize) => AQUA_MAXIMIZE,
@@ -132,6 +145,8 @@ impl WindowButtonStyle {
             WindowButtonStyle::Luna => "luna",
             WindowButtonStyle::Materia => "materia",
             WindowButtonStyle::Classic => "classic",
+            WindowButtonStyle::System => "system",
+            WindowButtonStyle::Snes => "snes",
         }
     }
 }
@@ -771,6 +786,12 @@ pub struct ThemeFile {
     /// default, and what every theme written before this got) or `"aqua"`.
     #[serde(default)]
     pub window_button_style: String,
+    /// Whose controls the chrome is drawn with: `win98`, `xp`, `aqua`,
+    /// `system` or `snes`. Empty, or anything else, is the app's own - which is what
+    /// every theme written before skins existed keeps looking like. See
+    /// [`crate::ui::skin`].
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub skin: String,
     /// Read from themes written before `window_button_order`, where it put the
     /// controls at the left-hand end; never written, since the order now says
     /// where everything goes.
@@ -917,6 +938,7 @@ impl Default for ThemeFile {
             syntax_routine: String::new(),
             syntax_extrinsic: String::new(),
             window_button_style: String::new(),
+            skin: String::new(),
             window_buttons_left: false,
             window_button_show_close: true,
             window_button_show_minimize: true,
@@ -1048,6 +1070,8 @@ pub struct Theme {
     pub syntax_routine: Color32,
     pub syntax_extrinsic: Color32,
     pub window_buttons: WindowButtons,
+    /// Whose controls the chrome is drawn with.
+    pub skin: crate::ui::skin::Skin,
     /// Colour of the terminal's scroll handle, when the theme names one or its
     /// button style implies one.
     pub scrollbar_handle: Option<Color32>,
@@ -1179,6 +1203,7 @@ impl Theme {
             syntax_extrinsic: syntax(&file.syntax_extrinsic, DEFAULT_SYNTAX.extrinsic),
             ansi,
             window_buttons: window_buttons(file),
+            skin: crate::ui::skin::Skin::from_name(&file.skin),
             scrollbar_handle: parse_hex(&file.scrollbar_handle).or_else(|| {
                 // An Aqua theme gets the blue capsule for free: the scroll bar
                 // is as much a part of that look as the traffic lights are.
@@ -1250,6 +1275,7 @@ impl Theme {
             syntax_routine: to_hex(self.syntax_routine),
             syntax_extrinsic: to_hex(self.syntax_extrinsic),
             window_button_style: self.window_buttons.style.name().to_string(),
+            skin: self.skin.name().to_string(),
             window_buttons_left: false,
             window_button_show_close: self.window_buttons.show_close,
             window_button_show_minimize: self.window_buttons.show_minimize,
@@ -1499,6 +1525,42 @@ pub fn contrast(a: Color32, b: Color32) -> f32 {
 }
 
 /// Whether a background is dark enough that egui's dark widget set suits it.
+/// The built-in a theme of the user's was copied from, as far as can be told
+/// from what the copy kept of it: the same skin first, then the built-in whose
+/// name the copy's starts with - "Windows XP" for "Windows XP copy" over
+/// "Windows XP Dark" - then the most colours in common. What its reading is
+/// taken from, and what the editor puts a colour back to.
+pub fn origin(theme: &Theme) -> Option<Theme> {
+    let score = |b: &Theme| {
+        [
+            b.background == theme.background,
+            b.foreground == theme.foreground,
+            b.cursor == theme.cursor,
+            b.selection == theme.selection,
+            b.ansi == theme.ansi,
+            b.window_buttons.style == theme.window_buttons.style,
+            b.scrollbar_handle == theme.scrollbar_handle,
+            b.scrollbar_track == theme.scrollbar_track,
+            b.ui_background == theme.ui_background,
+            b.ui_foreground == theme.ui_foreground,
+        ]
+        .iter()
+        .filter(|&&same| same)
+        .count()
+    };
+    builtin_files()
+        .iter()
+        .map(Theme::from_file)
+        .max_by_key(|b| {
+            let named = theme.name.starts_with(b.name.as_str());
+            (
+                b.skin == theme.skin,
+                if named { b.name.len() } else { 0 },
+                score(b),
+            )
+        })
+}
+
 pub fn is_dark(color: Color32) -> bool {
     let luma = 0.2126 * color.r() as f32 + 0.7152 * color.g() as f32 + 0.0722 * color.b() as f32;
     luma < 128.0
@@ -1630,10 +1692,9 @@ pub fn builtin_files() -> Vec<ThemeFile> {
             builtin: true,
             ..with_syntax(DEFAULT_SYNTAX)
         },
-        // Windows XP: Luna blue chrome around the console black-and-silver,
-        // with the console's own sixteen colours. The blues, the edge and the
-        // scroll bar are XP.css's (botoxparty/XP.css), which took them off
-        // the real thing pixel by pixel.
+        // Windows XP, by XP.css: the Luna window - the cream dialog face, the
+        // blue title bar and its tiles drawn by the skin - round the console's
+        // black and silver, with the console's own sixteen colours.
         ThemeFile {
             name: "Windows XP".into(),
             background: "#000000".into(),
@@ -1646,23 +1707,44 @@ pub fn builtin_files() -> Vec<ThemeFile> {
                 "#c0c0c0", "#808080", "#ff0000", "#00ff00", "#ffff00", "#0000ff", "#ff00ff",
                 "#00ffff", "#ffffff",
             ]),
-            ui_foreground: "#ffffff".into(),
-            // The Luna title bar, which is what anyone naming this theme is
-            // asking for: its gradient from the bright line along the top
-            // through the deep blue of most of it.
-            ui_background: "#0050ee".into(),
-            ui_gradient: "vertical".into(),
-            ui_gradient_from: "#0058ee".into(),
-            ui_gradient_to: "#003dd7".into(),
-            // The frame round an XP window, one of its six blue rims.
+            ui_foreground: "#000000".into(),
+            // The dialog face every XP window body is.
+            ui_background: "#ece9d8".into(),
             ui_border: "#0831d9".into(),
-            // The Luna tiles themselves: a red close and two blue ones, each
-            // shaded into a gradient by the painter.
             window_button_style: "luna".into(),
             window_button_icon: "#ffffff".into(),
-            // XP's scroll bar: a pale blue thumb on an off-white track.
+            skin: "xp".into(),
             scrollbar_handle: "#c5d5ff".into(),
             scrollbar_track: "#f4f3ee".into(),
+            font_family: default_font_family(),
+            font_size: 14.0,
+            dark: false,
+            builtin: true,
+            ..with_syntax(DEFAULT_SYNTAX)
+        },
+        // Windows XP had no dark mode. This is Luna at night: the same blue
+        // title bar and tiles, over dialogs, buttons and fields taken down to
+        // a warm charcoal that keeps their bevels.
+        ThemeFile {
+            name: "Windows XP Dark".into(),
+            background: "#000000".into(),
+            foreground: "#c0c0c0".into(),
+            cursor: "#c0c0c0".into(),
+            selection: "#316ac5".into(),
+            ansi: ansi([
+                "#000000", "#800000", "#008000", "#808000", "#000080", "#800080", "#008080",
+                "#c0c0c0", "#808080", "#ff0000", "#00ff00", "#ffff00", "#0000ff", "#ff00ff",
+                "#00ffff", "#ffffff",
+            ]),
+            ui_foreground: "#e8e8e8".into(),
+            // The dialog face at night - what the skin darkens #ece9d8 to.
+            ui_background: "#43423d".into(),
+            ui_border: "#0831d9".into(),
+            window_button_style: "luna".into(),
+            window_button_icon: "#ffffff".into(),
+            skin: "xp".into(),
+            scrollbar_handle: "#3c5a9a".into(),
+            scrollbar_track: "#2a2826".into(),
             font_family: default_font_family(),
             font_size: 14.0,
             dark: true,
@@ -1690,6 +1772,7 @@ pub fn builtin_files() -> Vec<ThemeFile> {
             tab_selected_text: "#ffffff".into(),
             window_button_style: "classic".into(),
             window_button_icon: "#000000".into(),
+            skin: "win98".into(),
             // The thumb is a button like any other; the track was a dither
             // of grey and white, which is this grey from any distance.
             scrollbar_handle: "#c0c0c0".into(),
@@ -1714,18 +1797,114 @@ pub fn builtin_files() -> Vec<ThemeFile> {
                 "#c0c0c0", "#808080", "#ff0000", "#00ff00", "#ffff00", "#0000ff", "#ff00ff",
                 "#00ffff", "#ffffff",
             ]),
-            ui_foreground: "#e0e0e0".into(),
-            ui_background: "#2b2b2b".into(),
+            ui_foreground: "#e8e8e8".into(),
+            ui_background: "#3c3c3c".into(),
             ui_border: "#5a5a5a".into(),
             tab_selected: "#0a246a".into(),
             tab_selected_text: "#ffffff".into(),
             window_button_style: "classic".into(),
+            skin: "win98".into(),
             window_button_close: "#3c3c3c".into(),
             window_button_minimize: "#3c3c3c".into(),
             window_button_maximize: "#3c3c3c".into(),
             window_button_icon: "#e8e8e8".into(),
             scrollbar_handle: "#3c3c3c".into(),
             scrollbar_track: "#1e1e1e".into(),
+            font_family: default_font_family(),
+            font_size: 14.0,
+            dark: true,
+            builtin: true,
+            ..with_syntax(DEFAULT_SYNTAX)
+        },
+        // The classic Mac OS, by system.css: black on white, one pixel at a
+        // time, and the terminal the same white paper with black ink.
+        ThemeFile {
+            name: "System".into(),
+            background: "#ffffff".into(),
+            // A hair off the chrome's black, which the theme tests hold
+            // apart from the terminal's; on white paper the two read the same.
+            foreground: "#1a1a1a".into(),
+            cursor: "#000000".into(),
+            selection: "#a5a5a5".into(),
+            ansi: ansi([
+                "#000000", "#a00000", "#006400", "#7a6000", "#0000a0", "#7a007a", "#006a6a",
+                "#a5a5a5", "#555555", "#d00000", "#008800", "#9a7a00", "#0000d0", "#a000a0",
+                "#008a8a", "#ffffff",
+            ]),
+            ui_foreground: "#000000".into(),
+            ui_background: "#e8e8e8".into(),
+            window_button_style: "system".into(),
+            skin: "system".into(),
+            font_family: default_font_family(),
+            font_size: 14.0,
+            dark: false,
+            builtin: true,
+            ..with_syntax(LIGHT_SYNTAX)
+        },
+        // The same desk with the lights out: system.css's black and white
+        // swapped, so a window is white lines on black.
+        ThemeFile {
+            name: "System Dark".into(),
+            background: "#000000".into(),
+            foreground: "#e8e8e8".into(),
+            cursor: "#ffffff".into(),
+            selection: "#555555".into(),
+            ansi: ansi([
+                "#000000", "#ff5f5f", "#5fd75f", "#ffd75f", "#5f87ff", "#ff5fff", "#5fffff",
+                "#c0c0c0", "#808080", "#ff8787", "#87ff87", "#ffff87", "#87afff", "#ff87ff",
+                "#87ffff", "#ffffff",
+            ]),
+            ui_foreground: "#ffffff".into(),
+            ui_background: "#1a1a1a".into(),
+            window_button_style: "system".into(),
+            skin: "system".into(),
+            font_family: default_font_family(),
+            font_size: 14.0,
+            dark: true,
+            builtin: true,
+            ..with_syntax(DEFAULT_SYNTAX)
+        },
+        // The Super Nintendo, by snes.css: its pixel-lined boxes on the grey
+        // of the page, Dusk ink, Nature-green buttons and the console's
+        // purple title bar; the terminal is the console's own black, with
+        // the library's colours for its sixteen.
+        ThemeFile {
+            name: "SNES".into(),
+            background: "#000000".into(),
+            foreground: "#e5e5e5".into(),
+            cursor: "#f2c019".into(),
+            selection: "#5a7d9a".into(),
+            ansi: ansi([
+                "#000000", "#f22561", "#4bb244", "#f2c019", "#5a7d9a", "#9b5de5", "#4eb6d9",
+                "#e5e5e5", "#566573", "#f784b2", "#7fd178", "#f7d55c", "#4eb6d9", "#b88cf0",
+                "#40e0d0", "#ffffff",
+            ]),
+            ui_foreground: "#2c3e50".into(),
+            ui_background: "#e5e5e5".into(),
+            window_button_style: "snes".into(),
+            skin: "snes".into(),
+            font_family: default_font_family(),
+            font_size: 14.0,
+            dark: false,
+            builtin: true,
+            ..with_syntax(DEFAULT_SYNTAX)
+        },
+        // The same boxes on Dusk, the library's ink, with aged-yellow words.
+        ThemeFile {
+            name: "SNES Dark".into(),
+            background: "#000000".into(),
+            foreground: "#e5e5e5".into(),
+            cursor: "#f2c019".into(),
+            selection: "#5a7d9a".into(),
+            ansi: ansi([
+                "#000000", "#f22561", "#4bb244", "#f2c019", "#5a7d9a", "#9b5de5", "#4eb6d9",
+                "#e5e5e5", "#566573", "#f784b2", "#7fd178", "#f7d55c", "#4eb6d9", "#b88cf0",
+                "#40e0d0", "#ffffff",
+            ]),
+            ui_foreground: "#fcf4d9".into(),
+            ui_background: "#2c3e50".into(),
+            window_button_style: "snes".into(),
+            skin: "snes".into(),
             font_family: default_font_family(),
             font_size: 14.0,
             dark: true,
@@ -1751,6 +1930,7 @@ pub fn builtin_files() -> Vec<ThemeFile> {
             ui_background: "#dcdcdc".into(),
             window_button_style: "aqua".into(),
             window_buttons_left: true,
+            skin: "aqua".into(),
             font_family: default_font_family(),
             font_size: 14.0,
             dark: false,
@@ -1777,6 +1957,7 @@ pub fn builtin_files() -> Vec<ThemeFile> {
             ui_background: "#26262b".into(),
             window_button_style: "aqua".into(),
             window_buttons_left: true,
+            skin: "aqua".into(),
             font_family: default_font_family(),
             font_size: 14.0,
             dark: true,
@@ -1922,6 +2103,25 @@ pub fn builtin_files() -> Vec<ThemeFile> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A copy whose colours were changed is still traced back to the
+    /// built-in it came from - the one its colours go back to - by its name
+    /// first: "SNES Dark copy" is SNES Dark's, not SNES's.
+    #[test]
+    fn a_changed_copy_is_traced_back_to_the_builtin_it_came_from() {
+        let file = builtin_files()
+            .into_iter()
+            .find(|f| f.name == "SNES Dark")
+            .unwrap();
+        let mut copy = Theme::from_file(&file);
+        copy.name = "SNES Dark copy".into();
+        copy.builtin = false;
+        copy.ui_background = Color32::from_rgb(1, 2, 3);
+        copy.ui_foreground = Color32::from_rgb(4, 5, 6);
+        let origin = origin(&copy).unwrap();
+        assert_eq!(origin.name, "SNES Dark");
+        assert_eq!(origin.ui_background, parse_hex("#2c3e50").unwrap());
+    }
 
     #[test]
     fn hex_parses_both_lengths() {

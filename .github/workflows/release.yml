@@ -1,8 +1,12 @@
-# Release pipeline. Pushing a tag vX.Y.Z builds every platform and creates or updates the DRAFT
-# GitHub Release vX.Y.Z; a person publishes it. A manual run (workflow_dispatch) builds and
-# uploads the same artifacts to the run as a dry run and drafts nothing. See docs/releasing.md.
+# Release pipeline. Pushing a tag vX.Y.Z tests and then builds every platform and creates or
+# updates the DRAFT GitHub Release vX.Y.Z; a person publishes it. A manual run
+# (workflow_dispatch) tests, builds and uploads the same artifacts to the run as a dry run and
+# drafts nothing. See docs/releasing.md.
 #
-# Every job only calls a script under packaging/, which runs unchanged on a laptop.
+# This is the only workflow: pushes to main and pull requests are checked by hand, with the
+# commands in CLAUDE.md, which are what the test job runs.
+#
+# Every build job only calls a script under packaging/, which runs unchanged on a laptop.
 name: Release
 
 on:
@@ -54,9 +58,49 @@ jobs:
           } >>"$GITHUB_OUTPUT"
           echo "### consisTerm v$v (\`${GITHUB_SHA::9}\`)" >>"$GITHUB_STEP_SUMMARY"
 
+  # The checks CLAUDE.md asks for before a change is called working, on every
+  # platform released for. Nothing is built for release until they pass, so a
+  # broken tag never gets as far as a draft.
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: test
+      # eframe needs the windowing/clipboard stack, and keyring needs
+      # libsecret, neither of which the runner image ships.
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev libxkbcommon-dev libwayland-dev \
+            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libxkbcommon-x11-dev libssl-dev libsecret-1-dev
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Clippy with plugins
+        run: cargo clippy --all-targets --features plugins -- -D warnings
+      - name: Test
+        run: cargo test --lib --tests
+      # The plugin host is behind a feature flag, so it would otherwise rot.
+      - name: Test with plugins
+        run: cargo test --features plugins --lib --tests
+
   linux:
     name: Linux x86_64
-    needs: version
+    needs: [version, test]
     # The oldest GitHub-hosted image, so the binary only needs glibc >= 2.35.
     runs-on: ubuntu-22.04
     env:
@@ -99,7 +143,7 @@ jobs:
 
   macos:
     name: macOS universal
-    needs: version
+    needs: [version, test]
     runs-on: macos-14
     env:
       CONSISTERM_VERSION: ${{ needs.version.outputs.version }}
@@ -135,7 +179,7 @@ jobs:
 
   windows:
     name: Windows x64
-    needs: version
+    needs: [version, test]
     runs-on: windows-latest
     env:
       CONSISTERM_VERSION: ${{ needs.version.outputs.version }}

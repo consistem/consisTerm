@@ -296,8 +296,7 @@ fn group_cards(ui: &mut Ui, c: &mut Ctx<'_>) {
     // will appear. Nothing has been created yet - see `new_group` - so it is
     // drawn here rather than against a group.
     if let Some(draft) = state.new_group.as_mut() {
-        prefs::section(ui, tr("New group"));
-        prefs::card(ui, "new-group", |card| {
+        prefs::titled_card(ui, Some(tr("New group")), true, "new-group", |card| {
             card.row(Row::new(tr("Group name")), |ui| {
                 if prefs::button(ui, tr("Cancel")).clicked() {
                     create_cancelled = true;

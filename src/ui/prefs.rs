@@ -39,6 +39,7 @@ use egui::{
 
 use crate::ui::icons::{self, Symbol};
 use crate::ui::shading::{darken, lighten};
+use crate::ui::skin::{Kit, St};
 
 /// Between a row's edge and its text, and between its control and its edge.
 const PAD_X: f32 = 12.0;
@@ -132,7 +133,31 @@ pub struct Palette {
 impl Palette {
     /// The palette for `ui`, as opaque over a backdrop as Settings says.
     pub fn for_ui(ui: &Ui) -> Self {
+        if let Some(kit) = Kit::of(ui.ctx()) {
+            return Self::skinned(&kit);
+        }
         Self::with_opacity(ui.visuals(), opacity(ui.ctx()))
+    }
+
+    /// Under a skin: no veils, no hairlines and no washes - the skin draws
+    /// boxes and fields of its own - and the skin's own ink everywhere.
+    fn skinned(kit: &Kit) -> Self {
+        let c = kit.colors();
+        Palette {
+            sidebar: Color32::TRANSPARENT,
+            card: Color32::TRANSPARENT,
+            card_stroke: Color32::TRANSPARENT,
+            separator: Color32::TRANSPARENT,
+            field: c.field,
+            track_off: c.subtle,
+            hover: Color32::TRANSPARENT,
+            text: c.text,
+            subtle: c.subtle,
+            heading: c.text,
+            accent: c.select,
+            on_accent: c.select_text,
+            accent_text: c.link,
+        }
     }
 
     pub fn from_visuals(visuals: &Visuals) -> Self {
@@ -297,13 +322,30 @@ pub fn sidebar(
 ) -> SidebarOutput {
     let palette = Palette::for_ui(ui);
     let outer = ui.max_rect();
-    ui.painter()
-        .rect_filled(outer, Rounding::same(CARD_RADIUS), palette.sidebar);
+    let kit = Kit::of(ui.ctx());
+    if kit.is_none() {
+        ui.painter()
+            .rect_filled(outer, Rounding::same(CARD_RADIUS), palette.sidebar);
+    }
 
     let inner = outer.shrink2(vec2(8.0, 10.0));
     let mut ui = ui.child_ui_with_id_source(inner, Layout::top_down(Align::Min), "sidebar", None);
     let search = search_field(&mut ui, search_id, query, hint, &palette);
     ui.add_space(10.0);
+
+    // Under a skin the categories are a list box: a sunken field with the
+    // entries inside its border.
+    if let Some(kit) = &kit {
+        let list = Rect::from_min_max(ui.cursor().min, ui.max_rect().max);
+        ui.painter().extend(kit.style().list(kit, list));
+        let border = 2.0 * kit.u() + 1.0;
+        ui = ui.child_ui_with_id_source(
+            list.shrink(border),
+            Layout::top_down(Align::Min),
+            "sidebar-list",
+            None,
+        );
+    }
 
     let mut clicked = None;
     egui::ScrollArea::vertical()
@@ -331,17 +373,29 @@ fn search_field(
     hint: &str,
     palette: &Palette,
 ) -> Response {
-    let height = ui.spacing().interact_size.y + 8.0;
+    let kit = Kit::of(ui.ctx());
+    let height = match &kit {
+        Some(kit) => kit.px(kit.metrics().field_height),
+        None => ui.spacing().interact_size.y + 8.0,
+    };
     let (rect, _) = ui.allocate_exact_size(vec2(ui.available_width(), height), Sense::hover());
     let focused = ui.memory(|m| m.has_focus(id));
-    ui.painter()
-        .rect_filled(rect, Rounding::same(height / 2.0), palette.field);
-    if focused {
-        ui.painter().rect_stroke(
-            rect.shrink(0.5),
-            Rounding::same(height / 2.0),
-            Stroke::new(1.5_f32, palette.accent),
-        );
+    if let Some(kit) = &kit {
+        let st = St {
+            focused,
+            ..St::default()
+        };
+        ui.painter().extend(kit.style().field(kit, rect, st));
+    } else {
+        ui.painter()
+            .rect_filled(rect, Rounding::same(height / 2.0), palette.field);
+        if focused {
+            ui.painter().rect_stroke(
+                rect.shrink(0.5),
+                Rounding::same(height / 2.0),
+                Stroke::new(1.5_f32, palette.accent),
+            );
+        }
     }
     let glyph = Rect::from_center_size(
         pos2(rect.left() + height / 2.0 + 2.0, rect.center().y),
@@ -360,6 +414,10 @@ fn search_field(
         id.with("text"),
         None,
     );
+    // Typed into the skin's field, so in the field's ink, not the page's.
+    if let Some(kit) = &kit {
+        child.visuals_mut().override_text_color = Some(kit.colors().field_text);
+    }
     let response = child.add(
         egui::TextEdit::singleline(query)
             .id(id)
@@ -402,6 +460,9 @@ fn sidebar_entry(
     selected: bool,
     palette: &Palette,
 ) -> Response {
+    if let Some(kit) = Kit::of(ui.ctx()) {
+        return skinned_sidebar_entry(ui, item, selected, &kit);
+    }
     let (rect, response) =
         ui.allocate_exact_size(vec2(ui.available_width(), SIDEBAR_ROW), Sense::click());
     if !ui.is_rect_visible(rect) {
@@ -436,6 +497,57 @@ fn sidebar_entry(
     let galley = painter.layout_no_wrap(item.label.to_owned(), font, colour);
     let pos = pos2(tile.right() + 9.0, rect.center().y - galley.size().y / 2.0);
     painter.with_clip_rect(rect).galley(pos, galley, colour);
+    response.widget_info(|| {
+        egui::WidgetInfo::selected(
+            egui::WidgetType::SelectableLabel,
+            true,
+            selected,
+            item.label,
+        )
+    });
+    response
+}
+
+/// A category as a row of a list box: the symbol in the row's ink rather than
+/// on a coloured tile - the tiles are System Settings', and no list of the
+/// skins' era had them - and the selection in the skin's own colours.
+fn skinned_sidebar_entry(
+    ui: &mut Ui,
+    item: &SidebarItem<'_>,
+    selected: bool,
+    kit: &Kit,
+) -> Response {
+    let height = kit.px(kit.metrics().menu_item_height + 2.0);
+    let (rect, response) =
+        ui.allocate_exact_size(vec2(ui.available_width(), height), Sense::click());
+    if !ui.is_rect_visible(rect) {
+        return response;
+    }
+    let style = kit.style();
+    let st = St {
+        on: selected,
+        hovered: response.hovered(),
+        focused: response.has_focus(),
+        ..St::default()
+    };
+    let painter = ui.painter();
+    painter.extend(style.list_item(kit, rect, st));
+    if st.focused {
+        painter.extend(style.focus(kit, rect));
+    }
+    let ink = style.list_text(kit, st);
+    let glyph = Rect::from_center_size(
+        pos2(rect.left() + 4.0 + 8.0, rect.center().y),
+        vec2(14.0, 14.0),
+    );
+    icons::symbol(painter, glyph, item.symbol, ink);
+    let font = TextStyle::Body.resolve(ui.style());
+    let galley = painter.layout_no_wrap(item.label.to_owned(), font, ink);
+    let pos = pos2(
+        glyph.right() + 6.0,
+        (rect.center().y - galley.size().y / 2.0).round(),
+    );
+    painter.with_clip_rect(rect).galley(pos, galley, ink);
     response.widget_info(|| {
         egui::WidgetInfo::selected(
             egui::WidgetType::SelectableLabel,
@@ -511,12 +623,15 @@ pub fn page_header_with_back(ui: &mut Ui, title: &str, back: Option<&str>) -> bo
         ui.add_space(2.0);
     }
     let size = TextStyle::Body.resolve(ui.style()).size * 1.5;
-    ui.label(
-        egui::RichText::new(title)
-            .size(size.round())
-            .strong()
-            .color(palette.heading),
-    );
+    let mut text = egui::RichText::new(title)
+        .size(size.round())
+        .strong()
+        .color(palette.heading);
+    if Kit::of(ui.ctx()).is_some() {
+        // A real bold face rather than egui's brighter `strong`.
+        text = text.family(crate::ui::fonts::skin_bold(ui.ctx()));
+    }
+    ui.label(text);
     ui.add_space(6.0);
     clicked
 }
@@ -583,7 +698,11 @@ pub fn section_link(ui: &mut Ui, title: &str) -> Response {
 fn section_heading(ui: &mut Ui, title: &str, sense: Sense) -> Response {
     let palette = Palette::for_ui(ui);
     ui.add_space(14.0);
-    let font = TextStyle::Body.resolve(ui.style());
+    let skinned = Kit::of(ui.ctx()).is_some();
+    let mut font = TextStyle::Body.resolve(ui.style());
+    if skinned {
+        font.family = crate::ui::fonts::skin_bold(ui.ctx());
+    }
     let galley = ui.painter().layout(
         title.to_owned(),
         font,
@@ -598,7 +717,10 @@ fn section_heading(ui: &mut Ui, title: &str, sense: Sense) -> Response {
     // than the rows under it does not read as a heading.
     let painter = ui.painter();
     painter.galley(pos, galley.clone(), palette.heading);
-    painter.galley(pos + vec2(0.45, 0.0), galley.clone(), palette.heading);
+    // A skin has a bold face of its own; drawing it twice would smear it.
+    if !skinned {
+        painter.galley(pos + vec2(0.45, 0.0), galley.clone(), palette.heading);
+    }
     if sense.click && response.hovered() {
         let y = rect.top() + galley.size().y;
         painter.hline(
@@ -628,6 +750,73 @@ pub fn footer(ui: &mut Ui, text: &str) {
     });
 }
 
+thread_local! {
+    /// Set by [`titled_card`] for the [`card`] it is about to draw, which then
+    /// leaves the framing to it.
+    static IN_GROUP: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// A [`section`] heading and the [`card`] under it, `enabled` or greyed out.
+///
+/// One call rather than two because under a skin they are one thing: a group
+/// box whose legend is the heading, sitting in a gap in its frame, the way
+/// every dialog of the period grouped its settings. Without a skin it draws
+/// exactly the two it replaces, the heading left out of the greying as
+/// before.
+pub fn titled_card<R>(
+    ui: &mut Ui,
+    heading: Option<&str>,
+    enabled: bool,
+    id_source: impl Hash,
+    add: impl FnOnce(&mut Card<'_>) -> R,
+) -> R {
+    let Some(kit) = Kit::of(ui.ctx()) else {
+        match heading {
+            Some(heading) => section(ui, heading),
+            None => ui.add_space(10.0),
+        }
+        return ui
+            .add_enabled_ui(enabled, |ui| card(ui, id_source, add))
+            .inner;
+    };
+    let c = kit.colors();
+    let font = TextStyle::Body.resolve(ui.style());
+    let legend = heading.map(|heading| {
+        let ink = if enabled { c.text } else { c.text_disabled };
+        ui.painter()
+            .layout_no_wrap(heading.to_owned(), font.clone(), ink)
+    });
+    let legend_height = legend.as_ref().map_or(0.0, |g| g.size().y);
+    ui.add_space(8.0 + legend_height / 2.0);
+    let background = ui.painter().add(Shape::Noop);
+    let top = ui.cursor().min.y;
+    IN_GROUP.with(|g| g.set(true));
+    let shown = ui.add_enabled_ui(enabled, |ui| {
+        egui::Frame::none()
+            .inner_margin(egui::Margin {
+                left: 4.0,
+                right: 4.0,
+                top: legend_height / 2.0 + 4.0,
+                bottom: 4.0,
+            })
+            .show(ui, |ui| card(ui, id_source, add))
+            .inner
+    });
+    let rect = Rect::from_min_max(
+        pos2(shown.response.rect.left(), top),
+        shown.response.rect.max,
+    );
+    let legend_rect = legend
+        .as_ref()
+        .map(|g| Rect::from_min_size(pos2(rect.left() + 8.0, top - g.size().y / 2.0), g.size()));
+    let mut shapes = kit.style().group(&kit, rect, legend_rect);
+    if let (Some(galley), Some(at)) = (legend, legend_rect) {
+        shapes.push(Shape::galley(at.min, galley, c.text));
+    }
+    ui.painter().set(background, Shape::Vec(shapes));
+    shown.inner
+}
+
 /// A boxed list: a rounded card that rows are added to, with a hairline
 /// between each two of them.
 ///
@@ -635,6 +824,7 @@ pub fn footer(ui: &mut Ui, text: &str) {
 /// that both have a "Name" row do not share its remembered layout.
 pub fn card<R>(ui: &mut Ui, id_source: impl Hash, add: impl FnOnce(&mut Card<'_>) -> R) -> R {
     let palette = Palette::for_ui(ui);
+    let framed = IN_GROUP.with(|g| g.replace(false));
     // Reserved before the contents and filled in after, when the card's
     // height is known: the background has to be under the rows, and only the
     // rows know how tall they came out.
@@ -646,17 +836,26 @@ pub fn card<R>(ui: &mut Ui, id_source: impl Hash, add: impl FnOnce(&mut Card<'_>
         add(&mut card)
     });
     let rect = shown.response.rect;
-    ui.painter().set(
-        background,
-        Shape::Vec(vec![
-            Shape::rect_filled(rect, Rounding::same(CARD_RADIUS), palette.card),
-            Shape::rect_stroke(
-                rect.shrink(0.5),
-                Rounding::same(CARD_RADIUS),
-                Stroke::new(1.0_f32, palette.card_stroke),
-            ),
-        ]),
-    );
+    // Under a skin a card is the inside of a group box: framed by
+    // `titled_card` when it has a heading, a plain group box when not.
+    if let Some(kit) = Kit::of(ui.ctx()) {
+        if !framed {
+            ui.painter()
+                .set(background, Shape::Vec(kit.style().group(&kit, rect, None)));
+        }
+    } else {
+        ui.painter().set(
+            background,
+            Shape::Vec(vec![
+                Shape::rect_filled(rect, Rounding::same(CARD_RADIUS), palette.card),
+                Shape::rect_stroke(
+                    rect.shrink(0.5),
+                    Rounding::same(CARD_RADIUS),
+                    Stroke::new(1.0_f32, palette.card_stroke),
+                ),
+            ]),
+        );
+    }
     shown.inner
 }
 
@@ -834,9 +1033,22 @@ pub fn row<R>(ui: &mut Ui, spec: Row<'_>, control: impl FnOnce(&mut Ui) -> R) ->
     let background = ui.painter().add(Shape::Noop);
 
     let remembered = ui.data(|d| d.get_temp::<f32>(id));
-    let control_width = remembered.unwrap_or(width * 0.4).clamp(0.0, width * 0.7);
-    let text_room = (width - 2.0 * PAD_X - control_width - GAP).max(width * 0.3);
     let body = TextStyle::Body.resolve(ui.style());
+    // A control too wide to stand beside its title - seven choices in a wide
+    // pixel face - goes on a line of its own under it, rather than over it.
+    let title_line = ui
+        .painter()
+        .layout_no_wrap(spec.title.to_owned(), body.clone(), palette.text)
+        .size()
+        .x;
+    let stacked = !spec.title.is_empty()
+        && remembered.is_some_and(|w| w + title_line + GAP + 2.0 * PAD_X > width);
+    let control_width = if stacked {
+        0.0
+    } else {
+        remembered.unwrap_or(width * 0.4).clamp(0.0, width * 0.7)
+    };
+    let text_room = (width - 2.0 * PAD_X - control_width - GAP).max(width * 0.3);
     let title = ui
         .painter()
         .layout(spec.title.to_owned(), body, palette.text, text_room);
@@ -849,17 +1061,29 @@ pub fn row<R>(ui: &mut Ui, spec: Row<'_>, control: impl FnOnce(&mut Ui) -> R) ->
         .x
         .max(subtitle.as_ref().map_or(0.0, |g| g.size().x));
     let text_height = title.size().y + subtitle.as_ref().map_or(0.0, |g| g.size().y + 1.0);
-    let height = (text_height + 2.0 * PAD_Y).max(MIN_ROW);
+    let line = ui.spacing().interact_size.y + PAD_Y;
+    let height = if stacked {
+        text_height + 2.0 * PAD_Y + line
+    } else {
+        (text_height + 2.0 * PAD_Y).max(MIN_ROW)
+    };
 
-    let control_left = if spec.title.is_empty() {
+    let control_left = if spec.title.is_empty() || stacked {
         left + PAD_X
     } else {
         left + PAD_X + text_width + GAP
     };
-    let control_rect = Rect::from_min_max(
-        pos2(control_left, top),
-        pos2((left + width - PAD_X).max(control_left), top + height),
-    );
+    let control_rect = if stacked {
+        Rect::from_min_max(
+            pos2(control_left, top + height - PAD_Y - line),
+            pos2(left + width - PAD_X, top + height - PAD_Y),
+        )
+    } else {
+        Rect::from_min_max(
+            pos2(control_left, top),
+            pos2((left + width - PAD_X).max(control_left), top + height),
+        )
+    };
     let mut child = ui.child_ui_with_id_source(
         control_rect,
         Layout::right_to_left(Align::Center),
@@ -880,7 +1104,11 @@ pub fn row<R>(ui: &mut Ui, spec: Row<'_>, control: impl FnOnce(&mut Ui) -> R) ->
 
     let rect = Rect::from_min_size(pos2(left, top), vec2(width, height));
     ui.allocate_rect(rect, Sense::hover());
-    let label_rect = Rect::from_min_max(rect.min, pos2(control_left - GAP / 2.0, rect.bottom()));
+    let label_rect = if stacked {
+        Rect::from_min_max(rect.min, pos2(rect.right(), control_rect.top()))
+    } else {
+        Rect::from_min_max(rect.min, pos2(control_left - GAP / 2.0, rect.bottom()))
+    };
     let sense = if spec.link {
         Sense::click()
     } else {
@@ -910,7 +1138,11 @@ pub fn row<R>(ui: &mut Ui, spec: Row<'_>, control: impl FnOnce(&mut Ui) -> R) ->
             Shape::rect_filled(rect.shrink(2.0), Rounding::same(CARD_RADIUS - 2.0), wash),
         );
     }
-    let mut y = rect.center().y - text_height / 2.0;
+    let mut y = if stacked {
+        top + PAD_Y
+    } else {
+        rect.center().y - text_height / 2.0
+    };
     let x = left + PAD_X;
     let title_height = title.size().y;
     painter.galley(pos2(x, y), title, palette.text);
@@ -938,6 +1170,9 @@ pub fn row<R>(ui: &mut Ui, spec: Row<'_>, control: impl FnOnce(&mut Ui) -> R) ->
 /// Focusable like any button, and Space or Enter flips it once it has the
 /// keyboard. The response is marked changed on the frame it is flipped.
 pub fn toggle(ui: &mut Ui, on: &mut bool) -> Response {
+    if let Some(kit) = Kit::of(ui.ctx()) {
+        return checkbox(ui, on, &kit);
+    }
     let height = (ui.spacing().interact_size.y + 2.0).round();
     let size = vec2((height * 1.75).round(), height);
     let (rect, mut response) = ui.allocate_exact_size(size, Sense::click());
@@ -977,11 +1212,98 @@ pub fn toggle(ui: &mut Ui, on: &mut bool) -> Response {
     response
 }
 
+/// A switch as the skins drew one: a checkbox. Its row's words are its
+/// label, so it is the box alone.
+fn checkbox(ui: &mut Ui, on: &mut bool, kit: &Kit) -> Response {
+    let side = kit.px(kit.metrics().checkbox);
+    let (rect, mut response) = ui.allocate_exact_size(vec2(side, side), Sense::click());
+    if response.clicked() {
+        *on = !*on;
+        response.mark_changed();
+    }
+    response.widget_info(|| {
+        egui::WidgetInfo::selected(egui::WidgetType::Checkbox, ui.is_enabled(), *on, "")
+    });
+    if ui.is_rect_visible(rect) {
+        let st = St::of(&response).on(*on).disabled(!ui.is_enabled());
+        let style = kit.style();
+        let painter = ui.painter();
+        painter.extend(style.checkbox(kit, rect, st));
+        if st.focused {
+            painter.extend(style.focus(kit, rect.expand(2.0 * kit.u())));
+        }
+    }
+    response
+}
+
+/// One choice out of a few, as the skins drew one: a row of radio buttons,
+/// each with its label.
+fn radios<T: PartialEq + Copy>(
+    ui: &mut Ui,
+    value: &mut T,
+    options: &[(T, &str)],
+    kit: &Kit,
+) -> bool {
+    let style = kit.style();
+    let m = kit.metrics();
+    let c = kit.colors();
+    let font = TextStyle::Body.resolve(ui.style());
+    let side = kit.px(m.radio);
+    let gap = kit.px(m.label_gap);
+    let mut changed = false;
+    // Laid out right to left, as a row's control is, so the first option
+    // still reads first: the options are added last to first.
+    for (index, (option, label)) in options.iter().enumerate().rev() {
+        let ink = if ui.is_enabled() {
+            c.text
+        } else {
+            c.text_disabled
+        };
+        let galley = ui
+            .painter()
+            .layout_no_wrap((*label).to_owned(), font.clone(), ink);
+        let size = vec2(side + gap + galley.size().x, side.max(galley.size().y));
+        let (rect, response) = ui.allocate_exact_size(size, Sense::click());
+        let response = response.on_hover_cursor(egui::CursorIcon::Default);
+        if response.clicked() && *value != *option {
+            *value = *option;
+            changed = true;
+        }
+        let selected = *value == *option;
+        response.widget_info(|| {
+            egui::WidgetInfo::selected(egui::WidgetType::RadioButton, true, selected, *label)
+        });
+        let st = St::of(&response).on(selected).disabled(!ui.is_enabled());
+        let circle = Rect::from_min_size(
+            pos2(rect.left(), rect.center().y - side / 2.0),
+            vec2(side, side),
+        );
+        let painter = ui.painter();
+        painter.extend(style.radio(kit, circle, st));
+        let text = pos2(
+            circle.right() + gap,
+            (rect.center().y - galley.size().y / 2.0).round(),
+        );
+        let text_rect = Rect::from_min_size(text, galley.size());
+        painter.galley(text, galley, ink);
+        if st.focused {
+            painter.extend(style.focus(kit, text_rect.expand(kit.u())));
+        }
+        if index > 0 {
+            ui.add_space(gap * 2.0);
+        }
+    }
+    changed
+}
+
 /// One choice out of a few, as a row of joined buttons - GNOME's "Left |
 /// Right". Returns true when the choice changed.
 ///
 /// Each segment is a button of its own, so Tab walks them and Space picks one.
 pub fn segmented<T: PartialEq + Copy>(ui: &mut Ui, value: &mut T, options: &[(T, &str)]) -> bool {
+    if let Some(kit) = Kit::of(ui.ctx()) {
+        return radios(ui, value, options, &kit);
+    }
     let palette = Palette::for_ui(ui);
     let font = TextStyle::Body.resolve(ui.style());
     let galleys: Vec<_> = options
@@ -1040,6 +1362,9 @@ pub fn popup<R>(
     selected: impl Into<WidgetText>,
     menu: impl FnOnce(&mut Ui) -> R,
 ) -> Option<R> {
+    if let Some(kit) = Kit::of(ui.ctx()) {
+        return select(ui, Id::new(id_source), selected.into(), menu, &kit);
+    }
     egui::ComboBox::from_id_source(id_source)
         .selected_text(selected)
         // Wider than egui's default, which cut theme and font names short.
@@ -1055,6 +1380,58 @@ pub fn popup<R>(
         })
         .show_ui(ui, menu)
         .inner
+}
+
+/// A drop-down as the skins drew one: the value in a field, the arrow button
+/// at its right end, and the list opening under it.
+fn select<R>(
+    ui: &mut Ui,
+    id: Id,
+    selected: WidgetText,
+    menu: impl FnOnce(&mut Ui) -> R,
+    kit: &Kit,
+) -> Option<R> {
+    let style = kit.style();
+    let m = kit.metrics();
+    let size = vec2(200.0, kit.px(m.field_height));
+    let (rect, response) = ui.allocate_exact_size(size, Sense::click());
+    let popup = id.with("list");
+    if response.clicked() {
+        ui.memory_mut(|mem| mem.toggle_popup(popup));
+    }
+    let open = ui.memory(|mem| mem.is_popup_open(popup));
+    let st = St::of(&response).on(open).disabled(!ui.is_enabled());
+    if ui.is_rect_visible(rect) {
+        ui.painter().extend(style.select(kit, rect, st));
+        let ink = style.select_text(kit, st);
+        let galley = selected.into_galley(
+            ui,
+            Some(egui::TextWrapMode::Truncate),
+            rect.width() - kit.px(m.select_arrow) - 10.0,
+            TextStyle::Button,
+        );
+        let at = pos2(
+            rect.left() + kit.px(4.0),
+            (rect.center().y - galley.size().y / 2.0).round(),
+        );
+        // Over the colour the page's text is laid out in: the skin's field
+        // ink, whatever the user's page text is.
+        ui.painter()
+            .galley_with_override_text_color(at, galley, ink);
+    }
+    egui::popup::popup_below_widget(
+        ui,
+        popup,
+        &response,
+        egui::PopupCloseBehavior::CloseOnClick,
+        |ui| {
+            ui.set_min_width(rect.width() - 6.0);
+            egui::ScrollArea::vertical()
+                .max_height(320.0)
+                .show(ui, menu)
+                .inner
+        },
+    )
 }
 
 /// A slider with what its two ends mean written at them - "Clear ... Solid" -
@@ -1078,7 +1455,11 @@ pub fn slider<N: egui::emath::Numeric>(
         caption(ui, high);
     }
     ui.spacing_mut().slider_width = 150.0;
-    let response = ui.add(configure(egui::Slider::new(value, range).show_value(false)));
+    let kit = Kit::of(ui.ctx());
+    let response = match &kit {
+        None => ui.add(configure(egui::Slider::new(value, range).show_value(false))),
+        Some(kit) => trackbar(ui, value, range, configure, kit),
+    };
     if let Some((low, _)) = ends {
         caption(ui, low);
     }
@@ -1087,8 +1468,62 @@ pub fn slider<N: egui::emath::Numeric>(
     response
 }
 
+/// egui's slider for the dragging - its steps, its clamping, its keys - with
+/// the skin's trackbar drawn in its place.
+fn trackbar<N: egui::emath::Numeric>(
+    ui: &mut Ui,
+    value: &mut N,
+    range: std::ops::RangeInclusive<N>,
+    configure: impl FnOnce(egui::Slider<'_>) -> egui::Slider<'_>,
+    kit: &Kit,
+) -> Response {
+    let (low, high) = (range.start().to_f64(), range.end().to_f64());
+    let thumb = kit.metrics().slider_thumb * kit.u();
+    let response = ui
+        .scope(|ui| {
+            // Nothing of egui's own slider is drawn: every colour it paints
+            // in is clear, and the rail's room is the thumb's height.
+            ui.spacing_mut().interact_size.y = thumb.y;
+            let visuals = ui.visuals_mut();
+            for w in [
+                &mut visuals.widgets.inactive,
+                &mut visuals.widgets.hovered,
+                &mut visuals.widgets.active,
+                &mut visuals.widgets.noninteractive,
+            ] {
+                w.bg_fill = Color32::TRANSPARENT;
+                w.weak_bg_fill = Color32::TRANSPARENT;
+                w.bg_stroke = Stroke::NONE;
+                w.fg_stroke = Stroke::NONE;
+            }
+            visuals.selection.bg_fill = Color32::TRANSPARENT;
+            ui.add(configure(egui::Slider::new(value, range).show_value(false)))
+        })
+        .inner;
+    let rect = response.rect;
+    if ui.is_rect_visible(rect) {
+        let style = kit.style();
+        let st = St::of(&response).disabled(!ui.is_enabled());
+        let span = (high - low).abs().max(f64::EPSILON);
+        let t = ((value.to_f64() - low) / span).clamp(0.0, 1.0) as f32;
+        // The thumb travels between its own half-widths, as the browser's
+        // does: at either end it is flush with the track's end.
+        let x = egui::lerp(
+            (rect.left() + thumb.x / 2.0)..=(rect.right() - thumb.x / 2.0),
+            t,
+        );
+        let painter = ui.painter();
+        painter.extend(style.slider_track(kit, rect, st));
+        painter.extend(style.slider_thumb(kit, pos2(x, rect.center().y), st));
+    }
+    response
+}
+
 /// A rounded push button, the size of the others on a row.
 pub fn button(ui: &mut Ui, text: &str) -> Response {
+    if let Some(kit) = Kit::of(ui.ctx()) {
+        return crate::ui::skin::button(ui, &kit, text, false);
+    }
     ui.add(
         egui::Button::new(text)
             .rounding(Rounding::same(6.0))
@@ -1116,6 +1551,32 @@ pub fn empty_state(ui: &mut Ui, text: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A control too wide to stand beside its title goes under it: the title
+    /// is never drawn over.
+    #[test]
+    fn a_control_too_wide_for_its_row_goes_under_the_title() {
+        let ctx = egui::Context::default();
+        let mut control = Rect::NOTHING;
+        let mut top = 0.0;
+        let input = || egui::RawInput {
+            screen_rect: Some(Rect::from_min_size(egui::Pos2::ZERO, vec2(320.0, 400.0))),
+            ..Default::default()
+        };
+        for _ in 0..3 {
+            let _ = ctx.run(input(), |ctx| {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    top = ui.cursor().min.y;
+                    let _ = row(ui, Row::new("Style"), |ui| {
+                        control = ui.allocate_exact_size(vec2(280.0, 20.0), Sense::hover()).0;
+                    });
+                });
+            });
+        }
+        // The title's line is the top of the row; the control starts below it.
+        let title_bottom = top + PAD_Y + 12.0;
+        assert!(control.top() >= title_bottom, "{control:?} top {top}");
+    }
 
     /// Draws one row headlessly in a panel `width` wide, a couple of frames so
     /// the control's width is remembered, and returns where its words and its

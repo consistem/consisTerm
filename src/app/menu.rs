@@ -393,10 +393,30 @@ impl App {
         // `horizontal` row starts a button high and grows when the taller tabs
         // are drawn, which centred every button ahead of the tabs on the short
         // row and left them sitting high on the tall one.
-        let height = if inline_tabs {
-            super::tabs::tab_height(ui)
-        } else {
-            ui.spacing().interact_size.y
+        // Under a skin the bar keeps the height every window of the skin has
+        // - Settings' - and the tabs take the row's height rather than
+        // growing it: a 98 tab is taller than 98's title buttons.
+        let skin_row = crate::ui::skin::Kit::of(ui.ctx()).map(|kit| {
+            // As tall as Settings' bar is: its buttons, the line of its
+            // title, or a widget's height, whichever is tallest.
+            let m = kit.metrics();
+            let scale = (ui.spacing().interact_size.y / 18.0).max(1.0);
+            let family = crate::ui::fonts::skin_title(ui.ctx());
+            let line =
+                ui.fonts(|f| f.row_height(&egui::FontId::new(m.title_font_size * scale, family)));
+            // egui gives every label and button of a row at least its
+            // interaction height, which is what Settings' row comes to: the
+            // row starts at that, so the `+` laid out before the tabs is
+            // centred on the same line as the controls laid out after them.
+            (m.title_button.y * kit.u() * scale)
+                .max(line)
+                .max(ui.spacing().interact_size.y)
+                .round()
+        });
+        let height = match (inline_tabs, skin_row) {
+            (true, Some(row)) => row,
+            (true, None) => super::tabs::tab_height(ui),
+            (false, _) => ui.spacing().interact_size.y,
         };
         ui.allocate_ui_with_layout(
             egui::vec2(ui.available_width(), height),
@@ -448,10 +468,13 @@ impl App {
                     let info = format!("{}{pid}  {cols}x{rows}", tab.profile.endpoint());
                     // Reading matter, and nothing else: the window is dragged by
                     // it like any other empty stretch of the bar.
-                    chrome::drag_text(
+                    // A skin sets it as the window's title, in the bar's own ink.
+                    let text = egui::RichText::new(info);
+                    let skinned = crate::ui::skin::Kit::of(ui.ctx()).is_some();
+                    chrome::title_text(
                         ui,
-                        egui::RichText::new(info).weak(),
-                        true,
+                        if skinned { text } else { text.weak() },
+                        room,
                         "nit-main",
                         "session",
                     )
@@ -468,6 +491,8 @@ impl App {
                         new_tab: Some(&mut new_tab),
                         tabs: &mut middle,
                         tabs_fill,
+                        close_gap: 0.0,
+                        close_extra: 0.0,
                     },
                 );
             },

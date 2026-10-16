@@ -519,6 +519,13 @@ fn editor() -> Vec<Section> {
             Item::rows("theme_use", "Use this theme", use_row)
                 .contextual()
                 .keys(&["apply", "aplicar", "active", "ativo", "duplicate", "duplicar"]),
+            Item::control("th_skin", "Controls", skin_picker)
+                .sub("Draws the window, its title bar, the tabs, Settings and every dialog with another desktop's controls.")
+                .contextual()
+                .keys(&[
+                    "skin", "retro", "windows", "98", "xp", "7", "aero", "aqua", "lion",
+                    "system", "mac", "classic", "classico", "aparencia",
+                ]),
         ]),
         section(
             "Colours",
@@ -1022,13 +1029,30 @@ pub(super) fn colour_item(
 ) -> Option<RowResponse<()>> {
     let index = editing(c)?;
     let editable = !c.themes[index].builtin;
+    // What the colour was in the built-in this theme was copied from: what
+    // the reset button beside it gives back.
+    let original = crate::config::theme::origin(&c.themes[index])
+        .and_then(|mut origin| get(&mut origin).copied());
     let theme = &mut c.themes[index];
     let mut changed = false;
     let shown = card.row(spec, |ui| {
         if let Some(value) = get(theme) {
-            changed = ui
-                .add_enabled_ui(editable, |ui| swatch(ui, value, editable))
-                .inner;
+            ui.add_enabled_ui(editable, |ui| {
+                changed = swatch(ui, value, editable);
+                // Only offered when there is something to go back from.
+                if let Some(original) = original.filter(|o| *o != *value) {
+                    if ui
+                        .small_button("\u{21ba}")
+                        .tip(tr(
+                            "Back to the colour of the theme this one was copied from.",
+                        ))
+                        .clicked()
+                    {
+                        *value = original;
+                        changed = true;
+                    }
+                }
+            });
         }
     });
     c.theme_edited |= changed;
@@ -1089,6 +1113,14 @@ pub(super) fn fallback_item(
 /// built-in is the most common reason to want one.
 fn swatch(ui: &mut Ui, value: &mut Color32, editable: bool) -> bool {
     let response = color_edit_button_srgba(ui, value, Alpha::Opaque);
+    // Outlined in the text's colour, faintly: a swatch of the page's own
+    // colour - the background, being edited - is otherwise not there at all.
+    let ink = ui.visuals().text_color().gamma_multiply(0.6);
+    ui.painter().rect_stroke(
+        response.rect,
+        ui.visuals().widgets.inactive.rounding,
+        egui::Stroke::new(1.0_f32, ink),
+    );
     let mut changed = response.changed();
     if let Some(pasted) = colour_clipboard(ui, &response, *value, editable) {
         if pasted != *value {
@@ -1290,6 +1322,35 @@ fn scrollbar_gradient(ui: &mut Ui, c: &mut Ctx<'_>) {
         .inner;
 }
 
+/// Whose controls the theme draws the chrome with. A pop-up rather than a row
+/// of choices: there are six, and their names are long.
+fn skin_picker(ui: &mut Ui, c: &mut Ctx<'_>) {
+    use crate::ui::skin::Skin;
+    let Some(index) = editing(c) else {
+        return;
+    };
+    let editable = !c.themes[index].builtin;
+    // The skins' own names are proper names, left as they are in both
+    // languages; only "none" is words.
+    let label = |skin: Skin| match skin {
+        Skin::None => tr("The app's own"),
+        other => other.label(),
+    };
+    let current = c.themes[index].skin;
+    let mut chosen = current;
+    ui.add_enabled_ui(editable, |ui| {
+        prefs::popup(ui, "theme-skin", label(current), |ui| {
+            for skin in Skin::ALL {
+                ui.selectable_value(&mut chosen, skin, label(skin));
+            }
+        });
+    });
+    if chosen != current {
+        c.themes[index].skin = chosen;
+        c.theme_edited = true;
+    }
+}
+
 fn button_style(ui: &mut Ui, c: &mut Ctx<'_>) {
     let Some(index) = editing(c) else {
         return;
@@ -1304,6 +1365,8 @@ fn button_style(ui: &mut Ui, c: &mut Ctx<'_>) {
                 WindowButtonStyle::Luna => "Luna",
                 WindowButtonStyle::Materia => "Materia",
                 WindowButtonStyle::Classic => "Classic",
+                WindowButtonStyle::System => "System",
+                WindowButtonStyle::Snes => "SNES",
             };
             (style, tr(label))
         })

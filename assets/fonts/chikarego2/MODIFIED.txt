@@ -1,0 +1,17 @@
+Modified by consisTerm
+======================
+
+The font file here is not the original: the Latin-1 accented letters it
+lacked (a/e/i/o/u with grave, acute, circumflex, tilde and diaeresis, n
+with tilde, y with acute, c with cedilla, and their capitals) were added,
+each drawn as the base letter plus the accent in squares of the font's own
+pixel grid. Without them egui fell back to Arial for every accented letter
+in a Portuguese string, at a different size and weight from the letters
+around it. Nothing else in the font was changed.
+
+The change was made with ../add_accents.py:
+
+    python add_accents.py original.ttf modified.ttf [pixel size in units]
+
+(64 units for ChiKareGo2 and FindersKeepers, 4096/11 for MS Sans Serif.)
+The modified font is distributed under the same licence as the original.

@@ -197,6 +197,11 @@ pub struct Grid {
     /// after a resize rather than a clear-screen. See
     /// [`Grid::expect_repaint`].
     repaint_until: Option<std::time::Instant>,
+    /// A resize has gone out and the repaint answering it has not finished
+    /// arriving. See [`Grid::awaiting_repaint`].
+    repaint_pending: bool,
+    /// That repaint has begun: the cursor has been homed since the resize.
+    repaint_begun: bool,
     /// Set by [`Grid::purge_history_on_next_clear`].
     purge_on_clear: bool,
     /// The screen has just been cleared and nothing has been printed since.
@@ -235,6 +240,8 @@ impl Grid {
             pending_wrap: false,
             clear: None,
             repaint_until: None,
+            repaint_pending: false,
+            repaint_begun: false,
             purge_on_clear: false,
             screen_cleared: false,
             revision: 0,
@@ -266,7 +273,11 @@ impl Grid {
         self.cursor.row = row.min(self.rows.saturating_sub(1));
         self.cursor.col = col.min(self.cols.saturating_sub(1));
         // Homing the cursor is how a clear-screen opens. See [`ClearSweep`].
+        // It is also how the repaint answering a resize opens.
         if self.cursor.row == 0 && self.cursor.col == 0 {
+            if self.repaint_pending && self.repainting() {
+                self.repaint_begun = true;
+            }
             self.begin_clear();
         }
         self.pending_wrap = false;
@@ -325,6 +336,18 @@ impl Grid {
         let next = ((self.cursor.col / 8) + 1) * 8;
         self.cursor.col = next.min(self.cols - 1);
         self.pending_wrap = false;
+        self.touch();
+    }
+
+    /// DECTCEM. A pseudoconsole hides the cursor while it repaints and shows it
+    /// again as the last thing it does, so this is also where the repaint
+    /// answering a resize is known to be over.
+    pub fn set_cursor_visible(&mut self, visible: bool) {
+        self.cursor.visible = visible;
+        if visible && self.repaint_begun {
+            self.repaint_pending = false;
+            self.repaint_begun = false;
+        }
         self.touch();
     }
 
@@ -596,6 +619,25 @@ impl Grid {
     fn repainting(&self) -> bool {
         self.repaint_until
             .is_some_and(|until| std::time::Instant::now() < until)
+    }
+
+    /// Whether the repaint answering the last resize is still on its way, so
+    /// that a session which repaints must not be resized again yet.
+    ///
+    /// A repaint is drawn for the size the pseudoconsole was given, and it
+    /// lands in whatever size the grid is by the time it is read. A window
+    /// dragged a row a frame is resized again before the last repaint is in:
+    /// one drawn for 20 rows, read into a grid already down to 5, line-feeds
+    /// past the bottom and scrolls the screen it is repainting into the
+    /// scrollback - a second copy of rows the shrink had already filed there.
+    /// The grid it leaves is then no longer the pseudoconsole's, so the next
+    /// shrink files the wrong rows too, and a drag back and forth stacked
+    /// copies of the screen into the transcript.
+    ///
+    /// Lapses with the repaint window, for a resize the far side does not
+    /// answer at all.
+    pub fn awaiting_repaint(&self) -> bool {
+        self.repaint_pending && self.repainting()
     }
 
     fn cancel_clear(&mut self) {
@@ -879,6 +921,8 @@ impl Grid {
         // Whatever the far side sends back about this is a repaint, not a
         // clear-screen.
         self.expect_repaint();
+        self.repaint_pending = true;
+        self.repaint_begun = false;
 
         if cols != self.cols {
             for row in &mut self.screen {

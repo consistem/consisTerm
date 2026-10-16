@@ -101,7 +101,9 @@ pub fn shell(
         .with_title(title)
         .with_inner_size(size)
         .with_min_inner_size([360.0, 240.0])
-        .with_decorations(false);
+        .with_decorations(false)
+        // As the main window: the rounded corners show the desktop.
+        .with_transparent(true);
     // Only on the frame it opens. Asking for a position every frame would
     // fight the user dragging the window somewhere else.
     if let Some(position) = position {
@@ -132,34 +134,55 @@ pub fn shell(
 
         crate::ui::screensaver_view::note_activity(ctx);
         crate::ui::shading::paint_backdrop(ctx);
+        // Under a skin the window wears the skin's frame, and the bar and the
+        // page are laid out inside it.
+        let kit = crate::ui::skin::Kit::of(ctx);
+        let border = kit.as_ref().map(|kit| chrome::skinned_window(ctx, kit));
         // The bar and the page in one panel. As two - a top panel over a
         // central one - the edge between them fell between two pixels at
         // most scales, and the window's own clear colour showed through it
         // as a line under the bar. One frame paints the whole background,
         // and the two parts inside it only lay out.
         let style = ctx.style();
-        egui::CentralPanel::default()
-            .frame(egui::Frame::central_panel(&style).inner_margin(egui::Margin::ZERO))
-            .show(ctx, |ui| {
-                egui::Frame::none()
-                    .inner_margin(egui::Frame::side_top_panel(&style).inner_margin)
-                    .show(ui, |ui| {
-                        ui.set_width(ui.available_width());
-                        crate::ui::prefs::scale_style(ui, title_scale.clamp(1.0, 2.0));
-                        if let Some(action) = title_bar(ui, id, title, buttons) {
-                            match action {
-                                // Closing this window is not closing the app:
-                                // it puts the dialog away, which is what the
-                                // caller's flag means.
-                                WindowAction::Close => closed = true,
-                                other => chrome::apply(ctx, other),
-                            }
-                        }
-                    });
-                egui::Frame::none()
-                    .inner_margin(egui::Frame::central_panel(&style).inner_margin)
-                    .show(ui, contents);
-            });
+        let panel = match &kit {
+            Some(_) => egui::Frame::none().inner_margin(border.unwrap_or_default()),
+            None => egui::Frame::central_panel(&style).inner_margin(egui::Margin::ZERO),
+        };
+        egui::CentralPanel::default().frame(panel).show(ctx, |ui| {
+            let mut bar = |ui: &mut Ui| {
+                ui.set_width(ui.available_width());
+                crate::ui::prefs::scale_style(ui, title_scale.clamp(1.0, 2.0));
+                if let Some(action) = title_bar(ui, id, title, buttons) {
+                    match action {
+                        // Closing this window is not closing the app:
+                        // it puts the dialog away, which is what the
+                        // caller's flag means.
+                        WindowAction::Close => closed = true,
+                        other => chrome::apply(ctx, other),
+                    }
+                }
+            };
+            match &kit {
+                Some(kit) => chrome::skinned_bar(ui, kit, bar),
+                None => {
+                    egui::Frame::none()
+                        .inner_margin(egui::Frame::side_top_panel(&style).inner_margin)
+                        .show(ui, |ui| bar(ui));
+                }
+            }
+            // Under a skin the page is the skin's face, whatever the frame
+            // round it is.
+            let page = match &kit {
+                Some(kit) => egui::Frame::none().fill(crate::ui::skin::page_fill(kit)),
+                None => egui::Frame::none(),
+            };
+            page.inner_margin(egui::Frame::central_panel(&style).inner_margin)
+                .show(ui, |ui| {
+                    ui.set_width(ui.available_width());
+                    ui.set_height(ui.available_height());
+                    contents(ui);
+                });
+        });
         // Last, and in a foreground layer, for the same reason the main
         // window does it last. Nothing to keep off: a dialog has no
         // terminal in it reaching the window edge.
@@ -301,11 +324,15 @@ fn title_bar(
     let mut action = None;
     // Visual only, and a handle for the window: see `chrome::drag_text`. It
     // stands where the theme puts the tabs, which is the main window's middle.
-    let mut name = |ui: &mut Ui, _room: f32| {
-        chrome::drag_text(
+    // A skin's bar sets its own face and ink for the title; `strong` would
+    // only turn the ink back to egui's.
+    let skinned = crate::ui::skin::Kit::of(ui.ctx()).is_some();
+    let mut name = |ui: &mut Ui, room: f32| {
+        let text = egui::RichText::new(title);
+        chrome::title_text(
             ui,
-            egui::RichText::new(title).strong(),
-            true,
+            if skinned { text } else { text.strong() },
+            room,
             window,
             "title",
         )
@@ -325,6 +352,8 @@ fn title_bar(
                 new_tab: None,
                 tabs: &mut name,
                 tabs_fill: false,
+                close_gap: 0.0,
+                close_extra: 0.0,
             },
         );
     });

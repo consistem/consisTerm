@@ -206,10 +206,7 @@ impl Performer<'_> {
             // mouse reporting, alt-screen — are accepted silently so the
             // remote side does not keep retrying.
             match p.first().copied() {
-                Some(25) => {
-                    self.grid.cursor.visible = enable;
-                    self.grid.touch();
-                }
+                Some(25) => self.grid.set_cursor_visible(enable),
                 Some(1) => self.grid.app_cursor_keys = enable,
                 _ => {}
             }
@@ -489,6 +486,62 @@ mod tests {
             ],
             "the screen should hold one copy of itself"
         );
+    }
+
+    /// A drag resizes once a frame, faster than the pseudoconsole answers, and
+    /// a repaint drawn for one size and read into the next scrolls the screen
+    /// into the transcript. So the next resize waits for the repaint, which is
+    /// over when the cursor it hid at the start is shown again - not when the
+    /// first chunk of it has been read.
+    #[test]
+    fn a_resize_is_awaited_until_its_repaint_has_shown_the_cursor_again() {
+        let mut grid = Grid::new(20, 4, 100);
+        let mut parser = vte::Parser::new();
+        advance(&mut parser, &mut grid, b"one\r\ntwo\r\nUSER>");
+        assert!(!grid.awaiting_repaint(), "nothing has been resized yet");
+
+        grid.resize(20, 6);
+        assert!(grid.awaiting_repaint());
+
+        // A cursor shown before the repaint has begun is not its end.
+        advance(&mut parser, &mut grid, b"\x1b[?25h");
+        assert!(
+            grid.awaiting_repaint(),
+            "ended by a cursor shown before it began"
+        );
+
+        // Half a repaint, split across two reads the way a big one can be.
+        advance(
+            &mut parser,
+            &mut grid,
+            b"\x1b[?25l\x1b[H\x1b[Kone\x1b[K\r\ntwo\x1b[K\r\n",
+        );
+        assert!(grid.awaiting_repaint(), "ended halfway through");
+
+        advance(
+            &mut parser,
+            &mut grid,
+            b"USER>\x1b[K\r\n\x1b[K\r\n\x1b[K\r\n\x1b[K\x1b[3;6H\x1b[?25h",
+        );
+        assert!(
+            !grid.awaiting_repaint(),
+            "the repaint is in, and still waited on"
+        );
+        assert!(grid.cursor.visible);
+    }
+
+    /// A Telnet server says nothing back to a resize, and a pseudoconsole that
+    /// has nothing to repaint may not either: the wait has to give up, or the
+    /// grid could never be resized again.
+    #[test]
+    fn a_resize_nobody_answers_is_no_longer_awaited_once_the_window_lapses() {
+        let mut grid = Grid::new(20, 4, 100);
+        grid.resize(20, 6);
+        assert!(grid.awaiting_repaint());
+        std::thread::sleep(
+            crate::term::grid::REPAINT_WINDOW + std::time::Duration::from_millis(50),
+        );
+        assert!(!grid.awaiting_repaint());
     }
 
     /// And the window it is read in has to lapse, or a resize on a connection

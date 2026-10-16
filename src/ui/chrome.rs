@@ -12,10 +12,11 @@ use egui::{
     ViewportCommand,
 };
 
-use crate::config::theme::{TitleButton, WindowButtonStyle, WindowButtons};
+use crate::config::theme::{TitleButton, WindowButtonSlot, WindowButtonStyle, WindowButtons};
 use crate::i18n::tr;
 use crate::ui::icons::{self, Glyph};
 use crate::ui::shading::{darken, gloss, gradient, lighten, radial, white};
+use crate::ui::skin::{Glyph as SkinGlyph, Kit, Skin, St};
 
 /// How wide the grab area along each window edge is.
 ///
@@ -84,7 +85,9 @@ impl Icon {
                 }
                 // A classic close button is the grey face every button has;
                 // what marks it is the glyph, so the cross takes that.
-                WindowButtonStyle::Classic => style.icon,
+                WindowButtonStyle::Classic
+                | WindowButtonStyle::System
+                | WindowButtonStyle::Snes => style.icon,
             }),
         }
     }
@@ -154,11 +157,275 @@ fn drags_window(ui: &Ui, response: &Response) {
 
 /// A square control with a hand-drawn icon.
 fn window_button(ui: &mut Ui, icon: Icon, hint: &str, style: &WindowButtons) -> Response {
-    let side = ui.spacing().interact_size.y;
-    let (rect, response) = ui.allocate_exact_size(Vec2::splat(side), Sense::click_and_drag());
+    toggle_button(ui, icon, hint, style, false)
+}
+
+/// [`window_button`] that a skin draws held down while `on` - the gear while
+/// Settings is open.
+fn toggle_button(ui: &mut Ui, icon: Icon, hint: &str, style: &WindowButtons, on: bool) -> Response {
+    let size = button_size(ui, icon == Icon::Close, style);
+    let (rect, response) = allocate_button(ui, size);
     drags_window(ui, &response);
-    paint(ui, rect, icon, response.hovered(), style);
+    if !paint_skinned(ui, rect, icon, &response, on, style) {
+        paint_own(ui, rect, icon, response.hovered(), style);
+    }
     response.tip(hint)
+}
+
+/// The skin whose title-bar buttons the theme's button style is: XP's Luna
+/// tiles, 98's bevelled squares, the classic Mac OS's boxes - so a window in
+/// one skin's controls can wear another's buttons. `None` for the styles
+/// [`paint`] draws: stroked, Materia, and Aqua's bubbles, which are what an
+/// Aqua window wore before buttons could be mixed.
+fn button_kit(ctx: &egui::Context, style: &WindowButtons) -> Option<Kit> {
+    let skin = match style.style {
+        WindowButtonStyle::Luna => Skin::Xp,
+        WindowButtonStyle::Classic => Skin::Win98,
+        WindowButtonStyle::System => Skin::System,
+        WindowButtonStyle::Snes => Skin::Snes,
+        WindowButtonStyle::Aqua | WindowButtonStyle::Stroke | WindowButtonStyle::Materia => {
+            return None
+        }
+    };
+    if let Some(kit) = Kit::of(ctx).filter(|k| k.look.skin == skin) {
+        return Some(kit);
+    }
+    // A colour counts as the theme's when it is not the one the style
+    // supplies for a theme that names none.
+    let own = |slot, c: Option<Color32>| c.filter(|&c| Some(c) != style.style.default_colour(slot));
+    let paint = crate::ui::skin::Paint {
+        close: own(WindowButtonSlot::Close, style.close),
+        minimize: own(WindowButtonSlot::Minimize, style.minimize),
+        maximize: own(WindowButtonSlot::Maximize, style.maximize),
+        settings: style.settings,
+        on_top: style.on_top,
+        new_tab: style.new_tab,
+        icon: style.icon,
+        ..Default::default()
+    };
+    Some(Kit::for_skin(ctx, skin, paint))
+}
+
+/// The kit whose metrics size and space the buttons: the skin they come
+/// from; for the styles [`paint`] draws, the window's skin - Aqua's for its
+/// bubbles, which take the size of its gems - or none without a skin.
+fn sizing_kit(ctx: &egui::Context, style: &WindowButtons) -> Option<Kit> {
+    if let Some(kit) = button_kit(ctx, style) {
+        return Some(kit);
+    }
+    let kit = Kit::of(ctx)?;
+    if style.style == WindowButtonStyle::Aqua && kit.look.skin != Skin::Aqua {
+        return Some(Kit::for_skin(ctx, Skin::Aqua, kit.look.paint));
+    }
+    Some(kit)
+}
+
+/// [`paint`], with Aqua's bubbles under a skin drawn at the size of the
+/// Aqua skin's gems - every control alike.
+fn paint_own(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowButtons) {
+    let rect = match Kit::of(ui.ctx()) {
+        Some(kit) if style.style == WindowButtonStyle::Aqua => Rect::from_center_size(
+            rect.center(),
+            Vec2::new(rect.width(), (22.0 * kit.u() * bar_scale(ui)).round()),
+        ),
+        _ => rect,
+    };
+    paint(ui, rect, icon, hovered, style);
+}
+
+/// How far the title bar scale has grown the bar's widgets.
+fn bar_scale(ui: &Ui) -> f32 {
+    (ui.spacing().interact_size.y / DEFAULT_INTERACT).max(1.0)
+}
+
+/// Room for a title-bar button of `size`: the row's whole height, so every
+/// button is centred on the same line whichever group of the bar it is in -
+/// the `+` before the tabs sat two pixels higher than the window controls
+/// after them - and the button itself in the middle of it.
+fn allocate_button(ui: &mut Ui, size: Vec2) -> (Rect, Response) {
+    let row = ui.available_height();
+    let tall = if row.is_finite() && row > size.y && row < size.y * 3.0 {
+        row
+    } else {
+        size.y
+    };
+    let (slot, response) = ui.allocate_exact_size(Vec2::new(size.x, tall), Sense::click_and_drag());
+    let at = Rect::from_center_size(slot.center(), size).min;
+    (Rect::from_min_size(at.round(), size), response)
+}
+
+/// How big a title-bar button is: its skin's, grown with the title bar's
+/// scale, or a square the height of a widget.
+fn button_size(ui: &Ui, close: bool, style: &WindowButtons) -> Vec2 {
+    match sizing_kit(ui.ctx(), style) {
+        Some(kit) => {
+            let scale = bar_scale(ui);
+            let mut size = kit.metrics().title_button;
+            if close {
+                size.x = kit.style().close_width();
+            }
+            (size * kit.u() * scale).round()
+        }
+        None => Vec2::splat(ui.spacing().interact_size.y),
+    }
+}
+
+/// egui's own widget height, which the title bar scale multiplies: how much a
+/// skin's buttons have been asked to grow by.
+const DEFAULT_INTERACT: f32 = 18.0;
+
+/// Draws a control as the skin draws a title-bar button, when there is a
+/// skin. Reports whether it did.
+fn paint_skinned(
+    ui: &Ui,
+    rect: Rect,
+    icon: Icon,
+    response: &Response,
+    on: bool,
+    style: &WindowButtons,
+) -> bool {
+    let Some(kit) = button_kit(ui.ctx(), style) else {
+        return false;
+    };
+    let glyph = match icon {
+        Icon::Minimize => SkinGlyph::Minimize,
+        Icon::Maximize => SkinGlyph::Maximize,
+        Icon::Restore => SkinGlyph::Restore,
+        Icon::Close | Icon::CloseTab => SkinGlyph::Close,
+        Icon::Settings => SkinGlyph::Gear,
+        Icon::Pin { pinned: false } => SkinGlyph::Pin,
+        Icon::Pin { pinned: true } => SkinGlyph::Pinned,
+        Icon::NewTab => SkinGlyph::Plus,
+    };
+    let st = St {
+        hovered: response.hovered(),
+        pressed: on || response.is_pointer_button_down_on(),
+        inactive_window: !window_focused(ui.ctx()),
+        ..St::default()
+    };
+    // Grown by the title bar scale as a whole: painted for a screen that
+    // many times denser, in a rect that many times smaller, and the shapes
+    // then scaled up - so a skin's pixel art, bitmaps and frames all grow
+    // together, by whole physical pixels, instead of a 1x drawing sitting in
+    // a 2x box.
+    let scale = bar_scale(ui);
+    if scale > 1.0 {
+        let dense = kit.zoomed(scale);
+        let small = Rect::from_min_max(
+            (rect.min.to_vec2() / scale).to_pos2(),
+            (rect.max.to_vec2() / scale).to_pos2(),
+        );
+        let mut shapes = dense.style().title_button(&dense, small, glyph, st);
+        let grow = egui::emath::TSTransform::from_scaling(scale);
+        for shape in &mut shapes {
+            shape.transform(grow);
+        }
+        ui.painter().extend(shapes);
+    } else {
+        ui.painter()
+            .extend(kit.style().title_button(&kit, rect, glyph, st));
+    }
+    true
+}
+
+/// A skin's title bar round whatever `add` lays out in it: the bar's own
+/// padding about the row, and the bar's background behind it, painted once
+/// the row is laid out and its size known.
+pub fn skinned_bar<R>(ui: &mut Ui, kit: &Kit, add: impl FnOnce(&mut Ui) -> R) -> R {
+    let u = kit.u();
+    let m = kit.metrics();
+    let style = kit.style();
+    let st = St {
+        inactive_window: !window_focused(ui.ctx()),
+        ..St::default()
+    };
+    let background = ui.painter().add(egui::Shape::Noop);
+    let colours = kit.colors();
+    let pad = ((m.title_height - m.title_button.y) / 2.0).max(0.0);
+    // Aqua's tabs stand on the bar's foot, as a toolbar's segmented tabs did
+    // on Panther's metal: the padding under the row goes on top of it.
+    let (top, bottom) = if kit.look.skin == Skin::Aqua {
+        (2.0 * pad, 0.0)
+    } else {
+        (pad, pad)
+    };
+    let shown = egui::Frame::none()
+        .inner_margin(egui::Margin {
+            left: (pad * u).round(),
+            right: (pad * u).round(),
+            top: (top * u).round(),
+            bottom: (bottom * u).round(),
+        })
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            // What is written on the bar is the bar's ink - white on 98's
+            // navy - and in the bar's face.
+            ui.visuals_mut().override_text_color = Some(if st.inactive_window {
+                colours.title_text_inactive
+            } else {
+                colours.title_text
+            });
+            let family = crate::ui::fonts::skin_title(ui.ctx());
+            let size = m.title_font_size;
+            for style in [egui::TextStyle::Body, egui::TextStyle::Button] {
+                ui.style_mut()
+                    .text_styles
+                    .insert(style, egui::FontId::new(size, family.clone()));
+            }
+            add(ui)
+        });
+    ui.painter().set(
+        background,
+        egui::Shape::Vec(style.title_bar(kit, shown.response.rect, st)),
+    );
+    shown.inner
+}
+
+/// A window's frame and body under a skin, round the whole of `ctx`'s window:
+/// painted first, on the background, for the panels to be laid inside.
+/// Returns the margin they leave for it.
+pub fn skinned_window(ctx: &Context, kit: &Kit) -> egui::Margin {
+    let screen = ctx.screen_rect();
+    let st = St {
+        inactive_window: !window_focused(ctx),
+        ..St::default()
+    };
+    let painter = ctx.layer_painter(egui::LayerId::background());
+    painter.extend(kit.style().window(kit, screen, st));
+    let margin = window_margin(kit);
+    // A theme's chrome gradient is the window's body under a skin too: laid
+    // inside the frame, far enough in from a rounded corner that its square
+    // edge stays inside the curve.
+    if let Some(gradient) = crate::ui::shading::backdrop(ctx) {
+        let corner = (kit.metrics().window_radius * 0.3 * kit.u()).ceil();
+        let body = Rect::from_min_max(
+            screen.min + Vec2::new(margin.left.max(corner), margin.top.max(corner)),
+            screen.max - Vec2::new(margin.right.max(corner), margin.bottom.max(corner)),
+        );
+        crate::ui::shading::ui_gradient(&painter, body, &gradient);
+    }
+    margin
+}
+
+/// What a skin's window frame leaves round its contents: the border at the
+/// sides and the foot, and at the top what the skin keeps above its title bar
+/// - next to nothing for a skin whose bar runs to the edge.
+pub fn window_margin(kit: &Kit) -> egui::Margin {
+    let side = (kit.metrics().window_border * kit.u()).round();
+    let top = (kit.style().window_top() * kit.u()).round();
+    egui::Margin {
+        left: side,
+        right: side,
+        top,
+        bottom: side,
+    }
+}
+
+/// Whether the window being drawn has the keyboard, which is what an active
+/// title bar is drawn for. Unknown counts as yes: a window that cannot say
+/// is the one being used.
+pub fn window_focused(ctx: &Context) -> bool {
+    ctx.input(|i| i.viewport().focused.unwrap_or(true))
 }
 
 fn paint(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowButtons) {
@@ -168,6 +435,10 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowButtons) 
         WindowButtonStyle::Luna => paint_luna(ui, rect, icon, hovered, style),
         WindowButtonStyle::Materia => paint_materia(ui, rect, icon, hovered, style),
         WindowButtonStyle::Classic => paint_classic(ui, rect, icon, hovered, style),
+        // Drawn by their skins' painters (see `button_kit`); never here.
+        WindowButtonStyle::System | WindowButtonStyle::Snes => {
+            paint_stroked(ui, rect, icon, hovered, style)
+        }
     }
 }
 
@@ -221,7 +492,8 @@ fn paint_stroked(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowB
 fn paint_aqua(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowButtons) {
     let focused = ui.ctx().input(|i| i.viewport().focused.unwrap_or(true));
     let painter = ui.painter();
-    let radius = (side_of(rect) * 0.30).clamp(5.0, 7.5);
+    // No ceiling: the title bar scale grows the bubble with its button.
+    let radius = (side_of(rect) * 0.30).max(5.0);
     let center = rect.center();
 
     // Unfocused greys all three at once, which is why it is decided here rather
@@ -401,7 +673,7 @@ fn paint_luna(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowButt
 
     let colour = style.icon.unwrap_or(Color32::WHITE);
     // XP's marks are drawn three pixels thick at 21 px.
-    let weight = (side * 0.13).clamp(2.0, 3.5);
+    let weight = (side * 0.13).max(2.0);
     let glyph = Rect::from_center_size(tile.center(), Vec2::splat((side * 0.48).round()));
     match icon {
         // Luna never had one either, and its glyphs are always on.
@@ -492,7 +764,7 @@ fn paint_classic(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowB
         // Greyed, as a disabled control's mark was, rather than gone.
         colour = colour.gamma_multiply(0.6);
     }
-    let weight = (h * 0.15).clamp(2.0, 3.0).round();
+    let weight = (h * 0.15).max(2.0).round();
     let glyph = ui.painter().round_rect_to_pixels(Rect::from_center_size(
         tile.center(),
         Vec2::new(h * 0.6, h * 0.55),
@@ -553,7 +825,7 @@ fn paint_materia(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowB
     let focused = ui.ctx().input(|i| i.viewport().focused.unwrap_or(true));
     let painter = ui.painter();
     // The stone takes the room its socket used to.
-    let radius = (side_of(rect) * 0.3).clamp(4.5, 8.0);
+    let radius = (side_of(rect) * 0.3).max(4.5);
     let center = rect.center();
 
     let mut base = icon.tint(style).unwrap_or(match icon {
@@ -641,6 +913,8 @@ pub fn sample_bar(ui: &mut Ui, style: &WindowButtons, middle: &str) {
                 on_top: Some(Pin::Off),
                 new_tab: Some(&mut plus),
                 tabs_fill: false,
+                close_gap: 0.0,
+                close_extra: 0.0,
                 tabs: &mut tabs,
             },
         );
@@ -688,6 +962,13 @@ pub struct TitleBar<'a> {
     /// The tabs fill the bar and move the window themselves - dragged up or
     /// down - so no strip is held back after them to drag it by.
     pub tabs_fill: bool,
+    /// Room a skin keeps before close beyond the gap between two buttons -
+    /// 98 set close two pixels apart. Worked out by [`title_bar`]; callers
+    /// leave it at zero.
+    pub close_gap: f32,
+    /// How much wider than the others a skin draws close. Worked out by [`title_bar`]; callers leave it at
+    /// zero.
+    pub close_extra: f32,
 }
 
 /// One item of the order, laid out: its kind, and the width it advances the
@@ -704,6 +985,7 @@ fn item_width(
     match button {
         TitleButton::LeftSpace | TitleButton::RightSpace => 0.0,
         TitleButton::Tabs => tabs + tabs_gap,
+        TitleButton::Close if drawn(bar, button) => side + gap + bar.close_gap + bar.close_extra,
         b if drawn(bar, b) => side + gap,
         _ => 0.0,
     }
@@ -793,7 +1075,16 @@ pub fn centred_start(
 pub fn title_bar(ui: &mut Ui, mut bar: TitleBar) -> Option<WindowAction> {
     let mut action = None;
     let style = *bar.style;
-    let side = ui.spacing().interact_size.y;
+    // A skin spaces its buttons as its library does, and sizes them too -
+    // the skin the buttons come from, which need not be the window's.
+    if let Some(kit) = sizing_kit(ui.ctx(), &style) {
+        let m = kit.metrics();
+        let scale = bar_scale(ui);
+        ui.spacing_mut().item_spacing.x = (m.title_button_gap * kit.u() * scale).round();
+        bar.close_gap = ((m.close_gap - m.title_button_gap).max(0.0) * kit.u() * scale).round();
+    }
+    let side = button_size(ui, false, &style).x;
+    bar.close_extra = button_size(ui, true, &style).x - side;
     let gap = ui.spacing().item_spacing.x;
     let full = ui.available_rect_before_wrap().x_range();
     let full = full.min..full.max;
@@ -882,6 +1173,9 @@ fn draw_item(
     let window_controls = bar.window_controls;
     match button {
         TitleButton::Close if window_controls => {
+            if bar.close_gap > 0.0 && style.shows(TitleButton::Close) {
+                ui.add_space(bar.close_gap);
+            }
             clicked(optional_button(ui, Icon::Close, tr("Close"), style))
                 .then_some(WindowAction::Close)
         }
@@ -932,11 +1226,12 @@ pub fn settings_button(ui: &mut Ui, style: &WindowButtons, open: &mut bool) {
 }
 
 fn settings_toggle(ui: &mut Ui, style: &WindowButtons, open: &mut bool) {
-    let response = window_button(ui, Icon::Settings, tr("Settings"), style);
+    let response = toggle_button(ui, Icon::Settings, tr("Settings"), style, *open);
     // Drawn over the button rather than by it: the three painters know nothing
     // about a pressed state, and a gear that looks pressed while the window is
-    // open is worth more than making all three learn about one.
-    if *open {
+    // open is worth more than making all three learn about one. A skin's
+    // buttons do, and have drawn it held down already.
+    if *open && Kit::of(ui.ctx()).is_none() {
         pressed_outline(ui, response.rect);
     }
     if response.clicked() {
@@ -963,9 +1258,12 @@ fn on_top_toggle(ui: &mut Ui, style: &WindowButtons, on_top: Option<Pin>) -> boo
     // the state by, so off is faded as well. On is the button at full
     // strength and nothing more: the gear's pressed outline round it too
     // read as a glow on a button that is not being pressed.
+    let skinned = Kit::of(ui.ctx()).is_some();
     let response = ui
         .scope(|ui| {
-            if !pinned {
+            // A skin's pin is a button like the others, its mark saying
+            // whether it is in.
+            if !pinned && !skinned {
                 ui.multiply_opacity(PIN_OFF_OPACITY);
             }
             optional_button(ui, Icon::Pin { pinned }, hint, style)
@@ -1011,10 +1309,11 @@ pub fn close_tab_colour(style: &WindowButtons) -> Option<Color32> {
 /// A control with no tooltip, for callers whose tooltip needs text this module
 /// has no business knowing.
 fn bare_button(ui: &mut Ui, icon: Icon, style: &WindowButtons) -> Response {
-    let side = ui.spacing().interact_size.y;
-    let (rect, response) = ui.allocate_exact_size(Vec2::splat(side), Sense::click_and_drag());
+    let (rect, response) = allocate_button(ui, button_size(ui, false, style));
     drags_window(ui, &response);
-    paint(ui, rect, icon, response.hovered(), style);
+    if !paint_skinned(ui, rect, icon, &response, false, style) {
+        paint_own(ui, rect, icon, response.hovered(), style);
+    }
     response
 }
 
@@ -1063,6 +1362,63 @@ pub fn drag_text(
     // bar you can only take hold of by hitting the letters is not one. The row
     // is as tall as the tallest thing already placed in it, which is a button.
     let handle = Rect::from_x_y_ranges(response.rect.x_range(), ui.min_rect().y_range());
+    drag_area(ui, handle, Id::new(("nit-titlebar-text", window, tag)))
+}
+
+/// A window's title on its bar, in at most `room`: [`drag_text`], or under a
+/// skin the skin's way of setting a title - centred on the whole bar where it
+/// centres its titles, over whatever it puts behind one (the classic Mac OS
+/// stops its stripes there), and the whole of `room` a handle for the window.
+pub fn title_text(
+    ui: &mut Ui,
+    text: impl Into<egui::WidgetText>,
+    room: f32,
+    window: &'static str,
+    tag: &'static str,
+) -> Option<WindowAction> {
+    let Some(kit) = Kit::of(ui.ctx()) else {
+        return drag_text(ui, text, true, window, tag);
+    };
+    let style = kit.style();
+    let galley = text.into().into_galley(
+        ui,
+        Some(egui::TextWrapMode::Truncate),
+        room.max(1.0),
+        egui::TextStyle::Body,
+    );
+    let centred = style.title_centred();
+    let width = if centred {
+        room.max(galley.size().x)
+    } else {
+        galley.size().x
+    };
+    let (rect, _) = ui.allocate_exact_size(Vec2::new(width, galley.size().y), Sense::hover());
+    let x = if centred {
+        // On the bar's middle, not the room's, as a title is centred on its
+        // window - but never out of the room it was given.
+        let middle = ui.max_rect().center().x - galley.size().x / 2.0;
+        middle.clamp(
+            rect.left(),
+            (rect.right() - galley.size().x).max(rect.left()),
+        )
+    } else {
+        rect.left()
+    };
+    let at = egui::pos2(x.round(), rect.top().round());
+    let words = Rect::from_min_size(at, galley.size());
+    let st = St {
+        inactive_window: !window_focused(ui.ctx()),
+        ..St::default()
+    };
+    let ink = ui.visuals().text_color();
+    let painter = ui.painter();
+    painter.extend(style.title_backing(&kit, words, st));
+    // The emboss a skin sets its titles on - Aqua's white a pixel under.
+    if let (Some(shadow), false) = (kit.colors().title_shadow, st.inactive_window) {
+        painter.galley(at + Vec2::new(0.0, kit.u()), galley.clone(), shadow);
+    }
+    painter.galley(at, galley, ink);
+    let handle = Rect::from_x_y_ranges(rect.x_range(), ui.min_rect().y_range());
     drag_area(ui, handle, Id::new(("nit-titlebar-text", window, tag)))
 }
 
@@ -1205,6 +1561,46 @@ fn edge_at(screen: Rect, pos: Pos2) -> Option<(ResizeDirection, CursorIcon)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The button style picks whose buttons a window wears, whatever skin
+    /// its controls are in: XP's tiles on a classic Mac window, and the
+    /// styles no skin draws - stroked, Materia, Aqua's bubbles - left to
+    /// `paint`.
+    #[test]
+    fn a_window_in_one_skin_can_wear_another_skins_buttons() {
+        let ctx = egui::Context::default();
+        let _ = ctx.run(egui::RawInput::default(), |ctx| {
+            crate::ui::skin::set(
+                ctx,
+                crate::ui::skin::Look {
+                    skin: Skin::System,
+                    ..Default::default()
+                },
+            );
+            let mut style = crate::config::Theme::default().window_buttons;
+            let skin_of = |style: &WindowButtons| button_kit(ctx, style).map(|k| k.look.skin);
+            style.style = WindowButtonStyle::Aqua;
+            assert_eq!(skin_of(&style), None);
+            style.style = WindowButtonStyle::System;
+            assert_eq!(skin_of(&style), Some(Skin::System));
+            style.style = WindowButtonStyle::Luna;
+            assert_eq!(skin_of(&style), Some(Skin::Xp));
+            style.style = WindowButtonStyle::Classic;
+            assert_eq!(skin_of(&style), Some(Skin::Win98));
+            style.style = WindowButtonStyle::Stroke;
+            assert_eq!(skin_of(&style), None);
+            style.style = WindowButtonStyle::Materia;
+            assert_eq!(skin_of(&style), None);
+            // A colour the theme names reaches the other skin's buttons; the
+            // style's own default does not count as one.
+            style.style = WindowButtonStyle::Luna;
+            style.close = WindowButtonStyle::Luna.default_colour(WindowButtonSlot::Close);
+            style.minimize = Some(Color32::from_rgb(1, 2, 3));
+            let kit = button_kit(ctx, &style).unwrap();
+            assert_eq!(kit.look.paint.close, None);
+            assert_eq!(kit.look.paint.minimize, Some(Color32::from_rgb(1, 2, 3)));
+        });
+    }
 
     #[test]
     fn the_middle_group_is_centred_on_the_whole_bar() {

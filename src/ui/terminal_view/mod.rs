@@ -35,7 +35,7 @@ use menu::{analyze_scopes, export_menu, macro_menu, natives_menu};
 use mouse::handle_mouse;
 use paint::{paint_row, syntax_overrides};
 pub use pieces::{GlobalTarget, KeySelection, PieceSelection};
-use scroll::{autoscroll_lines, h_scrollbar, scroll_lines, scrollbar, SCROLLBAR_WIDTH};
+use scroll::{autoscroll_lines, h_scrollbar, scroll_lines, scrollbar};
 pub use scroll::{gradient_end, handle_colour, track_colour};
 
 /// Everything about how the grid should be drawn that is not the grid itself.
@@ -445,13 +445,14 @@ pub fn show(
     // The bar's width comes off before the grid is measured, and is reserved
     // whether or not there is history yet: taking it away the moment the first
     // line scrolls off would drop a column and reflow the PTY mid-session.
-    let bar_width = if opts.scrollbar { SCROLLBAR_WIDTH } else { 0.0 };
+    let skin_bar = scroll::bar_width(ui.ctx());
+    let bar_width = if opts.scrollbar { skin_bar } else { 0.0 };
     // Clipping is the mode where a line runs off the side, so that is the mode
     // that reserves room for a horizontal bar. Reserved whether or not anything
     // currently overflows: letting it come and go would change the row count
     // and reflow the PTY every time a long line arrived.
     let h_bar_height = if opts.scrollbar && !opts.wrap {
-        SCROLLBAR_WIDTH
+        skin_bar
     } else {
         0.0
     };

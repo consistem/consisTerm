@@ -43,7 +43,10 @@ pub mod search;
 pub mod settings_view;
 pub mod shading;
 pub mod shortcut;
+pub mod skin;
 pub mod snake_view;
+#[cfg(test)]
+pub(crate) mod snapshot;
 pub mod terminal_view;
 pub mod tip;
 pub mod tray;

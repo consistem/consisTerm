@@ -7,11 +7,68 @@
 use super::*;
 
 /// Width of the scrollback scrollbar, in points.
-pub(super) const SCROLLBAR_WIDTH: f32 = 10.0;
+const SCROLLBAR_WIDTH: f32 = 10.0;
 
 /// Shortest the thumb is allowed to get, so a long history still leaves
 /// something you can actually grab.
 const MIN_THUMB_HEIGHT: f32 = 24.0;
+
+/// How wide the bars are: the skin's, or the app's own.
+pub(super) fn bar_width(ctx: &egui::Context) -> f32 {
+    match crate::ui::skin::Kit::of(ctx) {
+        Some(kit) => (kit.metrics().scrollbar * kit.u()).round(),
+        None => SCROLLBAR_WIDTH,
+    }
+}
+
+/// A skin's bar split into its two arrow buttons and the track between them,
+/// when the skin has arrows and the bar is long enough for both and a thumb.
+fn arrows(track: Rect, kit: &crate::ui::skin::Kit, vertical: bool) -> Option<(Rect, Rect, Rect)> {
+    let arrow = (kit.metrics().scroll_arrow * kit.u()).round();
+    let length = if vertical {
+        track.height()
+    } else {
+        track.width()
+    };
+    if arrow <= 0.0 || length < 2.0 * arrow + MIN_THUMB_HEIGHT {
+        return None;
+    }
+    Some(if vertical {
+        (
+            Rect::from_min_max(track.min, Pos2::new(track.right(), track.top() + arrow)),
+            Rect::from_min_max(
+                Pos2::new(track.left(), track.top() + arrow),
+                Pos2::new(track.right(), track.bottom() - arrow),
+            ),
+            Rect::from_min_max(Pos2::new(track.left(), track.bottom() - arrow), track.max),
+        )
+    } else {
+        (
+            Rect::from_min_max(track.min, Pos2::new(track.left() + arrow, track.bottom())),
+            Rect::from_min_max(
+                Pos2::new(track.left() + arrow, track.top()),
+                Pos2::new(track.right() - arrow, track.bottom()),
+            ),
+            Rect::from_min_max(Pos2::new(track.right() - arrow, track.top()), track.max),
+        )
+    })
+}
+
+/// Draws a skin's arrow button and reports a click on it.
+fn arrow_button(
+    ui: &Ui,
+    kit: &crate::ui::skin::Kit,
+    rect: Rect,
+    dir: crate::ui::skin::Dir,
+    id: egui::Id,
+    enabled: bool,
+) -> bool {
+    let response = ui.interact(rect, id, Sense::click());
+    let st = crate::ui::skin::St::of(&response).disabled(!enabled);
+    ui.painter()
+        .extend(kit.style().scroll_arrow(kit, rect, dir, st));
+    enabled && response.clicked()
+}
 
 /// Draws the horizontal scrollbar and handles dragging it.
 ///
@@ -28,18 +85,55 @@ pub(super) fn h_scrollbar(
     view_cols: usize,
     max_offset: usize,
 ) {
+    let kit = crate::ui::skin::Kit::of(ui.ctx());
+    let id = egui::Id::new(("nit-terminal-h-scrollbar", tab_uid));
+    // A skin's bar has an arrow at each end, and the thumb runs between them.
+    let track = match kit
+        .as_ref()
+        .and_then(|kit| arrows(track, kit, false).map(|a| (kit, a)))
+    {
+        Some((kit, (left, inner, right))) => {
+            let enabled = max_offset > 0;
+            if arrow_button(
+                ui,
+                kit,
+                left,
+                crate::ui::skin::Dir::Left,
+                id.with("left"),
+                enabled,
+            ) {
+                state.h_offset = state.h_offset.saturating_sub(1);
+            }
+            if arrow_button(
+                ui,
+                kit,
+                right,
+                crate::ui::skin::Dir::Right,
+                id.with("right"),
+                enabled,
+            ) {
+                state.h_offset = (state.h_offset + 1).min(max_offset);
+            }
+            inner
+        }
+        None => track,
+    };
     let painter = ui.painter_at(track);
-    paint_track(&painter, track, theme, false);
+    match &kit {
+        Some(kit) => {
+            painter.extend(
+                kit.style()
+                    .scroll_track(kit, track, false, Default::default()),
+            )
+        }
+        None => paint_track(&painter, track, theme, false),
+    }
 
     if max_offset == 0 {
         return;
     }
 
-    let response = ui.interact(
-        track,
-        egui::Id::new(("nit-terminal-h-scrollbar", tab_uid)),
-        Sense::click_and_drag(),
-    );
+    let response = ui.interact(track, id, Sense::click_and_drag());
 
     let visible = (view_cols as f32 / content_cols.max(1) as f32).clamp(0.0, 1.0);
     let thumb_width = (track.width() * visible).max(MIN_THUMB_HEIGHT.min(track.width()));
@@ -55,6 +149,15 @@ pub(super) fn h_scrollbar(
     }
 
     let progress = state.h_offset.min(max_offset) as f32 / max_offset as f32;
+    if let Some(kit) = &kit {
+        let thumb = Rect::from_min_size(
+            Pos2::new(track.left() + span * progress, track.top()),
+            Vec2::new(thumb_width, track.height()),
+        );
+        let st = crate::ui::skin::St::of(&response);
+        painter.extend(kit.style().scroll_thumb(kit, thumb, false, st));
+        return;
+    }
     let thumb = Rect::from_min_size(
         Pos2::new(track.left() + span * progress, track.top() + 1.0),
         Vec2::new(thumb_width, (track.height() - 2.0).max(1.0)),
@@ -296,23 +399,63 @@ pub(super) fn scrollbar(
     mode: wrap::Mode,
     used: &dyn Fn(usize) -> usize,
 ) {
+    let kit = crate::ui::skin::Kit::of(ui.ctx());
+    let id = egui::Id::new(("nit-terminal-scrollbar", tab_uid));
+    // A skin's bar has an arrow at each end - one line each - and the thumb
+    // runs between them.
+    let scrollable = max_top != wrap::Top::default();
+    let at_now = match state.anchor {
+        ScrollAnchor::Bottom => max_top,
+        ScrollAnchor::At(at) => at.min(max_top),
+    };
+    let track = match kit
+        .as_ref()
+        .and_then(|kit| arrows(track, kit, true).map(|a| (kit, a)))
+    {
+        Some((kit, (up, inner, down))) => {
+            if arrow_button(
+                ui,
+                kit,
+                up,
+                crate::ui::skin::Dir::Up,
+                id.with("up"),
+                scrollable,
+            ) {
+                scroll_lines(state, at_now, 1, max_top, total, mode, used);
+            }
+            if arrow_button(
+                ui,
+                kit,
+                down,
+                crate::ui::skin::Dir::Down,
+                id.with("down"),
+                scrollable,
+            ) {
+                scroll_lines(state, at_now, -1, max_top, total, mode, used);
+            }
+            inner
+        }
+        None => track,
+    };
     let painter = ui.painter_at(track);
     // The track is drawn even with nothing to scroll, so the reserved strip
     // reads as part of the terminal rather than as a gap beside it.
-    paint_track(&painter, track, theme, true);
+    match &kit {
+        Some(kit) => painter.extend(
+            kit.style()
+                .scroll_track(kit, track, true, Default::default()),
+        ),
+        None => paint_track(&painter, track, theme, true),
+    }
 
-    if max_top == wrap::Top::default() {
+    if !scrollable {
         return;
     }
 
     // Its own id. Sharing the terminal's would give the bar the keyboard focus
     // the terminal defends with a focus-lock filter, and typing would stop
     // reaching IRIS.
-    let response = ui.interact(
-        track,
-        egui::Id::new(("nit-terminal-scrollbar", tab_uid)),
-        Sense::click_and_drag(),
-    );
+    let response = ui.interact(track, id, Sense::click_and_drag());
 
     let visible = (rows as f32 / total as f32).clamp(0.0, 1.0);
     let thumb_height = (track.height() * visible).max(MIN_THUMB_HEIGHT.min(track.height()));
@@ -379,6 +522,15 @@ pub(super) fn scrollbar(
         }
     }
     .clamp(0.0, 1.0);
+    if let Some(kit) = &kit {
+        let thumb = Rect::from_min_size(
+            Pos2::new(track.left(), track.top() + span * progress),
+            Vec2::new(track.width(), thumb_height),
+        );
+        let st = crate::ui::skin::St::of(&response);
+        painter.extend(kit.style().scroll_thumb(kit, thumb, true, st));
+        return;
+    }
     let thumb = Rect::from_min_size(
         Pos2::new(track.left() + 1.0, track.top() + span * progress),
         Vec2::new((track.width() - 2.0).max(1.0), thumb_height),

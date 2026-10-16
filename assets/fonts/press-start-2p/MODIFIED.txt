@@ -1,0 +1,18 @@
+Modified by consisTerm
+======================
+
+The font file here is not the original: its line metrics were given a
+descent of 250 units (2 px at the 8 px it is set at) - `hhea.descender`,
+`OS/2.sTypoDescender` and `OS/2.usWinDescent`. The face ships with none,
+so two lines set in it touched, and a hint under a label ran into the label.
+No glyph was changed.
+
+The change was made with ../add_descent.py:
+
+    python add_descent.py original.ttf modified.ttf
+
+It was also renamed - family "SNES Pixel 8px", PostScript name
+"SNESPixel8px-Regular", file SNESPixel8px-Regular.ttf - because the OFL
+reserves the name "Press Start 2P" to the original: a modified version may
+not carry it. The modified font is distributed under the same licence as
+the original (SIL Open Font License 1.1, OFL.txt).

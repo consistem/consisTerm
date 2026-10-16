@@ -124,6 +124,9 @@ pub fn run() -> eframe::Result<()> {
         .with_title(APP_NAME)
         .with_app_id(APP_ID)
         .with_decorations(false)
+        // A skin's window has rounded corners - Aqua's, XP's - and what lies
+        // outside them has to be the desktop, not the black eframe clears to.
+        .with_transparent(true)
         .with_resizable(true)
         // Define o ícone da janela e barra de tarefas aqui:
         .with_icon(Arc::new(load_icon()));

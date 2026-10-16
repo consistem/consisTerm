@@ -8,7 +8,26 @@
 use super::*;
 
 impl eframe::App for App {
+    /// Nothing: the window is transparent, so a skin's rounded corners show
+    /// the desktop; every pixel inside them is painted by the frame.
+    fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
+        [0.0; 4]
+    }
+
     fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
+        self.frame(ctx);
+    }
+
+    fn on_exit(&mut self, gl: Option<&eframe::glow::Context>) {
+        self.exit(gl);
+    }
+}
+
+impl App {
+    /// One frame of the whole window. Everything `update` does, without the
+    /// `eframe::Frame` it never reads - which is what lets a test draw the
+    /// main window: eframe offers no way to make one.
+    pub(crate) fn frame(&mut self, ctx: &Context) {
         // Set again by the tab strip if a tab is shown this frame; one left
         // from the last frame would be sealed against a terminal it no longer
         // touches.
@@ -32,6 +51,37 @@ impl eframe::App for App {
         crate::ui::prefs::set_opacity(ctx, glass);
         self.track_window_geometry(ctx);
         crate::ui::shading::paint_backdrop(ctx);
+        // Under a skin the whole window wears the skin's frame, painted first
+        // and kept clear by a band of empty panel along each edge, so every
+        // panel after this one is laid out inside it.
+        let kit = crate::ui::skin::Kit::of(ctx);
+        if let Some(kit) = &kit {
+            let margin = crate::ui::chrome::skinned_window(ctx, kit);
+            let border = margin.left;
+            let none = egui::Frame::none();
+            egui::TopBottomPanel::top("skin-edge-top")
+                .frame(none)
+                .exact_height(margin.top.max(0.5))
+                .show_separator_line(false)
+                .show(ctx, |_| {});
+            egui::TopBottomPanel::bottom("skin-edge-bottom")
+                .frame(none)
+                .exact_height(border)
+                .show_separator_line(false)
+                .show(ctx, |_| {});
+            egui::SidePanel::left("skin-edge-left")
+                .frame(none)
+                .exact_width(border)
+                .resizable(false)
+                .show_separator_line(false)
+                .show(ctx, |_| {});
+            egui::SidePanel::right("skin-edge-right")
+                .frame(none)
+                .exact_width(border)
+                .resizable(false)
+                .show_separator_line(false)
+                .show(ctx, |_| {});
+        }
         // Refilled as the panes draw, below, and read by the resize grips at
         // the end of the frame.
         self.pane_rects.clear();
@@ -99,6 +149,12 @@ impl eframe::App for App {
             left: if flush_left { 0.0 } else { 8.0 },
             right: if flush_right { 0.0 } else { 8.0 },
         });
+        // A skin's bar pads itself and paints its own background.
+        let bar_frame = if kit.is_some() {
+            egui::Frame::none()
+        } else {
+            bar_frame
+        };
         // Along the top or the bottom the bar is a row, the tabs in it or in
         // a row of their own beside it; down a side it is a column holding
         // both. Ids of their own per kind of panel, so a panel never reads
@@ -129,18 +185,35 @@ impl eframe::App for App {
         } else {
             row_panel("menu")
                 .frame(bar_frame)
-                .show_separator_line(!tabs_inline)
+                .show_separator_line(!tabs_inline && kit.is_none())
                 .show(ctx, |ui| {
                     crate::ui::prefs::scale_style(ui, title_scale);
-                    window_action = self.menu_bar(ui, &theme.window_buttons);
+                    match &kit {
+                        Some(kit) => {
+                            window_action = crate::ui::chrome::skinned_bar(ui, kit, |ui| {
+                                self.menu_bar(ui, &theme.window_buttons)
+                            });
+                        }
+                        None => window_action = self.menu_bar(ui, &theme.window_buttons),
+                    }
                 });
         }
         // Not when the setting has moved them into the title bar, where
         // `menu_bar` has already drawn them - that is what was putting the same
         // tabs on screen twice - nor down a side, which has its own column.
         if !position.is_side() && (!self.settings.tabs_in_title_bar || self.tabs.is_empty()) {
+            // Under a skin the tabs stand on the window's face, with room
+            // above them for the shown one to stand taller, as a tab did.
+            let tabs_frame = match &kit {
+                Some(kit) => egui::Frame::none().inner_margin(egui::Margin {
+                    top: (3.0 * kit.u()).round(),
+                    left: (2.0 * kit.u()).round(),
+                    ..egui::Margin::ZERO
+                }),
+                None => egui::Frame::side_top_panel(&ctx.style()).inner_margin(egui::Margin::ZERO),
+            };
             row_panel("tabs")
-                .frame(egui::Frame::side_top_panel(&ctx.style()).inner_margin(egui::Margin::ZERO))
+                .frame(tabs_frame)
                 .show_separator_line(false)
                 .show(ctx, |ui| {
                     crate::ui::prefs::scale_style(
@@ -173,15 +246,29 @@ impl eframe::App for App {
         if let Some(status) = self.status.text().map(str::to_owned) {
             let action = self.status.action().map(|a| a.label());
             let (mut act, mut dismiss) = (false, false);
-            egui::TopBottomPanel::bottom("status").show(ctx, |ui| {
-                ui.horizontal(|ui| {
-                    ui.label(status);
-                    if let Some(label) = action {
-                        act = ui.small_button(label).clicked();
-                    }
-                    dismiss = ui.small_button(tr("dismiss")).clicked();
+            let status_frame = match &kit {
+                Some(_) => egui::Frame::none().inner_margin(egui::Margin::symmetric(2.0, 2.0)),
+                None => egui::Frame::side_top_panel(&ctx.style()),
+            };
+            egui::TopBottomPanel::bottom("status")
+                .frame(status_frame)
+                .show_separator_line(kit.is_none())
+                .show(ctx, |ui| {
+                    ui.horizontal(|ui| {
+                        // A skin's status bar: the message in a sunken field.
+                        let field = ui.painter().add(egui::Shape::Noop);
+                        let shown = ui.label(status);
+                        if let Some(kit) = &kit {
+                            let rect = shown.rect.expand2(egui::vec2(3.0, 2.0));
+                            ui.painter()
+                                .set(field, egui::Shape::Vec(kit.style().status_field(kit, rect)));
+                        }
+                        if let Some(label) = action {
+                            act = ui.small_button(label).clicked();
+                        }
+                        dismiss = ui.small_button(tr("dismiss")).clicked();
+                    });
                 });
-            });
             if act {
                 match self.status.take_action() {
                     Some(super::status::Action::ReviewUsageReport(offer)) => {
@@ -197,14 +284,39 @@ impl eframe::App for App {
         // Where the find bar floats, filled in once the central panel knows how
         // much room it has.
         let mut terminal_rect = egui::Rect::NOTHING;
+        // Under a skin the terminal is sunk into the window's face, the way a
+        // console or a text box was: the face round it, and the field's
+        // border between the two.
+        let sunk = kit.as_ref().map_or(0.0, |kit| (2.0 * kit.u()).round());
+        // A skin's window frame is the edge a resize is grabbed by, so the
+        // gutter kept clear of the grips is not needed on the far sides: the
+        // scroll bars sit against the frame, as a window's own did.
+        let mut inset = self.terminal_inset();
+        if kit.is_some() {
+            let grab = crate::ui::chrome::RESIZE_GRAB + 1.0;
+            inset.right = (inset.right - grab).max(0.0);
+            inset.bottom = (inset.bottom - grab).max(0.0);
+        }
+        let central_fill = match &kit {
+            Some(kit) => crate::ui::skin::page_fill(kit),
+            None => theme.background,
+        };
         egui::CentralPanel::default()
             .frame(
                 egui::Frame::none()
-                    .fill(theme.background)
-                    .inner_margin(self.terminal_inset()),
+                    .fill(central_fill)
+                    .inner_margin(inset + egui::Margin::same(sunk)),
             )
             .show(ctx, |ui| {
                 terminal_rect = ui.max_rect();
+                if let Some(kit) = &kit {
+                    let well = terminal_rect + self.terminal_inset();
+                    let mut shapes = kit
+                        .style()
+                        .field(kit, well.expand(sunk), Default::default());
+                    shapes.push(egui::Shape::rect_filled(well, 0.0, theme.background));
+                    ui.painter().extend(shapes);
+                }
                 super::tabs::seal_shown_tab(
                     ui.ctx(),
                     ui.layer_id(),
@@ -488,6 +600,18 @@ impl eframe::App for App {
             // what the old rate cost.
             ctx.request_repaint_after(Duration::from_secs(1));
         }
+        let held = |tab: &Tab| tab.awaiting_repaint();
+        if self
+            .tabs
+            .iter()
+            .any(|t| held(t) || t.split.as_ref().is_some_and(|s| held(&s.tab)))
+        {
+            // A resize held back for a repaint that is late, or never coming.
+            // The repaint itself wakes the loop when it arrives; this is for
+            // the window lapsing without one, so the pane is not left at the
+            // wrong size until something else asks for a frame.
+            ctx.request_repaint_after(Duration::from_millis(50));
+        }
         if self.updates.working() {
             // Nothing on screen is moving, but a thread is: without a frame to
             // read it in, the check's answer and the download's progress would
@@ -497,7 +621,7 @@ impl eframe::App for App {
         }
     }
 
-    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
+    fn exit(&mut self, _gl: Option<&eframe::glow::Context>) {
         // Before the sessions are closed down, while every tab is still here.
         // An empty list is saved as such: closing every tab and then the
         // window is asking for nothing to come back.

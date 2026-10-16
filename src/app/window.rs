@@ -11,7 +11,7 @@ impl App {
     /// Applies theme colours *and* the style bits that are not part of
     /// `Visuals`. `set_visuals` replaces only the colours, so the scrollbar
     /// spacing has to be set separately or the switch would do nothing.
-    pub(super) fn apply_style(ctx: &Context, theme: &Theme, settings: &Settings) {
+    pub(crate) fn apply_style(ctx: &Context, theme: &Theme, settings: &Settings) {
         ctx.set_visuals(theme.visuals());
         crate::ui::shading::set_backdrop(ctx, theme.ui_gradient);
         ctx.style_mut(|style| {
@@ -22,6 +22,9 @@ impl App {
                 style.spacing.scroll.bar_width = 10.0;
             }
         });
+        // Last, because a skin works on top of the theme's colours and draws
+        // the scroll bars its own way.
+        crate::ui::skin::dress(ctx, crate::ui::skin::Look::of(theme));
     }
 
     /// Hands the configured font to egui and records what it actually got.

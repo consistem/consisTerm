@@ -263,3 +263,86 @@ fn a_session_whose_program_exits_says_it_ended() {
     }
     assert!(ended, "the program exited and the session never said so");
 }
+
+/// Dragging the window's edge up and down must leave the transcript as it
+/// was: one copy of everything, however many sizes the drag went through.
+///
+/// A pseudoconsole answers each resize with a repaint drawn for that size, and
+/// a drag resizes once a frame - faster than the answers come back. Read into a
+/// grid that had already moved on to a shorter size, a repaint line-fed past
+/// the bottom and scrolled the screen into the scrollback, so dragging back and
+/// forth stacked copies of the screen into the transcript. Driven here the way
+/// `Tab::resize` drives it: a size held back while a repaint is awaited, and
+/// asked for again on the next frame.
+///
+/// A shell rather than IRIS, because the repaint is the pseudoconsole's and not
+/// the program's, and a shell can be started without logging in anywhere.
+#[test]
+#[ignore = "starts a process on this machine"]
+fn dragging_the_window_taller_and_shorter_never_duplicates_the_screen() {
+    let cmd = std::path::PathBuf::from(std::env::var("ComSpec").unwrap_or("cmd.exe".into()));
+    let (cols, start_rows) = (120, 14);
+    let mut session =
+        Session::shell(&cmd, &[], None, cols as u16, start_rows as u16).expect("opens");
+    let mut grid = Grid::new(cols, start_rows, 500);
+    let mut vte = vte::Parser::new();
+    let mut frame = |session: &mut Session, grid: &mut Grid| {
+        let (bytes, _) = session.drain();
+        if !bytes.is_empty() {
+            let replies = parser::advance(&mut vte, grid, &bytes);
+            if !replies.is_empty() {
+                let _ = session.write(&replies);
+            }
+        }
+        std::thread::sleep(Duration::from_millis(16));
+    };
+    let settle = |frame: &mut dyn FnMut(&mut Session, &mut Grid),
+                  session: &mut Session,
+                  grid: &mut Grid,
+                  ms: u64| {
+        let deadline = Instant::now() + Duration::from_millis(ms);
+        while Instant::now() < deadline {
+            frame(session, grid);
+        }
+    };
+    let lines = |grid: &Grid| -> Vec<String> {
+        (0..grid.total_lines())
+            .filter_map(|line| grid.line(line))
+            .map(|row| row.to_text().trim_end().to_string())
+            .filter(|text| !text.is_empty())
+            .collect()
+    };
+
+    settle(&mut frame, &mut session, &mut grid, 1500);
+    for command in ["echo first-marker\r", "\r", "\r", "echo last-marker\r"] {
+        session.write(command.as_bytes()).expect("writes");
+        settle(&mut frame, &mut session, &mut grid, 400);
+    }
+    let before = lines(&grid);
+    assert!(
+        before.iter().any(|l| l == "last-marker"),
+        "the shell never ran the commands: {before:?}"
+    );
+
+    // Three times down to 5 rows and back up to 20, a row a frame.
+    let mut sizes = (5..=20).rev().chain(5..=20).cycle().take(3 * 32);
+    let mut next = sizes.next();
+    let deadline = Instant::now() + Duration::from_secs(60);
+    while let Some(rows) = next {
+        assert!(Instant::now() < deadline, "the drag never finished");
+        let held = session.repaints_on_resize() && grid.awaiting_repaint();
+        if !held {
+            grid.resize(cols, rows);
+            session.resize(cols as u16, rows as u16).expect("resizes");
+            next = sizes.next();
+        }
+        frame(&mut session, &mut grid);
+    }
+    settle(&mut frame, &mut session, &mut grid, 800);
+
+    assert_eq!(
+        lines(&grid),
+        before,
+        "the drag changed what the session holds"
+    );
+}

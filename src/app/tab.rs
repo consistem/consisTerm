@@ -269,6 +269,46 @@ impl Tab {
         tab
     }
 
+    /// A tab with no session behind it, its screen filled with `text` -
+    /// for the snapshot test, which must not start IRIS.
+    #[cfg(test)]
+    pub(crate) fn for_snapshot(name: &str, text: &str) -> Self {
+        let profile = Profile {
+            name: name.to_string(),
+            ..Profile::default()
+        };
+        let mut tab = Tab {
+            uid: NEXT_TAB_UID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+            autologon: Autologon::new(&profile),
+            doc_lookup: DocLookup::default(),
+            grid: Grid::new(120, 30, 100),
+            profile,
+            session: None,
+            parser: vte::Parser::new(),
+            view: ViewState::default(),
+            log: None,
+            custom_title: Some(name.to_string()),
+            namespace: None,
+            commands: Vec::new(),
+            recall_step: None,
+            clear_asked: None,
+            ended: false,
+            error: None,
+            split: None,
+            focus: Pane::First,
+            game: None,
+            resume_namespace: None,
+            cwd: None,
+            zn_sent: None,
+            hiding: Vec::new(),
+            sql: false,
+            completion: Completion::default(),
+        };
+        let bytes = text.replace('\n', "\r\n");
+        let _ = crate::term::parser::advance(&mut tab.parser, &mut tab.grid, bytes.as_bytes());
+        tab
+    }
+
     /// A tab holding the easter egg instead of a session.
     ///
     /// Nothing is started, nothing is logged and nothing is connected: this
@@ -720,6 +760,15 @@ impl Tab {
         }
     }
 
+    /// A resize has been sent and the screen it changes has not come back yet,
+    /// so the size the pane is drawn at is not yet the one the session has.
+    pub fn awaiting_repaint(&self) -> bool {
+        self.session
+            .as_ref()
+            .is_some_and(|session| session.repaints_on_resize())
+            && self.grid.awaiting_repaint()
+    }
+
     pub fn resize(&mut self, cols: usize, rows: usize) {
         // The easter egg has no grid worth the name and no far side to tell
         // about one. Its board is square and sizes itself to the pane it is
@@ -736,6 +785,13 @@ impl Tab {
         // far side redrew a one-cell screen over what had been there. Nothing
         // this small is a size a user asked for, so it is not a size to obey.
         if cols < 2 || rows < 2 {
+            return;
+        }
+        // One size at a time: the next is asked for once the repaint of the
+        // last has been read, and a window being dragged catches up a round
+        // trip later. This is called again on every frame the pane is drawn,
+        // and the repaint arriving is what wakes the next one.
+        if self.awaiting_repaint() {
             return;
         }
         self.grid.resize(cols, rows);

@@ -86,15 +86,22 @@ fn dock_rect(
     (x, y, wide, tall)
 }
 
-/// How far into its roll the window is, `elapsed` of `millis` in: eased out,
-/// so it arrives quickly and settles rather than stopping dead.
+/// How far into its roll the window is, `elapsed` of `millis` in: eased in and
+/// out along a half cosine, so it neither starts nor stops dead. Eased out
+/// alone, as it was, a fast roll covered a third of its way in its first
+/// frame and read as a jump; this one's fastest frame is barely more than
+/// half again its average.
 #[cfg_attr(not(any(windows, test)), allow(dead_code))]
 fn rolled(elapsed: u128, millis: u32) -> f32 {
     if millis == 0 {
         return 1.0;
     }
     let k = (elapsed as f32 / millis as f32).clamp(0.0, 1.0);
-    1.0 - (1.0 - k).powi(3)
+    if k >= 1.0 {
+        // Exactly, which the cosine need not land on: the roll ends here.
+        return 1.0;
+    }
+    0.5 - 0.5 * (std::f32::consts::PI * k).cos()
 }
 
 /// How much of a window `tall` high shows `k` of the way into its roll, and
@@ -187,9 +194,10 @@ mod imp {
     use std::time::Instant;
 
     use windows_sys::Win32::Foundation::{BOOL, HWND, LPARAM, LRESULT, POINT, RECT, WPARAM};
+    use windows_sys::Win32::Graphics::Dwm::{DwmFlush, DwmSetWindowAttribute, DWMWA_CLOAK};
     use windows_sys::Win32::Graphics::Gdi::{
-        CreateRectRgn, GetMonitorInfoW, MonitorFromPoint, SetWindowRgn, MONITORINFO,
-        MONITOR_DEFAULTTONEAREST,
+        CreateRectRgn, GetMonitorInfoW, MonitorFromPoint, RedrawWindow, SetWindowRgn, MONITORINFO,
+        MONITOR_DEFAULTTONEAREST, RDW_INVALIDATE, RDW_UPDATENOW,
     };
     use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows_sys::Win32::System::Threading::GetCurrentThreadId;
@@ -199,11 +207,11 @@ mod imp {
     use windows_sys::Win32::UI::Shell::{DefSubclassProc, SetWindowSubclass};
     use windows_sys::Win32::UI::WindowsAndMessaging::{
         CreateWindowExW, DefWindowProcW, EnumThreadWindows, GetCursorPos, GetForegroundWindow,
-        GetWindowLongPtrW, GetWindowRect, IsIconic, IsWindow, IsWindowVisible, IsZoomed, KillTimer,
-        RegisterClassW, SetForegroundWindow, SetTimer, SetWindowPos, ShowWindow, GWL_EXSTYLE,
+        GetWindowLongPtrW, GetWindowRect, IsIconic, IsWindow, IsWindowVisible, IsZoomed,
+        PostMessageW, RegisterClassW, SetForegroundWindow, SetWindowPos, ShowWindow, GWL_EXSTYLE,
         HWND_MESSAGE, HWND_NOTOPMOST, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
-        SWP_NOZORDER, SWP_SHOWWINDOW, SW_HIDE, SW_RESTORE, SW_SHOWNOACTIVATE, WM_EXITSIZEMOVE,
-        WM_HOTKEY, WM_SHOWWINDOW, WM_TIMER, WNDCLASSW, WS_EX_TOPMOST,
+        SWP_NOZORDER, SWP_SHOWWINDOW, SW_HIDE, SW_RESTORE, SW_SHOWNOACTIVATE, WM_APP,
+        WM_EXITSIZEMOVE, WM_HOTKEY, WM_SHOWWINDOW, WNDCLASSW, WS_EX_TOPMOST,
     };
 
     use super::Quake;
@@ -234,19 +242,25 @@ mod imp {
     /// The app's other windows - Settings, a detached manager - put away with
     /// the main one, to bring back with it.
     static PUT_AWAY: Mutex<Vec<isize>> = Mutex::new(Vec::new());
+    /// Which pacing thread is the live one; any other sees it is stale and
+    /// ends.
+    static PACER: AtomicU32 = AtomicU32::new(0);
+    /// A step is posted to the sink and not yet taken, so a busy message loop
+    /// is not handed a queue of them to work through.
+    static STEP_POSTED: AtomicBool = AtomicBool::new(false);
     const HOTKEY_ID: i32 = 1;
-    const ROLL_TIMER: usize = 1;
-    /// How long a window coming back from hidden is held fully clipped before
-    /// it starts to roll in: two frames, for eframe to paint it. Rolled in at
-    /// once, the first steps showed whatever the hidden window last held, or
-    /// nothing, and the roll flickered.
-    const PAINT_FIRST: std::time::Duration = std::time::Duration::from_millis(34);
+    /// Posted to the sink once per composition while a roll is under way.
+    const WM_ROLL_STEP: u32 = WM_APP + 1;
     const SUBCLASS_ID: usize = 1;
     const CLASS: &str = "consisTermQuake";
 
-    /// A roll in or out, moved on by a timer on the sink window - so the
-    /// message loop keeps turning and the window keeps painting while it
-    /// moves, which a loop sleeping between steps would stop.
+    /// A roll in or out, moved on by steps posted to the sink window - so the
+    /// message loop keeps turning while it moves, which a loop sleeping
+    /// between steps would stop. The steps come one per composition of the
+    /// desktop, from `pace`: driven by a `WM_TIMER` they came every 15.6 ms
+    /// of the system clock against a screen showing one every 16.7, so some
+    /// frames got two steps and some none, and the roll juddered - and a
+    /// timer's message is the last a busy queue hands over.
     #[derive(Clone, Copy)]
     struct Roll {
         started: Instant,
@@ -490,51 +504,141 @@ mod imp {
     /// edge - or, with no animation set, puts it there at once.
     fn start_roll(window: HWND, rect: (i32, i32, i32, i32), edge: QuakeEdge, coming_in: bool) {
         let millis = ROLL_MILLIS.load(Ordering::Relaxed);
-        let started = if coming_in {
-            Instant::now() + PAINT_FIRST
-        } else {
-            Instant::now()
-        };
-        let roll = Roll {
-            started,
+        if coming_in {
+            paint_unseen(window, rect);
+        }
+        // Timed from here, not from before the paint, or a fast roll would
+        // spend its first frames waiting on it and then jump.
+        let roll = || Roll {
+            started: Instant::now(),
             millis,
             rect,
             edge,
             coming_in,
         };
         if millis == 0 {
-            land(window, roll);
+            land(window, roll());
             return;
         }
         let (x, y, w, h) = rect;
-        // SAFETY: places our own window, clips it to a region the system
-        // takes ownership of, and starts a timer on our own sink window.
+        // SAFETY: places our own window and clips it to a region the system
+        // takes ownership of.
         unsafe {
             if coming_in {
-                // Placed with nothing of it showing, then rolled in.
+                // Painted, now put where it starts with nothing of it
+                // showing, and only then let out to be rolled in.
                 let (dy, from, to) = super::roll_frame(edge, h, 0.0);
                 SetWindowRgn(window, CreateRectRgn(0, from, w, to), 0);
-                SetWindowPos(window, level(), x, y + dy, w, h, SWP_SHOWWINDOW);
+                SetWindowPos(
+                    window,
+                    std::ptr::null_mut(),
+                    x,
+                    y + dy,
+                    0,
+                    0,
+                    SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE,
+                );
+                cloak(window, false);
             }
-            if let Ok(mut slot) = ROLL.lock() {
-                *slot = Some(roll);
+        }
+        if let Ok(mut slot) = ROLL.lock() {
+            *slot = Some(roll());
+        }
+        pace();
+    }
+
+    /// Shows `window` at `rect` with none of it on screen, and has eframe
+    /// paint it there before anyone can see it.
+    ///
+    /// The window is transparent - a skin's rounded corners need the desktop
+    /// behind them - and a window that was hidden has no frame of its own to
+    /// show when it comes back: eframe gives a hidden window none, and clipped
+    /// to nothing it is sent no `WM_PAINT` either. So what rolled in was
+    /// nothing at all but the system's border around it, which flashed as a
+    /// white outline on landing - unless the roll was slow enough for some
+    /// other event to have it painted on the way.
+    fn paint_unseen(window: HWND, rect: (i32, i32, i32, i32)) {
+        let (x, y, w, h) = rect;
+        cloak(window, true);
+        // SAFETY: places, unclips and repaints our own window. `RedrawWindow`
+        // with `RDW_UPDATENOW` sends `WM_PAINT` before it returns, and winit
+        // answers it by having eframe draw and swap a frame - this runs from
+        // the sink's message, outside winit's handler, so it is not deferred.
+        unsafe {
+            SetWindowRgn(window, std::ptr::null_mut(), 0);
+            SetWindowPos(window, level(), x, y, w, h, SWP_SHOWWINDOW);
+            // Twice: a window brought back at a new size lays out on the
+            // first frame against the size it had.
+            for _ in 0..2 {
+                RedrawWindow(
+                    window,
+                    std::ptr::null(),
+                    std::ptr::null_mut(),
+                    RDW_INVALIDATE | RDW_UPDATENOW,
+                );
             }
-            if let Some(sink) = handle(&SINK) {
-                SetTimer(sink, ROLL_TIMER, 10, None);
-            }
+            // Until the desktop has composed what was swapped: let out
+            // before then, the first frame on screen is still the empty one.
+            DwmFlush();
         }
     }
 
-    /// One step of the roll under way, from the timer.
+    /// Hides `window` from the screen, or lets it be seen again, while to
+    /// everything else - eframe, the shell, `IsWindowVisible` - it stays
+    /// shown, and is painted like any window that is.
+    fn cloak(window: HWND, cloaked: bool) {
+        let value: BOOL = cloaked.into();
+        // SAFETY: sets one attribute on our own window from a local.
+        unsafe {
+            DwmSetWindowAttribute(
+                window,
+                DWMWA_CLOAK as u32,
+                &value as *const BOOL as *const _,
+                std::mem::size_of::<BOOL>() as u32,
+            )
+        };
+    }
+
+    /// Starts posting a step of the roll to the sink at every composition of
+    /// the desktop, until the roll is over. `DwmFlush` blocks until the next
+    /// one, so the thread doing it cannot be the one whose messages paint.
+    fn pace() {
+        let me = PACER.fetch_add(1, Ordering::Relaxed).wrapping_add(1);
+        STEP_POSTED.store(false, Ordering::Relaxed);
+        std::thread::spawn(move || {
+            while PACER.load(Ordering::Relaxed) == me {
+                let before = Instant::now();
+                // SAFETY: takes no arguments; waits for the compositor.
+                let flushed = unsafe { DwmFlush() } >= 0;
+                // Not a spin when there is nothing to compose - a locked
+                // screen, a display asleep - for which it returns at once.
+                if !flushed || before.elapsed() < std::time::Duration::from_millis(2) {
+                    std::thread::sleep(std::time::Duration::from_millis(8));
+                }
+                if PACER.load(Ordering::Relaxed) != me {
+                    break;
+                }
+                let Some(sink) = handle(&SINK) else {
+                    break;
+                };
+                if !STEP_POSTED.swap(true, Ordering::Relaxed) {
+                    // SAFETY: posts to our own sink window, which outlives
+                    // the app's message loop; a closed one refuses it.
+                    unsafe { PostMessageW(sink, WM_ROLL_STEP, 0, 0) };
+                }
+            }
+        });
+    }
+
+    /// One step of the roll under way, from `pace`.
     fn step_roll() {
         let Some(window) = handle(&WINDOW) else {
             return;
         };
         let Some(roll) = ROLL.lock().ok().and_then(|slot| *slot) else {
-            stop_timer();
+            stop_pacing();
             return;
         };
-        // Zero until `started`, which a roll in sets a little ahead.
         let k = super::rolled(roll.started.elapsed().as_millis(), roll.millis);
         if k >= 1.0 {
             finish_roll(window);
@@ -563,17 +667,15 @@ mod imp {
     /// Lands the roll under way, if there is one, where it was going.
     fn finish_roll(window: HWND) {
         let roll = ROLL.lock().ok().and_then(|mut slot| slot.take());
-        stop_timer();
+        stop_pacing();
         if let Some(roll) = roll {
             land(window, roll);
         }
     }
 
-    fn stop_timer() {
-        if let Some(sink) = handle(&SINK) {
-            // SAFETY: kills only the timer this module set on its own window.
-            unsafe { KillTimer(sink, ROLL_TIMER) };
-        }
+    /// Ends the pacing thread, which sees it is no longer the live one.
+    fn stop_pacing() {
+        PACER.fetch_add(1, Ordering::Relaxed);
     }
 
     /// Where a roll ends: down against the edge, whole, or put away.
@@ -584,6 +686,8 @@ mod imp {
             if roll.coming_in {
                 SetWindowPos(window, level(), x, y, w, h, SWP_SHOWWINDOW);
                 SetWindowRgn(window, std::ptr::null_mut(), 1);
+                // Still cloaked when there was no roll to let it out.
+                cloak(window, false);
             } else {
                 ShowWindow(window, SW_HIDE);
                 put_away_the_others(window);
@@ -698,7 +802,8 @@ mod imp {
             toggle();
             return 0;
         }
-        if msg == WM_TIMER && wparam == ROLL_TIMER {
+        if msg == WM_ROLL_STEP {
+            STEP_POSTED.store(false, Ordering::Relaxed);
             step_roll();
             return 0;
         }
@@ -825,10 +930,29 @@ mod tests {
     #[test]
     fn a_roll_eases_from_nothing_to_all_and_off_lands_at_once() {
         assert_eq!(rolled(0, 200), 0.0);
-        assert!(rolled(100, 200) > 0.5, "eased out, so past half by halfway");
+        assert!((rolled(100, 200) - 0.5).abs() < 1e-6, "halfway by halfway");
+        assert!(rolled(20, 200) < 0.1, "starts gently");
+        assert!(rolled(180, 200) > 0.9, "and settles gently");
         assert_eq!(rolled(200, 200), 1.0);
         assert_eq!(rolled(900, 200), 1.0);
         assert_eq!(rolled(0, 0), 1.0);
+    }
+
+    #[test]
+    fn no_frame_of_a_fast_roll_jumps_much_further_than_the_average() {
+        // The fast roll at 60 Hz, where a jump shows most.
+        let frames = 120 / 16;
+        let average = 1.0 / frames as f32;
+        let mut last = 0.0;
+        for i in 1..=frames + 1 {
+            let now = rolled(i as u128 * 16, 120);
+            assert!(
+                now - last < average * 1.7,
+                "frame {i} moved {} against {average}",
+                now - last
+            );
+            last = now;
+        }
     }
 
     #[test]

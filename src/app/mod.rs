@@ -441,6 +441,69 @@ impl App {
     }
 }
 
+#[cfg(test)]
+impl App {
+    /// An app with `settings` and `themes` and nothing else: no sessions, no
+    /// tray, no files read and no update check - what the snapshot test draws
+    /// the main window with.
+    pub(crate) fn for_snapshot(ctx: &Context, settings: Settings, themes: Vec<Theme>) -> Self {
+        let mut app = App {
+            new_tab_profile: Profile::default(),
+            closed_tabs: Vec::new(),
+            personal_secrets: Default::default(),
+            macro_groups: Vec::new(),
+            pane_rects: Vec::new(),
+            queued: Vec::new(),
+            pinch: 1.0,
+            quake: None,
+            history: History::default(),
+            vocabulary: Vocabulary::default(),
+            settings,
+            themes,
+            tabs: Vec::new(),
+            active: 0,
+            instances: vec!["IRIS".to_owned()],
+            servers: crate::config::ServerList::default(),
+            plugins: PluginHost::disabled(),
+            panels: PanelState::default(),
+            focused_tab: None,
+            terminal_size: (FALLBACK_COLS, FALLBACK_ROWS),
+            minimized: false,
+            view_size: (FALLBACK_COLS as usize, FALLBACK_ROWS as usize),
+            status: status::Footer::default(),
+            updates: UpdateState::default(),
+            font_family: String::new(),
+            font_request: String::new(),
+            renaming: None,
+            pending_layout: None,
+            screensaver: None,
+            settings_placement: crate::ui::detach::Placement::default(),
+            confirm_close: false,
+            close_confirmed: false,
+            on_top_applied: None,
+            fit: None,
+            window_size: None,
+            terminal_backdrop: None,
+            window_position: None,
+            window_maximized: false,
+        };
+        App::apply_style(ctx, &app.theme(), &app.settings);
+        app.apply_font(ctx);
+        app
+    }
+
+    /// Adds a tab with no session behind it, showing `text` as if IRIS had
+    /// printed it.
+    pub(crate) fn add_snapshot_tab(&mut self, name: &str, text: &str) {
+        self.tabs.push(Tab::for_snapshot(name, text));
+    }
+
+    /// Puts a message in the footer.
+    pub(crate) fn snapshot_status(&mut self, text: &str) {
+        self.set_status(text.to_owned());
+    }
+}
+
 /// Loads the organisation file (if configured) and the personal one, and
 /// reports anything that went wrong so a missing share is visible rather than
 /// silently halving the macro list.

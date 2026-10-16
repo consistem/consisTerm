@@ -1,12 +1,13 @@
 # Releasing consisTerm
 
-Releases are built by `.github/workflows/release.yml`, which only calls the scripts under
-`packaging/`. Every script also runs by hand on a machine of the right OS.
+Releases are built by `.github/workflows/release.yml`, whose build jobs only call the scripts
+under `packaging/`. Every script also runs by hand on a machine of the right OS.
 
 ## Cutting a release
 
 1. Bump `version` under `[package]` in `Cargo.toml` (e.g. `0.2.0`, or `0.2.0-rc.1` for a
-   pre-release), let `Cargo.lock` follow (`cargo build`), and merge that to `main`.
+   pre-release), let `Cargo.lock` follow (`cargo build`), write what the release brings
+   under **Novidades** in `packaging/release-notes.md`, and merge that to `main`.
 2. Tag the merge commit and push the tag:
 
    ```bash
@@ -15,9 +16,11 @@ Releases are built by `.github/workflows/release.yml`, which only calls the scri
    ```
 
    The `version` job fails the run if the tag is not exactly `v` + the Cargo.toml version.
-3. The workflow builds Linux, macOS and Windows in parallel, then creates (or, on a rerun,
-   refills) a **draft** release `v0.2.0` with all artifacts and `SHA256SUMS.txt`.
-4. Review the draft on GitHub, write the highlights under **Novidades**, and press
+3. The `test` job runs fmt, clippy and the tests (with and without `plugins`) on all three
+   platforms; a failure there stops the run before anything is built. Then the workflow
+   builds Linux, macOS and Windows in parallel, and creates (or, on a rerun, refills) a
+   **draft** release `v0.2.0` with all artifacts and `SHA256SUMS.txt`.
+4. Review the draft on GitHub, adjust **Novidades** there if need be, and press
    **Publish**. Nothing is public until then. A version with a `-` suffix is marked as a
    pre-release.
 
@@ -29,8 +32,9 @@ draft keeps the notes as they were edited.
 
 A published release is never overwritten: rerunning against its tag fails. Bump the version.
 
-To try the pipeline without releasing, run it from the Actions tab (**Run workflow**). It builds
-everything and keeps the artifacts on the run, but drafts nothing.
+To try the pipeline without releasing, run it from the Actions tab (**Run workflow**). It tests
+and builds everything and keeps the artifacts on the run, but drafts nothing. It is also the way
+to have GitHub check a branch: nothing runs on a push or a pull request.
 
 ## Artifacts
 

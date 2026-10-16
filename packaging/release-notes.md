@@ -1,13 +1,23 @@
 <!--
   The body every release draft opens with. The notes are in Brazilian
-  Portuguese, the language the people using consisTerm read; write the
-  highlights under Novidades before publishing. {version} is replaced with the
-  version number, and GitHub's generated list of changes follows this text
-  under the headings in .github/release.yml.
+  Portuguese, the language the people using consisTerm read. Novidades is the
+  release being cut: the commit that bumps the version rewrites it, so the
+  draft opens with it already written. {version} is replaced with the version
+  number, and GitHub's generated list of changes follows this text under the
+  headings in .github/release.yml.
 -->
 ## Novidades
 
-<!-- Escreva aqui, em poucas linhas, o que esta versão traz para quem usa. -->
+- **Novos temas, com a janela de cada época:** System e System Dark, no estilo
+  do Mac clássico; SNES e SNES Dark, com a fonte pixelada do Super Nintendo; e
+  Windows XP Dark. Tiger Aqua agora traz também a janela Aqua do Mac OS X, com
+  os botões em gota.
+- **Terminal drop-down sem piscar:** a janela não mostra mais um contorno branco
+  antes de aparecer, e desce e sobe suavemente em qualquer velocidade de
+  animação (Rápido, Normal ou Lento).
+- **Redimensionar não duplica mais a tela:** arrastar a borda da janela para
+  diminuir e aumentar não empilha mais cópias do conteúdo no histórico.
+- **Ctrl+clique abre endereços web** escritos no terminal.
 
 ## Instalação
 
