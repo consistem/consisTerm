@@ -706,6 +706,7 @@ pub fn settings_dialog(
     macros::forget_stale_selection(&mut c);
     screensaver::collect_picked_image(ctx, &mut c);
     macros::collect_picked_org_file(ctx, &mut c);
+    collect_picked_log_dir(ctx, &mut c);
     crate::ui::detach::shell(
         ctx,
         "nit-settings",
@@ -717,7 +718,12 @@ pub fn settings_dialog(
         // A window of its own, so it reopens where and how it was left for
         // whichever of the two switches on the Windows page is on.
         Some(placement),
-        |ui| window(ui, &mut c),
+        |ui| {
+            window(ui, &mut c);
+            // Over Settings, where the folder was chosen, rather than over
+            // the main window behind it.
+            crate::ui::log_move_view::show(ui.ctx(), &mut c.state.log_move);
+        },
     );
     if !open {
         c.state.show_settings = false;
@@ -2114,7 +2120,26 @@ fn log_dir(card: &mut Card<'_>, c: &mut Ctx<'_>) {
         if prefs::button(ui, tr("Open folder")).clicked() {
             c.requests.push(UiRequest::OpenFolder(path.clone()));
         }
+        if crate::ui::file_dialog::AVAILABLE {
+            let picking = c.state.picking_log_dir.is_some();
+            if ui
+                .add_enabled(!picking, egui::Button::new(tr("Change...")))
+                .clicked()
+            {
+                c.state.picking_log_dir =
+                    Some(crate::ui::file_dialog::pick_folder(ui.ctx(), "Logs folder"));
+            }
+        }
     });
+}
+
+/// The folder the dialog came back with, as a request: the app moves the
+/// sessions' transcripts over, and asks about the files already written.
+fn collect_picked_log_dir(ctx: &egui::Context, c: &mut Ctx<'_>) {
+    if let Some(picked) = crate::ui::file_dialog::collect(ctx, &mut c.state.picking_log_dir) {
+        c.requests
+            .push(UiRequest::ChangeLogDir(std::path::PathBuf::from(picked)));
+    }
 }
 
 fn shells() -> Vec<Section> {

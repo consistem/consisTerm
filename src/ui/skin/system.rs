@@ -645,7 +645,6 @@ impl Style for System {
             // The close and zoom boxes: 11 px with a one-pixel frame.
             title_button: vec2(11.0, 11.0),
             title_button_gap: 6.0,
-            close_gap: 6.0,
             window_border: 1.0,
             window_radius: 0.0,
             // The arrows' 17-cell drawing at a pixel a cell.
@@ -906,6 +905,23 @@ impl Style for System {
         ]
     }
 
+    fn tab_mark(&self, k: &Kit, rect: Rect, colour: Color32, st: St) -> Vec<Shape> {
+        // Inside the one-pixel outline, along the top and clear of the
+        // stepped corners; the selected tab stands two pixels taller.
+        let u = k.u();
+        let mut r = prim::snap_rect(rect, k.ppp);
+        if st.on {
+            r = Rect::from_min_max(pos2(r.left(), r.top() - 2.0 * u), r.max);
+        }
+        vec![fill(
+            Rect::from_min_max(
+                pos2(r.left() + 3.0 * u, r.top() + 2.0 * u),
+                pos2(r.right() - 3.0 * u, r.top() + 4.0 * u),
+            ),
+            colour,
+        )]
+    }
+
     fn tab_panel(&self, k: &Kit, rect: Rect) -> Vec<Shape> {
         let i = Self::ink(k);
         let mut out = vec![fill(prim::snap_rect(rect, k.ppp), i.paper)];
@@ -944,14 +960,16 @@ impl Style for System {
         let mut out = vec![fill(r, i.paper)];
         if !st.inactive_window {
             // `linear-gradient(var(--secondary) 50%, transparent 50%)` at
-            // `background-size: 13.33%` of the bar: two pixels of ink, two
+            // `background-size: 13.33%` of the bar, which system.css renders
+            // as stripes of about a pixel and a half each - its way of
+            // approximating, in CSS units, the one-pixel lines System 7
+            // drew. Drawn here as System 7 drew them: one pixel of ink, one
             // of paper, from the top of the band. `.inactive-title-bar`
             // drops them.
             let band = Self::band(k, r);
             let mut y = band.top();
             let mut lines = Vec::new();
             while y < band.bottom() {
-                // One pixel of ink, one of paper: System 7's lines.
                 lines.push(Rect::from_min_max(
                     pos2(band.left(), y),
                     pos2(band.right(), (y + u).min(band.bottom())),
@@ -969,8 +987,9 @@ impl Style for System {
     }
 
     fn title_button(&self, k: &Kit, rect: Rect, glyph: Glyph, st: St) -> Vec<Shape> {
-        // `.title-bar button`: a 2 px frame round paper, no bevel, nothing
-        // on hover. An inactive window's boxes go grey rather than away, as
+        // `.title-bar button`: a frame round paper, no bevel, nothing on
+        // hover. One pixel of frame, as System 7's close box had, where
+        // system.css's `border: 4px` under `scale(0.5)` comes out at two. An inactive window's boxes go grey rather than away, as
         // the app's own buttons have to stay where they can be found.
         let i = Self::ink(k);
         let line = if st.inactive_window || st.disabled {

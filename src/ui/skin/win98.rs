@@ -303,7 +303,6 @@ impl Style for Win98 {
             title_height: 20.0,
             title_button: vec2(16.0, 14.0),
             title_button_gap: 0.0,
-            close_gap: 2.0,
             // Two rings of border, then the one pixel of padding left showing.
             window_border: 3.0,
             window_radius: 0.0,
@@ -575,6 +574,23 @@ impl Style for Win98 {
             out.extend(prim::dotted(r.shrink(4.0 * u), g.text, k.ppp));
         }
         out
+    }
+
+    fn tab_mark(&self, k: &Kit, rect: Rect, colour: Color32, st: St) -> Vec<Shape> {
+        // Inside the two rings of bevel, on the face, along the top - where
+        // a selected tab stands two pixels taller, so does its mark.
+        let u = k.u();
+        let mut r = prim::snap_rect(rect, k.ppp);
+        if st.on {
+            r = Rect::from_min_max(pos2(r.left(), r.top() - 2.0 * u), r.max);
+        }
+        vec![fill(
+            Rect::from_min_max(
+                pos2(r.left() + 2.0 * u, r.top() + 2.0 * u),
+                pos2(r.right() - 2.0 * u, r.top() + 5.0 * u),
+            ),
+            colour,
+        )]
     }
 
     fn tab_panel(&self, k: &Kit, rect: Rect) -> Vec<Shape> {

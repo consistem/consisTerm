@@ -88,10 +88,14 @@ pub enum WindowButtonStyle {
     /// The Super Nintendo: snes.css's pixel-lined buttons in its colours,
     /// lit from the top left.
     Snes,
+    /// Winamp 2.91: small dark squares in a gold frame, the mark in gold.
+    Winamp,
+    /// Winamp 5 Classified: small silver squares edged in navy.
+    WinampClassified,
 }
 
 impl WindowButtonStyle {
-    pub const ALL: [WindowButtonStyle; 7] = [
+    pub const ALL: [WindowButtonStyle; 9] = [
         WindowButtonStyle::Stroke,
         WindowButtonStyle::Aqua,
         WindowButtonStyle::Luna,
@@ -99,6 +103,8 @@ impl WindowButtonStyle {
         WindowButtonStyle::Classic,
         WindowButtonStyle::System,
         WindowButtonStyle::Snes,
+        WindowButtonStyle::Winamp,
+        WindowButtonStyle::WinampClassified,
     ];
 
     /// Empty, or anything unrecognised, means the stroked style: a theme file
@@ -111,6 +117,8 @@ impl WindowButtonStyle {
             "classic" => WindowButtonStyle::Classic,
             "system" => WindowButtonStyle::System,
             "snes" => WindowButtonStyle::Snes,
+            "winamp" => WindowButtonStyle::Winamp,
+            "winamp5" => WindowButtonStyle::WinampClassified,
             _ => WindowButtonStyle::Stroke,
         }
     }
@@ -122,7 +130,11 @@ impl WindowButtonStyle {
     pub fn default_colour(self, slot: WindowButtonSlot) -> Option<Color32> {
         let hex = match (self, slot) {
             (
-                WindowButtonStyle::Stroke | WindowButtonStyle::System | WindowButtonStyle::Snes,
+                WindowButtonStyle::Stroke
+                | WindowButtonStyle::System
+                | WindowButtonStyle::Snes
+                | WindowButtonStyle::Winamp
+                | WindowButtonStyle::WinampClassified,
                 _,
             ) => return None,
             (WindowButtonStyle::Aqua, WindowButtonSlot::Close) => AQUA_CLOSE,
@@ -147,6 +159,8 @@ impl WindowButtonStyle {
             WindowButtonStyle::Classic => "classic",
             WindowButtonStyle::System => "system",
             WindowButtonStyle::Snes => "snes",
+            WindowButtonStyle::Winamp => "winamp",
+            WindowButtonStyle::WinampClassified => "winamp5",
         }
     }
 }
@@ -528,6 +542,28 @@ pub const DEFAULT_SYNTAX: SyntaxPalette = SyntaxPalette {
     member: "#FF5780",
     routine: "#C49AFF",
     extrinsic: "#A0C0FF",
+};
+
+/// The ObjectScript palette lifted a step, for Winamp 5 Classified: its
+/// playlist navy is far lighter than the near-black the default palette is
+/// tuned for, and the default's blues and purples sink into it.
+const CLASSIFIED_SYNTAX: SyntaxPalette = SyntaxPalette {
+    label: "#8fffb0",
+    command: "#ffb3e0",
+    string: "#f2f59a",
+    number: "#ff9a8a",
+    delimiter: "#8fe8ff",
+    operator: "#ffa8c6",
+    preprocessor: "#ffb08a",
+    function: "#d6a8ff",
+    global: "#ff8a70",
+    system_variable: "#e8e070",
+    class: "#c8ccff",
+    method: "#9ffcff",
+    attribute: "#a8c4ff",
+    member: "#ff9ab4",
+    routine: "#dcc4ff",
+    extrinsic: "#c8dcff",
 };
 
 /// A greener reading of the same palette, for the phosphor theme: the
@@ -2096,6 +2132,80 @@ pub fn builtin_files() -> Vec<ThemeFile> {
             dark: false,
             builtin: true,
             ..with_syntax(OKABE_ITO_LIGHT_SYNTAX)
+        },
+        // Winamp 2.91, the skin every copy shipped with, by webamp.org's copy
+        // of it. Every colour measured off its bitmaps rather than drawn from
+        // memory: the playlist's own green on black for the terminal - its
+        // PLEDIT.TXT says `Normal=#00FF00`, `Current=#FFFFFF`,
+        // `SelectedBG=#0000C6` - the main window's slate for the chrome, and
+        // the gold of the title bar's WINAMP for the chrome's text.
+        ThemeFile {
+            name: "Winamp".into(),
+            background: "#000000".into(),
+            foreground: "#00ff00".into(),
+            cursor: "#ffffff".into(),
+            selection: "#0000c6".into(),
+            ansi: ansi([
+                "#000000", "#d63a3a", "#00c000", "#ecce7a", "#3a5ad6", "#b04ad6", "#00b8b8",
+                "#bdced6", "#39395a", "#ff5a5a", "#00ff00", "#ffe08a", "#6a8aff", "#d68aff",
+                "#5affff", "#ffffff",
+            ]),
+            ui_foreground: "#ecce7a".into(),
+            ui_background: "#39395a".into(),
+            // Down the main window, from its lit top to the shadow at its
+            // foot.
+            ui_gradient: "vertical".into(),
+            ui_gradient_from: "#3e3e62".into(),
+            ui_gradient_to: "#181829".into(),
+            ui_border: "#1e1f25".into(),
+            // The shown tab is the song display: black, lit green.
+            tab_selected: "#000000".into(),
+            tab_selected_text: "#00ff00".into(),
+            window_button_style: "winamp".into(),
+            skin: "winamp".into(),
+            // The transport buttons' steel, on the slate.
+            scrollbar_handle: "#bdced6".into(),
+            scrollbar_track: "#181829".into(),
+            font_family: default_font_family(),
+            font_size: 14.0,
+            dark: true,
+            builtin: true,
+            ..with_syntax(DEFAULT_SYNTAX)
+        },
+        // Winamp 5 Classified (Sven Kistner, Zarko Jovic, GuidoD), the
+        // Winamp 5 look as a classic skin. Its playlist for the terminal -
+        // `NormalBG=#1C3D7D`, `Normal=#FFFFFF`, `Current=#BBD2FF`,
+        // `SelectedBG=#6788C9` - and the brushed silver down the side of its
+        // main window for the chrome, with the navy of its title bar as the
+        // edge round it.
+        ThemeFile {
+            name: "Winamp 5 Classified".into(),
+            background: "#1c3d7d".into(),
+            foreground: "#ffffff".into(),
+            cursor: "#bbd2ff".into(),
+            selection: "#6788c9".into(),
+            ansi: ansi([
+                "#0b1427", "#ff6b6b", "#7ee08a", "#ffd86b", "#8fb4ff", "#d59cff", "#7fe3f0",
+                "#dcdde4", "#596580", "#ff9a9a", "#a8f0b0", "#ffe8a0", "#bbd2ff", "#e6c0ff",
+                "#b0f0f8", "#ffffff",
+            ]),
+            ui_foreground: "#000000".into(),
+            ui_background: "#a8afbc".into(),
+            ui_gradient: "vertical".into(),
+            ui_gradient_from: "#dcdde4".into(),
+            ui_gradient_to: "#8b93a0".into(),
+            ui_border: "#354566".into(),
+            tab_selected: "#1c3d7d".into(),
+            tab_selected_text: "#ffffff".into(),
+            window_button_style: "winamp5".into(),
+            skin: "winamp5".into(),
+            scrollbar_handle: "#6788c9".into(),
+            scrollbar_track: "#16284e".into(),
+            font_family: default_font_family(),
+            font_size: 14.0,
+            dark: false,
+            builtin: true,
+            ..with_syntax(CLASSIFIED_SYNTAX)
         },
     ]
 }

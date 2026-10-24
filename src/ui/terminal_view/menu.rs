@@ -43,9 +43,14 @@ pub enum ContextAction {
     /// another session like this one: the shell's name, and whether it goes
     /// to the right (or else below).
     SplitWithShell(String, bool),
+    /// Give every pane of the tab a tab of its own.
     Unsplit,
-    /// Close the session in this pane, and nothing else: the other pane of a
-    /// split tab stays, unsplit.
+    /// Give this pane a tab of its own, and leave the rest where they are.
+    DetachPane,
+    /// Let this pane fill the tab for now, or put the others back.
+    ToggleZoom,
+    /// Close the session in this pane, and nothing else: the other panes of a
+    /// split tab stay.
     ClosePane,
     /// Reset the terminal and drop the scrollback. The same thing Ctrl+Delete
     /// does, put where it can be found.

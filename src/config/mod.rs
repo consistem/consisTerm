@@ -730,6 +730,11 @@ pub struct Settings {
     /// password.
     #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
     pub macro_values: crate::features::macros::OwnValues,
+    /// Whether each organization macro asks for its values before sending,
+    /// where the user has chosen differently from the shared file. See
+    /// `features::macros::apply_own_ask`.
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub macro_send_directly: crate::features::macros::OwnAsk,
     /// Reopen at the size the window was last closed at. Off opens every
     /// launch at [`Settings::default_geometry`].
     pub save_terminal_size: bool,
@@ -856,6 +861,7 @@ impl Default for Settings {
             quake_on_top: false,
             quake_animation: QuakeAnimation::default(),
             macro_values: Default::default(),
+            macro_send_directly: Default::default(),
             theme_highlight: Default::default(),
             save_terminal_size: false,
             default_cols: DEFAULT_TERMINAL_COLS,

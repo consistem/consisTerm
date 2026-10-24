@@ -612,7 +612,6 @@ impl Style for Xp {
             title_button: vec2(21.0, 21.0),
             // `.title-bar-controls button { margin-left: 2px }`.
             title_button_gap: 2.0,
-            close_gap: 2.0,
             window_border: 3.0,
             window_radius: 8.0,
             // `::-webkit-scrollbar { width: 17px }`, and 17 px buttons.
@@ -842,6 +841,28 @@ impl Style for Xp {
         )]
     }
 
+    fn tab_mark(&self, k: &Kit, rect: Rect, colour: Color32, st: St) -> Vec<Shape> {
+        // Where XP marks a tab itself: the orange line along its top, and
+        // the glow under it - three rows, drawn in the user's colour over
+        // them, stepped in at the ends as the 3 px corners are.
+        let u = k.u();
+        let r = if st.on {
+            grow(k, rect, 2.0, 0.0, 1.0, 0.0)
+        } else {
+            prim::snap_rect(rect, k.ppp)
+        };
+        (0..3)
+            .map(|row| {
+                let inset = [2.0, 1.0, 1.0][row] * u;
+                let y = r.top() + row as f32 * u;
+                prim::fill(
+                    Rect::from_min_max(pos2(r.left() + inset, y), pos2(r.right() - inset, y + u)),
+                    colour,
+                )
+            })
+            .collect()
+    }
+
     fn tab(&self, k: &Kit, rect: Rect, st: St) -> Vec<Shape> {
         let mut out = Vec::new();
         if st.on {
@@ -905,10 +926,20 @@ impl Style for Xp {
         out
     }
 
+    /// `legend { color: #0046d5 }`; at night, the same blue lifted to read
+    /// on the darkened face.
+    fn legend_text(&self, k: &Kit) -> Color32 {
+        if k.look.dark {
+            hex(0x7fb2ff)
+        } else {
+            hex(0x0046d5)
+        }
+    }
+
     fn group(&self, k: &Kit, rect: Rect, legend: Option<Rect>) -> Vec<Shape> {
         // `fieldset`: white, in a 4 px-rounded #d0d0bf line. The legend is
-        // `color: #0046d5` - text, which the caller sets - on no background
-        // of its own: the line simply stops either side of it.
+        // `legend_text` on no background of its own: the line simply stops
+        // either side of it.
         let r = prim::snap_rect(rect, k.ppp);
         let mut out = vec![raster(
             k,

@@ -31,6 +31,7 @@ pub mod fonts;
 pub mod icons;
 pub mod illustration;
 pub mod input;
+pub mod log_move_view;
 pub mod logo;
 pub mod monitors;
 pub mod panels;
@@ -47,6 +48,7 @@ pub mod skin;
 pub mod snake_view;
 #[cfg(test)]
 pub(crate) mod snapshot;
+pub mod tab_colour;
 pub mod terminal_view;
 pub mod tip;
 pub mod tray;

@@ -11,16 +11,53 @@ use crate::ui::tip::Tip;
 
 /// A tab name being edited.
 pub(super) struct Renaming {
-    pub(super) tab: usize,
-    pub(super) draft: String,
-    /// The second pane's name, when the tab is split. Two fields because the
-    /// entry names two sessions; the `1:` and `2:` in front of them are the
-    /// panes themselves and not part of either name.
-    pub(super) second: Option<String>,
+    /// The tab, by the uid of its own session.
+    ///
+    /// Uids rather than indices, here and for the names: tabs move under an
+    /// open dialog - reordered, docked into one another, split apart - and a
+    /// pane's number changes when one before it closes. A name typed for one
+    /// session must land on that session or nowhere.
+    pub(super) tab: u64,
+    /// One name per pane, in pane order, each with the uid of its session.
+    /// Several fields because a split tab's entry names whichever session has
+    /// the keyboard; the `1:`, `2:` in front of them are the panes themselves
+    /// and not part of any name.
+    pub(super) names: Vec<(u64, String)>,
+    /// The colour as picked in the dialog, put on the tab only when it is
+    /// confirmed - so Cancel leaves the tab as it was.
+    pub(super) colour: Option<egui::Color32>,
     /// Cleared after the field has been given focus once. Without this the
     /// terminal claims the keyboard back - it grabs focus whenever nothing else
     /// holds it - and the new name would be typed into IRIS.
     pub(super) focus: bool,
+}
+
+/// A tab being dragged out of the strip, to be dropped beside the panes of
+/// another.
+///
+/// By uid rather than index: the strip reorders tabs under a drag, and the
+/// tab being dropped onto is the one the user was looking at when they took
+/// hold of this one, wherever it has moved since.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct TabDrag {
+    /// The tab being dragged.
+    pub(super) uid: u64,
+    /// The tab that was shown when the drag began, which is what it is
+    /// dropped into.
+    pub(super) onto: u64,
+    /// The pointer has left the strip for the terminal, so the tab it will
+    /// be dropped into is the one shown, with the places it can go marked.
+    pub(super) over_terminal: bool,
+    /// The tab in the strip whose middle the pointer is over, which a drop
+    /// there joins - so a tab can be put into another without that one
+    /// having to be shown first.
+    pub(super) into_tab: Option<u64>,
+    /// The tab whose middle the pointer has been held over, and since when -
+    /// see [`TAB_SPRING`].
+    pub(super) held: Option<(u64, f64)>,
+    /// A tab held over has opened, and is the one shown - and the one the
+    /// drop goes into - for the rest of the drag.
+    pub(super) sprung: bool,
 }
 
 impl App {
@@ -52,7 +89,7 @@ impl App {
         self.active = self.tabs.len() - 1;
     }
 
-    /// Closes a tab and everything in it - both sessions, when it is split.
+    /// Closes a tab and everything in it - every session, when it is split.
     pub fn close_tab(&mut self, index: usize) {
         if index >= self.tabs.len() {
             return;
@@ -77,9 +114,9 @@ impl App {
     ///
     /// On a tab that is not split there is only the one session, so this is
     /// [`App::close_tab`]. On a split tab it closes the session the user
-    /// pointed at and leaves the other one in the tab, unsplit - which is what
-    /// the right-click menu over a pane has to mean, since the other pane
-    /// belongs to whatever is running in it.
+    /// pointed at and leaves the others where they are - which is what the
+    /// right-click menu over a pane has to mean, since the other panes belong
+    /// to whatever is running in them.
     pub(super) fn close_pane(&mut self, at: At) {
         let Some(tab) = self.tabs.get_mut(at.tab) else {
             return;
@@ -97,7 +134,7 @@ impl App {
             session.request_halt();
         }
         let closed = saved_pane(going);
-        tab.close_pane(at.pane);
+        tab.detach_pane(at.pane);
         self.remember_closed(closed);
     }
 
@@ -132,7 +169,7 @@ impl App {
             pane: self
                 .tabs
                 .get(self.active)
-                .map_or(Pane::First, |tab| tab.focus),
+                .map_or(Pane::FIRST, |tab| tab.focus),
         }
     }
 
@@ -146,7 +183,7 @@ impl App {
     }
 
     /// Every session open, in every tab. What "is anything still connected"
-    /// has to count, since a split tab holds two.
+    /// has to count, since a split tab holds several.
     pub(super) fn sessions(&self) -> impl Iterator<Item = &Tab> {
         self.tabs.iter().flat_map(|tab| tab.sessions())
     }
@@ -198,14 +235,14 @@ impl App {
     /// Text Editor do - all of it but `reserve`, which in the title bar is
     /// the space the window is dragged by and must not be taken.
     ///
-    /// In the title bar the tabs are what the window is moved by, so a tab
-    /// dragged up or down moves it instead of reordering. In a column they
-    /// are reordered up and down instead, and scrolled the same way.
+    /// A tab dragged is reordered or tiled, never the window moved, title bar
+    /// or not. In a column the tabs are reordered up and down, and scrolled
+    /// the same way.
     fn tab_strip_in(&mut self, ui: &mut egui::Ui, reserve: f32, strip: Strip) {
-        let in_title_bar = strip == Strip::TitleBar;
         let vertical = strip == Strip::Column;
         let mut to_close = None;
         let mut to_rename = None;
+        let mut to_colour = None;
         let mut to_split = None;
         let mut to_unsplit = None;
         let mut to_activate = None;
@@ -285,11 +322,12 @@ impl App {
         // Where each tab was drawn this frame, and which one is being dragged:
         // what a drag is measured against once every tab has been laid out.
         let mut spans: Vec<(f32, f32)> = Vec::with_capacity(self.tabs.len());
+        let mut rects: Vec<egui::Rect> = Vec::with_capacity(self.tabs.len());
+        let mut into_tab = None;
         let mut dragging = None;
-        // Set when a drag has been handed to the window, so the same drag is
-        // not also read as reordering.
-        let mut window_drag = false;
         let mut to_move = None;
+        let mut drag_began = None;
+        let mut over_terminal = false;
         let gap = 0.0;
         let count = self.tabs.len().max(1) as f32;
         let room = ui.available_width() - reserve;
@@ -302,7 +340,14 @@ impl App {
             (self.settings.tab_width == crate::config::TabWidth::Shared)
                 .then(|| ((room - gap * (count - 1.0)) / count).max(TAB_MIN_WIDTH))
         };
-        let tall = vertical.then(|| tab_height(ui));
+        // A column's tabs are each one tab tall, and so are a skin's in a row
+        // of their own: the row sizes itself to what is in it, so a tab told
+        // to take the row's height came out as tall as its text, and the
+        // skin's taller tab - the shown one standing two pixels higher - cut
+        // its own label off at the top. In the title bar the tab fits the
+        // bar instead.
+        let skinned_row = strip == Strip::Row && crate::ui::skin::Kit::of(ui.ctx()).is_some();
+        let tall = (vertical || skinned_row).then(|| tab_height(ui));
         let scroll = if vertical {
             egui::ScrollArea::vertical().auto_shrink([false, true])
         } else {
@@ -324,7 +369,8 @@ impl App {
                 for index in 0..self.tabs.len() {
                     let selected = index == self.active;
                     let split = self.tabs[index].split.is_some();
-                    let game = self.tabs[index].is_game();
+                    let can_split = self.tabs[index].can_split();
+                    let colour = self.tabs[index].colour;
                     let mut label = self.tabs[index].strip_label(with_namespace);
                     if self.tabs[index].focused().ended {
                         label.push_str(" (ended)");
@@ -344,6 +390,15 @@ impl App {
                         [shared, tall],
                         close_side,
                     );
+                    if let Some(colour) = colour {
+                        crate::ui::tab_colour::mark(
+                            ui,
+                            response.rect,
+                            colour,
+                            selected,
+                            vertical,
+                        );
+                    }
                     // A line between two tabs neither of which is shown: the
                     // shown one is set off by its colour already.
                     let next_selected = index + 1 == self.active;
@@ -365,35 +420,24 @@ impl App {
                         );
                         }
                     }
-                    let response =
-                        response.tip(tr("Double-click to rename, drag to reorder."));
+                    let response = response.tip(tr(
+                        "Double-click to rename or colour, drag to reorder. Drop it on the middle of another tab, or on the terminal, to tile the two together.",
+                    ));
                     if response.clicked() {
                         to_activate = Some(index);
                     }
                     // The tab being moved is the one shown, the way it is
                     // everywhere else tabs are dragged: what is under the strip
                     // should be the session the user has hold of.
-                    // In the title bar, a drag that sets off up or down is
-                    // the window being moved - the bar has no other free
-                    // space to take hold of - and so is any drag of a lone
-                    // tab, which has nowhere to be reordered to.
-                    if in_title_bar && response.drag_started() {
-                        let moved = ui.input(|i| {
-                            i.pointer
-                                .press_origin()
-                                .zip(i.pointer.interact_pos())
-                                .map(|(from, to)| to - from)
-                        });
-                        let upright = moved.is_some_and(|d| d.y.abs() > d.x.abs());
-                        if upright || self.tabs.len() == 1 {
-                            ui.ctx().send_viewport_cmd(egui::ViewportCommand::StartDrag);
-                            window_drag = true;
-                        }
-                    }
+                    // Never the window being moved, even in the title bar: a
+                    // tab taken hold of is being reordered or tiled, and the
+                    // bar's empty part - which `reserve` keeps - is what moves
+                    // the window.
                     if response.drag_started() {
                         to_activate = Some(index);
+                        drag_began = Some(index);
                     }
-                    if response.dragged() && !window_drag {
+                    if response.dragged() {
                         dragging = Some(index);
                         ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
                     }
@@ -413,41 +457,49 @@ impl App {
                             to_rename = Some(index);
                             ui.close_menu();
                         }
-                        ui.separator();
-                        // A tab already holding two sessions has nowhere to put
-                        // a third, so the only thing offered is the way back.
-                        if split {
-                            if ui
-                                .button(tr("Remove split"))
-                                .tip(tr(
-                                    "Gives the second session a tab of its own. Nothing is closed.",
-                                ))
-                                .clicked()
-                            {
-                                to_unsplit = Some(index);
+                        // Here as well as in the rename dialog: marking a tab
+                        // is one click, and should not need a dialog.
+                        ui.menu_button(tr("Colour"), |ui| {
+                            if let Some(picked) = crate::ui::tab_colour::picker(ui, colour) {
+                                to_colour = Some((index, picked));
                                 ui.close_menu();
                             }
-                        } else if !game {
+                        });
+                        ui.separator();
+                        // Splits the pane the keyboard is in, which is the one
+                        // the entry is named after.
+                        if can_split {
                             if ui
                                 .button(tr("Split to right"))
                                 .tip(tr(
-                                    "Opens a second session in this tab, beside this one. Click into a pane to type in it.",
+                                    "Opens another session in this tab, beside this one. Click into a pane to type in it.",
                                 ))
                                 .clicked()
                             {
-                                to_split = Some((index, SplitDir::Right));
+                                to_split = Some((index, Toward::Right));
                                 ui.close_menu();
                             }
                             if ui.button(tr("Split to bottom")).clicked() {
-                                to_split = Some((index, SplitDir::Bottom));
+                                to_split = Some((index, Toward::Down));
                                 ui.close_menu();
                             }
+                        }
+                        if split
+                            && ui
+                                .button(tr("Remove split"))
+                                .tip(tr(
+                                    "Gives every session in this tab a tab of its own. Nothing is closed.",
+                                ))
+                                .clicked()
+                        {
+                            to_unsplit = Some(index);
+                            ui.close_menu();
                         }
                         ui.separator();
                         if ui
                             .button(tr("Close"))
                             .tip(if split {
-                                tr("Closes both sessions in this tab.")
+                                tr("Closes every session in this tab.")
                             } else {
                                 tr("Closes this session.")
                             })
@@ -473,6 +525,7 @@ impl App {
                     if close.is_some_and(|close| close.tip(tr("Close this tab.")).clicked()) {
                         to_close = Some(index);
                     }
+                    rects.push(response.rect);
                     spans.push(if vertical {
                         (response.rect.top(), response.rect.bottom())
                     } else {
@@ -488,13 +541,51 @@ impl App {
                     } else {
                         (pointer.x, ui.clip_rect().left(), ui.clip_rect().right())
                     };
-                    to_move = drop_slot(&spans, from, along).map(|to| (from, to));
+                    // Off the strip altogether, the tab is on its way to the
+                    // terminal to be docked, and is neither reordered nor
+                    // scrolled along the strip after it.
+                    let across = if vertical { pointer.x } else { pointer.y };
+                    let band = if vertical {
+                        ui.clip_rect().x_range()
+                    } else {
+                        ui.clip_rect().y_range()
+                    };
+                    over_terminal = !band.expand(TAB_DOCK_SLACK).contains(across);
+                    // Over the middle of another tab, the drop joins the two
+                    // rather than reordering; the tab is only moved past one
+                    // once the pointer is through its middle half.
+                    into_tab = (!over_terminal)
+                        .then(|| dock_onto(&spans, from, along))
+                        .flatten();
+                    to_move = if over_terminal || into_tab.is_some() {
+                        None
+                    } else {
+                        drop_slot(&spans, from, along).map(|to| (from, to))
+                    };
+                    if let Some(target) = into_tab {
+                        let fits = self.tabs[target].pane_count() + self.tabs[from].pane_count()
+                            <= tab::MAX_PANES
+                            && !self.tabs[target].is_game()
+                            && !self.tabs[from].is_game();
+                        let colour = if fits {
+                            ui.visuals().selection.bg_fill
+                        } else {
+                            ui.visuals().error_fg_color
+                        };
+                        let rect = rects[target].shrink(1.0);
+                        ui.painter()
+                            .rect_filled(rect, 3.0, colour.gamma_multiply(0.3));
+                        ui.painter()
+                            .rect_stroke(rect, 3.0, egui::Stroke::new(2.0_f32, colour));
+                    }
                     // Held against either edge of the strip, the drag scrolls
                     // it: the tabs beyond the edge are where the user is
                     // trying to put this one, and they cannot be reached by
                     // a pointer that has nowhere further to go.
                     let edge = 24.0;
-                    let push = if along < near + edge {
+                    let push = if over_terminal {
+                        0.0
+                    } else if along < near + edge {
                         1.0
                     } else if along > far - edge {
                         -1.0
@@ -516,31 +607,124 @@ impl App {
             });
         });
 
+        if let Some(index) = drag_began {
+            // What was shown before this drag made the dragged tab the one
+            // shown, which is what it would be dropped into.
+            let onto = self.tabs.get(self.active).map_or(0, |tab| tab.uid);
+            self.tab_drag = Some(TabDrag {
+                uid: self.tabs[index].uid,
+                onto,
+                over_terminal: false,
+                into_tab: None,
+                held: None,
+                sprung: false,
+            });
+        }
+        // Let go over the middle of another tab: the dragged one joins it,
+        // beside the pane that has the keyboard there, and that tab is shown.
+        if dragging.is_none() && ui.input(|i| i.pointer.any_released()) {
+            if let Some((uid, into)) = self
+                .tab_drag
+                .and_then(|drag| drag.into_tab.map(|into| (drag.uid, into)))
+            {
+                self.tab_drag = None;
+                if let Some(index) = self.tabs.iter().position(|tab| tab.uid == into) {
+                    let onto = At {
+                        tab: index,
+                        pane: self.tabs[index].focus,
+                    };
+                    self.dock_tab(uid, onto, Toward::Right);
+                    // Docking has taken a tab out of the strip, so nothing
+                    // else collected by index this frame still means what it
+                    // did.
+                    return;
+                }
+            }
+        }
+        if dragging.is_some() {
+            if let Some(drag) = self.tab_drag.as_mut() {
+                drag.over_terminal = over_terminal;
+                let target = into_tab.map(|target| self.tabs[target].uid);
+                drag.into_tab = target;
+                // Held over the middle of a tab, it springs open - the way a
+                // folder does under a dragged file - so the drop can be aimed
+                // at its panes rather than only at its name.
+                let now = ui.input(|i| i.time);
+                match (target, drag.held) {
+                    (Some(target), Some((held, since))) if target == held => {
+                        let waited = now - since;
+                        if waited >= TAB_SPRING {
+                            drag.onto = target;
+                            drag.sprung = true;
+                        } else {
+                            ui.ctx().request_repaint_after(Duration::from_secs_f64(
+                                TAB_SPRING - waited,
+                            ));
+                        }
+                    }
+                    (Some(target), _) => {
+                        drag.held = Some((target, now));
+                        ui.ctx()
+                            .request_repaint_after(Duration::from_secs_f64(TAB_SPRING));
+                    }
+                    (None, _) => drag.held = None,
+                }
+            }
+        }
         if let Some((from, to)) = to_move {
             self.move_tab(from, to);
             // The tab ends where the pointer is, and it was active already
             // from the moment it was taken hold of.
             to_activate = Some(to);
         }
+        if let Some(drag) = self.tab_drag.filter(|_| dragging.is_some()) {
+            // Over the terminal, or once a tab has sprung open, the tab shown
+            // is the one the drop goes into, so it is aimed at what is on
+            // screen; otherwise it is the dragged one, as for a reorder.
+            // Looked up by uid after any reorder above has moved the tabs.
+            let onto = self.tabs.iter().position(|tab| tab.uid == drag.onto);
+            let moving = self.tabs.iter().position(|tab| tab.uid == drag.uid);
+            if let (Some(onto), Some(moving)) = (onto, moving) {
+                to_activate = Some(if (drag.over_terminal || drag.sprung) && onto != moving {
+                    onto
+                } else {
+                    moving
+                });
+            }
+        }
         if let Some(index) = to_activate {
             self.activate_tab(index);
         }
-        if let Some((index, dir)) = to_split {
-            self.split_tab(index, dir);
+        if let Some((index, side)) = to_split {
+            if let Some(focus) = self.tabs.get(index).map(|tab| tab.focus) {
+                self.split_pane(
+                    At {
+                        tab: index,
+                        pane: focus,
+                    },
+                    side,
+                );
+            }
         }
         if let Some(index) = to_unsplit {
-            self.remove_split(index);
+            self.unsplit_tab(index);
+        }
+        if let Some((index, colour)) = to_colour {
+            if let Some(tab) = self.tabs.get_mut(index) {
+                tab.colour = colour;
+            }
         }
         if let Some(index) = to_rename {
             // Seeded with the names on screen, so renaming is an edit rather
             // than starting from nothing.
             let tab = &self.tabs[index];
             self.renaming = Some(Renaming {
-                tab: index,
-                draft: tab.title(with_namespace),
-                second: tab
-                    .pane(Pane::Second)
-                    .map(|second| second.title(with_namespace)),
+                tab: tab.uid,
+                names: tab
+                    .sessions()
+                    .map(|s| (s.uid, s.title(with_namespace)))
+                    .collect(),
+                colour: tab.colour,
                 focus: true,
             });
         }
@@ -555,9 +739,9 @@ impl App {
 
     /// Moves the tab at `from` to `to`, shifting the ones between along.
     ///
-    /// Everything that remembers a tab by its index has to move with it: the
-    /// active tab, and a rename in progress, which would otherwise commit the
-    /// new name to whichever tab slid into the old place.
+    /// Everything that remembers a tab by its index has to move with it, which
+    /// is the active tab. A rename in progress remembers it by uid, and needs
+    /// nothing.
     pub(super) fn move_tab(&mut self, from: usize, to: usize) {
         if from == to || from >= self.tabs.len() || to >= self.tabs.len() {
             return;
@@ -565,9 +749,6 @@ impl App {
         let tab = self.tabs.remove(from);
         self.tabs.insert(to, tab);
         self.active = moved_index(self.active, from, to);
-        if let Some(renaming) = self.renaming.as_mut() {
-            renaming.tab = moved_index(renaming.tab, from, to);
-        }
     }
 
     /// Makes a tab the active one, which is the tab drawn and the one every
@@ -579,44 +760,26 @@ impl App {
         }
     }
 
-    /// Splits a tab in two, opening a second session in the pane it makes.
+    /// Opens another session against one side of a pane, of the same kind
+    /// as the session in that pane.
     ///
-    /// The new session goes where the pane appears - to the right, or at the
-    /// bottom - and takes the keyboard, the way a newly opened tab does. A tab
-    /// that is already split is left alone: it has two names to show and no
-    /// room for a third.
-    pub(super) fn split_tab(&mut self, index: usize, dir: SplitDir) {
-        // A tab holding the easter egg holds no session and cannot hold one:
-        // splitting it would put a live IRIS session in a pane nothing draws.
-        if self
-            .tabs
-            .get(index)
-            .is_none_or(|tab| tab.split.is_some() || tab.is_game())
-        {
+    /// The new session takes the keyboard, the way a newly opened tab does. A
+    /// tab already holding [`tab::MAX_PANES`] sessions is left alone, and
+    /// says so.
+    pub(super) fn split_pane(&mut self, at: At, side: Toward) {
+        // The pane's own profile, not the one Ctrl+T would open: splitting a
+        // CMD pane is asking for a second CMD beside it, and it used to come up
+        // as an IRIS session because that was the new-tab default.
+        let Some(profile) = self.pane(at).map(|pane| pane.profile.clone()) else {
             return;
-        }
-        // The tab's own profile, not the one Ctrl+T would open: splitting a CMD
-        // tab is asking for a second CMD beside it, and it used to come up as
-        // an IRIS session because that was the new-tab default.
-        let profile = self.tabs[index].profile.clone();
-        // Down the middle to start with. The divider between them is what moves
-        // it from there.
-        self.open_split(index, dir, profile, 0.5);
-        self.tabs[index].focus = Pane::Second;
-        self.active = index;
+        };
+        self.open_pane(at, side, profile);
     }
 
-    /// [`App::split_tab`], with the shell called `shell` in the new pane
-    /// instead of the tab's own kind of session. A shell gone from the list
+    /// [`App::split_pane`], with the shell called `shell` in the new pane
+    /// instead of the pane's own kind of session. A shell gone from the list
     /// since the menu was drawn splits nothing, and says so.
-    pub(super) fn split_tab_with_shell(&mut self, index: usize, dir: SplitDir, shell: &str) {
-        if self
-            .tabs
-            .get(index)
-            .is_none_or(|tab| tab.split.is_some() || tab.is_game())
-        {
-            return;
-        }
+    pub(super) fn split_pane_with_shell(&mut self, at: At, side: Toward, shell: &str) {
         let Some(found) = crate::plugins::shells::available()
             .into_iter()
             .find(|s| s.name == shell)
@@ -624,22 +787,170 @@ impl App {
             self.set_status(tr1("{} is no longer available.", shell));
             return;
         };
-        let profile = Profile::for_shell(&found);
-        self.open_split(index, dir, profile, 0.5);
-        self.tabs[index].focus = Pane::Second;
-        self.active = index;
+        self.open_pane(at, side, Profile::for_shell(&found));
     }
 
-    /// Opens `profile` in a second pane of the tab at `index`, which the
-    /// caller has made sure is not split already.
-    fn open_split(&mut self, index: usize, dir: SplitDir, profile: Profile, ratio: f32) {
+    fn open_pane(&mut self, at: At, side: Toward, profile: Profile) {
+        // A tab holding the easter egg holds no session and cannot hold one:
+        // splitting it would put a live IRIS session in a pane nothing draws.
+        // Asked before the session is started, so a refusal starts nothing.
+        let Some(tab) = self.tabs.get(at.tab) else {
+            return;
+        };
+        if tab.is_game() || tab.pane(at.pane).is_none() {
+            return;
+        }
+        if !tab.can_split() {
+            self.set_status(tr1(
+                "A tab holds at most {} sessions.",
+                &tab::MAX_PANES.to_string(),
+            ));
+            return;
+        }
         let (cols, rows) = self.initial_size(&profile);
         let opened = Tab::new(profile, &self.settings, cols, rows);
-        self.tabs[index].split = Some(Split {
-            dir,
-            tab: Box::new(opened),
-            ratio,
-        });
+        if let Ok(pane) = self.tabs[at.tab].add_pane(at.pane, side, opened) {
+            self.tabs[at.tab].focus = pane;
+            self.active = at.tab;
+        }
+    }
+
+    /// Writes the transcripts to `to` from now on, and offers to take the
+    /// ones already written along.
+    ///
+    /// Every session that is logging starts a new file in the new folder
+    /// straight away, before anything is moved: a file still open for writing
+    /// cannot be moved on Windows, and the transcript of a session that kept
+    /// writing to the old folder would be the one file left behind.
+    pub(super) fn change_log_dir(&mut self, ctx: &Context, to: std::path::PathBuf) {
+        let from = self.settings.log_dir.clone();
+        if from == to {
+            return;
+        }
+        self.settings.log_dir = to.clone();
+        self.handle_request(ctx, UiRequest::SettingsChanged);
+        let settings = &self.settings;
+        for tab in &mut self.tabs {
+            tab.for_each_session_mut(|session| session.reopen_log(settings));
+        }
+        let plan = crate::features::log_move::Plan::new(&from, &to);
+        if plan.is_empty() {
+            self.set_status(tr1("Logs now go to {}", &to.display().to_string()));
+        } else {
+            self.panels.log_move = Some(crate::ui::log_move_view::LogMove::Asking(plan));
+        }
+    }
+
+    /// Moves one pane of a split tab against a side of another of its
+    /// panes. The keyboard goes with it: it is the pane just taken hold of.
+    pub(super) fn move_pane(&mut self, at: At, onto: Pane, side: Toward) {
+        let Some(tab) = self.tabs.get_mut(at.tab) else {
+            return;
+        };
+        let Some(split) = tab.split.as_mut() else {
+            return;
+        };
+        if split.tree.relocate(at.pane, onto, side) {
+            split.zoomed = false;
+            tab.focus = at.pane;
+        }
+    }
+
+    /// Moves the keyboard to the pane next to the focused one, the way
+    /// `toward` says, in the active tab. Nothing there, nothing moves.
+    pub(super) fn focus_pane(&mut self, toward: Toward) {
+        let Some(tab) = self.tabs.get_mut(self.active) else {
+            return;
+        };
+        if let Some(pane) = tab.neighbour(toward) {
+            tab.focus = pane;
+        }
+    }
+
+    /// Trades the focused pane's place with the one next to it, the way
+    /// `toward` says. The keyboard stays with the session, which is now
+    /// where the other one was - the pane has been moved, not the focus.
+    pub(super) fn swap_pane(&mut self, toward: Toward) {
+        let Some(tab) = self.tabs.get_mut(self.active) else {
+            return;
+        };
+        let focus = tab.focus;
+        let Some(other) = tab.neighbour(toward) else {
+            return;
+        };
+        if let Some(split) = tab.split.as_mut() {
+            split.tree.swap(focus, other);
+        }
+    }
+
+    /// Gives one pane of a split tab a tab of its own, just after this one,
+    /// and shows it there. Nothing is closed.
+    pub(super) fn detach_to_tab(&mut self, at: At) {
+        let Some(gone) = self
+            .tabs
+            .get_mut(at.tab)
+            .and_then(|tab| tab.detach_pane(at.pane))
+        else {
+            return;
+        };
+        self.tabs.insert(at.tab + 1, gone);
+        self.active = at.tab + 1;
+    }
+
+    /// Takes a split tab back to one session, and gives each of the others a
+    /// tab of its own, in pane order, just after it.
+    ///
+    /// Promoted rather than closed: they are live IRIS sessions, and "remove
+    /// split" is a sentence about the layout. Closing the tab is what closes
+    /// them all. The keyboard stays with whichever session had it.
+    pub(super) fn unsplit_tab(&mut self, index: usize) {
+        let Some(tab) = self.tabs.get_mut(index) else {
+            return;
+        };
+        let had_focus = tab.focus;
+        let others = tab.detach_all();
+        let count = others.len();
+        for (i, other) in others.into_iter().enumerate() {
+            self.tabs.insert(index + 1 + i, other);
+        }
+        if had_focus.0 <= count {
+            self.active = index + had_focus.0;
+        }
+    }
+
+    /// Moves the tab with `uid` into another, against the `side` of the pane
+    /// at `onto` - a tab dropped onto the terminal.
+    pub(super) fn dock_tab(&mut self, uid: u64, onto: At, side: Toward) {
+        let Some(from) = self.tabs.iter().position(|tab| tab.uid == uid) else {
+            return;
+        };
+        let Some(host) = self.tabs.get(onto.tab) else {
+            return;
+        };
+        if from == onto.tab || host.pane(onto.pane).is_none() {
+            return;
+        }
+        let total = host.pane_count() + self.tabs[from].pane_count();
+        if total > tab::MAX_PANES || host.is_game() || self.tabs[from].is_game() {
+            self.set_status(tr1(
+                "A tab holds at most {} sessions.",
+                &tab::MAX_PANES.to_string(),
+            ));
+            return;
+        }
+        let moving = self.tabs.remove(from);
+        let host = if from < onto.tab {
+            onto.tab - 1
+        } else {
+            onto.tab
+        };
+        if let Err(moving) = self.tabs[host].adopt(onto.pane, side, moving) {
+            // Checked above, so this is not reached; but a tab is a live
+            // session, and one put back is better than one dropped.
+            self.tabs.insert(from.min(self.tabs.len()), *moving);
+            return;
+        }
+        self.active = host;
     }
 
     /// What [`App::restore_session`] needs to open these tabs again.
@@ -674,52 +985,36 @@ impl App {
 
     /// Opens one saved tab at the end of the strip.
     fn restore_tab(&mut self, entry: SavedTab) {
+        let (panes, tree, focus) = saved_layout(&entry);
         self.open_tab(entry.profile);
         let index = self.tabs.len() - 1;
-        self.tabs[index].custom_title = entry.title;
-        self.tabs[index].replay(&entry.screen);
-        self.tabs[index].resume_namespace = entry.namespace;
-        if let Some(split) = entry.split {
-            let dir = match split.dir {
-                SavedDir::Right => SplitDir::Right,
-                SavedDir::Bottom => SplitDir::Bottom,
-            };
-            // The file can be edited by hand, and a NaN would survive every
-            // clamp the layout applies to it.
-            let ratio = if split.ratio.is_finite() {
-                split.ratio.clamp(0.0, 1.0)
-            } else {
-                0.5
-            };
-            self.open_split(index, dir, split.profile, ratio);
-            if let Some(opened) = self.tabs[index].split.as_mut() {
-                opened.tab.custom_title = split.title;
-                opened.tab.replay(&split.screen);
-                opened.tab.resume_namespace = split.namespace;
-            }
-            if entry.second_focused {
-                self.tabs[index].focus = Pane::Second;
-            }
-        }
-    }
-
-    /// Takes a split tab back to one session, and gives the other one a tab of
-    /// its own.
-    ///
-    /// Promoted rather than closed: it is a live IRIS session, and "remove
-    /// split" is a sentence about the layout. Closing the tab is what closes
-    /// both. The keyboard stays with whichever of the two had it.
-    pub(super) fn remove_split(&mut self, index: usize) {
-        let Some(split) = self.tabs.get_mut(index).and_then(|tab| tab.split.take()) else {
+        let tab = &mut self.tabs[index];
+        tab.custom_title = entry.title;
+        tab.colour = entry
+            .colour
+            .as_deref()
+            .and_then(crate::config::theme::parse_hex);
+        tab.replay(&entry.screen);
+        tab.resume_namespace = entry.namespace;
+        let Some(tree) = tree else {
             return;
         };
-        let had_focus = std::mem::take(&mut self.tabs[index].focus);
-        self.tabs.insert(index + 1, *split.tab);
-        self.active = if had_focus == Pane::Second {
-            index + 1
-        } else {
-            index
-        };
+        let mut others = Vec::with_capacity(panes.len());
+        for pane in panes {
+            let (cols, rows) = self.initial_size(&pane.profile);
+            let mut opened = Tab::new(pane.profile, &self.settings, cols, rows);
+            opened.custom_title = pane.title;
+            opened.replay(&pane.screen);
+            opened.resume_namespace = pane.namespace;
+            others.push(opened);
+        }
+        let tab = &mut self.tabs[index];
+        tab.split = Some(Split {
+            tree,
+            others,
+            zoomed: false,
+        });
+        tab.focus = focus;
     }
 
     /// Names one tab.
@@ -731,9 +1026,11 @@ impl App {
         let Some(mut renaming) = self.renaming.take() else {
             return;
         };
-        if renaming.tab >= self.tabs.len() {
+        // Gone, or no longer a tab of its own - docked into another, or its
+        // session moved out from under it: the dialog has nothing to name.
+        let Some(index) = self.tabs.iter().position(|tab| tab.uid == renaming.tab) else {
             return;
-        }
+        };
 
         let mut open = true;
         let mut commit = false;
@@ -741,32 +1038,24 @@ impl App {
 
         crate::ui::dialog::show(ctx, "nit-rename-tab", tr("Rename tab"), &mut open, |ui| {
             {
-                // A split tab is two sessions under one entry, so it is renamed
-                // two names at a time. The `1:` and `2:` are the panes
-                // themselves and cannot be edited away.
-                let split = renaming.second.is_some();
-                let field = |ui: &mut egui::Ui, label: Option<&str>, text: &mut String| {
+                // A split tab is several sessions under one entry, so it is
+                // renamed several names at a time. The `1:`, `2:` are the
+                // panes themselves and cannot be edited away.
+                let split = renaming.names.len() > 1;
+                for (i, (_, name)) in renaming.names.iter_mut().enumerate() {
                     let mut response = None;
                     ui.horizontal(|ui| {
-                        if let Some(label) = label {
-                            ui.label(label);
+                        if split {
+                            ui.label(format!("{}:", i + 1));
                         }
                         response =
-                            Some(ui.add(egui::TextEdit::singleline(text).desired_width(220.0)));
+                            Some(ui.add(egui::TextEdit::singleline(name).desired_width(220.0)));
                     });
-                    response.expect("the field is always added")
-                };
-
-                let response = field(ui, split.then_some("1:"), &mut renaming.draft);
-                if renaming.focus {
-                    response.request_focus();
-                    renaming.focus = false;
-                }
-                if response.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter)) {
-                    commit = true;
-                }
-                if let Some(second) = renaming.second.as_mut() {
-                    let response = field(ui, Some("2:"), second);
+                    let response = response.expect("the field is always added");
+                    if i == 0 && renaming.focus {
+                        response.request_focus();
+                        renaming.focus = false;
+                    }
                     if response.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter)) {
                         commit = true;
                     }
@@ -776,6 +1065,11 @@ impl App {
                 // field already does, and two ways to say the same thing in a
                 // dialog this small only asks the user which one is real.
                 ui.weak(tr("Empty goes back to default."));
+                ui.add_space(4.0);
+                ui.label(tr("Colour"));
+                if let Some(picked) = crate::ui::tab_colour::picker(ui, renaming.colour) {
+                    renaming.colour = picked;
+                }
                 use crate::ui::dialog::{actions, button, Role};
                 actions(ui, |ui| {
                     if button(ui, tr("Rename"), Role::Suggested).clicked() {
@@ -793,12 +1087,17 @@ impl App {
                 let name = text.trim().to_string();
                 (!name.is_empty()).then_some(name)
             };
-            self.tabs[renaming.tab].custom_title = named(&renaming.draft);
-            if let (Some(text), Some(second)) = (
-                renaming.second.as_deref(),
-                self.tabs[renaming.tab].pane_mut(Pane::Second),
-            ) {
-                second.custom_title = named(text);
+            self.tabs[index].colour = renaming.colour;
+            // Each to its own session, wherever it is now - a pane closed
+            // while the dialog was open takes its name with it.
+            for (uid, name) in &renaming.names {
+                for tab in &mut self.tabs {
+                    tab.for_each_session_mut(|session| {
+                        if session.uid == *uid {
+                            session.custom_title = named(name);
+                        }
+                    });
+                }
             }
         } else if !(cancel || !open) {
             // Still open, so the draft survives to the next frame.
@@ -1007,9 +1306,13 @@ fn tab_pill(
         crate::config::TabCloseSide::Left => rect.left() + pad + close_side / 2.0,
         crate::config::TabCloseSide::Right => rect.right() - pad - close_side / 2.0,
     };
-    let close_rect = egui::Rect::from_center_size(
+    // On whole pixels, its side an even number of them: the cross is drawn
+    // about the square's centre, and a square starting part-way into a pixel
+    // put the cross a pixel off the middle of the square it is hovered in.
+    let close_rect = pixel_square(
+        ui.ctx().pixels_per_point(),
         egui::pos2(close_x, rect.center().y),
-        egui::Vec2::splat(close_side),
+        close_side,
     );
     let shows_close = selected || ui.rect_contains_pointer(rect);
     let close = shows_close.then(|| {
@@ -1127,9 +1430,10 @@ fn skinned_tab(
         style.tab_text(kit, st),
     );
     if let Some(close) = close {
-        let square = egui::Rect::from_center_size(
+        let square = pixel_square(
+            kit.ppp,
             close_rect.center() - egui::vec2(0.0, lift),
-            egui::Vec2::splat((close_rect.width().min(16.0 * kit.u())).round()),
+            close_rect.width().min(16.0 * kit.u()),
         );
         if close.hovered() {
             painter.extend(style.button(
@@ -1147,6 +1451,16 @@ fn skinned_tab(
         let ink = style.tab_text(kit, st);
         painter.extend(prim::sprite(at, &CROSS, &[('#', ink)], kit.ppp));
     }
+}
+
+/// A square of about `side` points centred on `centre`, its edges on whole
+/// pixels and its side an even number of them - so the middle of it falls on
+/// a pixel boundary, where a symmetric mark drawn about it stays symmetric.
+fn pixel_square(ppp: f32, centre: egui::Pos2, side: f32) -> egui::Rect {
+    let px = ((side * ppp / 2.0).round() * 2.0).max(2.0);
+    let middle = (centre.to_vec2() * ppp).round();
+    let min = (middle - egui::Vec2::splat(px / 2.0)) / ppp;
+    egui::Rect::from_min_size(min.to_pos2(), egui::Vec2::splat(px / ppp))
 }
 
 /// Where the tab being dragged belongs, given the left and right edge of every
@@ -1172,6 +1486,19 @@ fn drop_slot(spans: &[(f32, f32)], from: usize, x: f32) -> Option<usize> {
         .or_else(|| (0..from).find(|&i| x < middle(i)))
 }
 
+/// The tab a dragged one would join if let go at `x`: one whose middle half
+/// the pointer is over, other than the dragged tab itself.
+///
+/// The middle half rather than the whole tab, so the quarters at either end
+/// are still the way past it - [`drop_slot`] moves a tab once the pointer is
+/// through a neighbour's middle, which is then the far quarter.
+fn dock_onto(spans: &[(f32, f32)], from: usize, x: f32) -> Option<usize> {
+    spans.iter().enumerate().position(|(i, &(start, end))| {
+        let quarter = (end - start) / 4.0;
+        i != from && x > start + quarter && x < end - quarter
+    })
+}
+
 /// Where the tab at `index` is after the one at `from` has moved to `to`.
 fn moved_index(index: usize, from: usize, to: usize) -> usize {
     if index == from {
@@ -1189,26 +1516,101 @@ fn moved_index(index: usize, from: usize, to: usize) -> usize {
 /// [`SAVED_SCREEN_LINES`] of text, so the list is not left to grow all day.
 const CLOSED_TABS_KEPT: usize = 20;
 
+/// How far past the strip's own edge a dragged tab may stray and still be
+/// reordering, in points. A hand dragging along a row wanders up and down; it
+/// should take a deliberate move toward the terminal to start docking.
+const TAB_DOCK_SLACK: f32 = 12.0;
+
+/// How long, in seconds, a dragged tab is held over the middle of another
+/// before that one is shown. Long enough not to flick through every tab the
+/// pointer crosses on its way along the strip.
+const TAB_SPRING: f64 = 1.5;
+
 /// A tab as [`SavedTab`] keeps it, split included.
 fn saved_tab(tab: &Tab) -> SavedTab {
+    let split = tab.split.as_ref();
     SavedTab {
-        split: tab.split.as_ref().map(|split| SavedSplit {
-            dir: match split.dir {
-                SplitDir::Right => SavedDir::Right,
-                SplitDir::Bottom => SavedDir::Bottom,
-            },
-            ratio: split.ratio,
-            profile: saved_profile(&split.tab),
-            namespace: saved_namespace(&split.tab),
-            title: split.tab.custom_title.clone(),
-            screen: saved_screen(&split.tab),
-        }),
-        second_focused: tab.split.is_some() && tab.focus == Pane::Second,
+        colour: tab.colour.map(crate::config::theme::to_hex),
+        panes: split
+            .map(|split| {
+                split
+                    .others
+                    .iter()
+                    .map(|other| SavedPane {
+                        profile: saved_profile(other),
+                        namespace: saved_namespace(other),
+                        title: other.custom_title.clone(),
+                        screen: saved_screen(other),
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
+        layout: split.map(|split| split.tree.encode()),
+        focus: if split.is_some() { tab.focus.0 } else { 0 },
         ..saved_pane(tab)
     }
 }
 
-/// One pane on its own, as a tab of its own: what closing one side of a split
+/// The other panes a saved tab holds, where they go, and which one had the
+/// keyboard - or no layout at all for a tab that was not split.
+///
+/// Whatever the file says, what comes back is something the tab can hold: a
+/// layout that does not name each pane exactly once is replaced by the panes
+/// in a row, and panes past [`tab::MAX_PANES`] are left closed. A file from
+/// before a tab could hold more than two is read through its one `split`.
+fn saved_layout(entry: &SavedTab) -> (Vec<SavedPane>, Option<Node>, Pane) {
+    let (mut panes, layout, focus) = match (&entry.split, entry.panes.is_empty()) {
+        (Some(split), true) => {
+            let pane = SavedPane {
+                profile: split.profile.clone(),
+                title: split.title.clone(),
+                namespace: split.namespace.clone(),
+                screen: split.screen.clone(),
+            };
+            let dir = match split.dir {
+                SavedDir::Right => SplitDir::Right,
+                SavedDir::Bottom => SplitDir::Bottom,
+            };
+            let ratio = if split.ratio.is_finite() {
+                split.ratio.clamp(0.0, 1.0)
+            } else {
+                0.5
+            };
+            let tree = Node::Split {
+                dir,
+                ratio,
+                first: Box::new(Node::Leaf(Pane(0))),
+                second: Box::new(Node::Leaf(Pane(1))),
+            };
+            (vec![pane], Some(tree), usize::from(entry.second_focused))
+        }
+        _ => (
+            entry.panes.clone(),
+            entry.layout.as_deref().and_then(Node::parse),
+            entry.focus,
+        ),
+    };
+    if panes.is_empty() {
+        return (panes, None, Pane::FIRST);
+    }
+    panes.truncate(tab::MAX_PANES - 1);
+    let count = panes.len() + 1;
+    let tree = layout.filter(|tree| tree.covers(count)).unwrap_or_else(|| {
+        let mut row = Node::Leaf(Pane(0));
+        for i in 1..count {
+            row.dock(Pane(i - 1), Toward::Right, Node::Leaf(Pane(i)));
+        }
+        row
+    });
+    let focus = if focus < count {
+        Pane(focus)
+    } else {
+        Pane::FIRST
+    };
+    (panes, Some(tree), focus)
+}
+
+/// One pane on its own, as a tab of its own: what closing one pane of a split
 /// leaves to reopen.
 fn saved_pane(tab: &Tab) -> SavedTab {
     SavedTab {
@@ -1269,6 +1671,291 @@ fn kept_index(index: usize, kept: &[bool]) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// An app with a tab per name and no session behind any of them.
+    fn app_of(names: &[&str]) -> App {
+        let ctx = Context::default();
+        let mut app = App::for_snapshot(&ctx, Settings::default(), Vec::new());
+        for name in names {
+            app.add_snapshot_tab(name, "USER>");
+        }
+        app
+    }
+
+    fn strip(app: &App) -> Vec<Vec<String>> {
+        app.tabs
+            .iter()
+            .map(|tab| tab.sessions().map(|s| s.profile.name.clone()).collect())
+            .collect()
+    }
+
+    /// Puts tab `from` into tab `onto` against the side of its first pane, the
+    /// way a drop does.
+    fn dock(app: &mut App, from: usize, onto: usize, side: Toward) {
+        let uid = app.tabs[from].uid;
+        let onto = At {
+            tab: onto,
+            pane: Pane::FIRST,
+        };
+        app.dock_tab(uid, onto, side);
+    }
+
+    /// The close square sits on whole pixels with its middle between two, at
+    /// every display scale, wherever the tab happens to start.
+    #[test]
+    fn the_close_square_is_whole_pixels_with_an_even_side() {
+        for ppp in [1.0, 1.25, 1.5, 2.0] {
+            for x in [10.0, 10.3, 10.5, 10.8] {
+                let r = pixel_square(ppp, egui::pos2(x, 7.37), 13.0);
+                for v in [r.min.x, r.min.y, r.width()] {
+                    let px = v * ppp;
+                    assert!((px - px.round()).abs() < 1e-3, "{ppp} {x}: {r:?}");
+                }
+                assert_eq!((r.width() * ppp).round() as i32 % 2, 0);
+                assert!((r.center().x - x).abs() <= 1.0 / ppp);
+            }
+        }
+    }
+
+    #[test]
+    fn the_middle_of_another_tab_joins_it_and_its_ends_reorder() {
+        let spans = [(0.0, 100.0), (100.0, 200.0), (200.0, 300.0)];
+        assert_eq!(dock_onto(&spans, 0, 150.0), Some(1));
+        assert_eq!(dock_onto(&spans, 0, 260.0), Some(2));
+        assert_eq!(dock_onto(&spans, 0, 50.0), None, "not onto itself");
+        // The far quarter of a neighbour is past its middle: a reorder.
+        assert_eq!(dock_onto(&spans, 0, 180.0), None);
+        assert_eq!(drop_slot(&spans, 0, 180.0), Some(1));
+        assert_eq!(dock_onto(&spans, 0, 110.0), None);
+    }
+
+    /// A tab dropped beside another leaves the strip and turns up as a pane
+    /// of the one it was dropped on, which is then the tab shown - wherever in
+    /// the strip either of them was.
+    #[test]
+    fn a_tab_dropped_beside_another_becomes_a_pane_of_it() {
+        let mut app = app_of(&["a", "b", "c"]);
+        dock(&mut app, 2, 0, Toward::Right);
+        assert_eq!(strip(&app), [vec!["a", "c"], vec!["b"]]);
+        assert_eq!(app.active, 0);
+        dock(&mut app, 0, 1, Toward::Left);
+        assert_eq!(strip(&app), [vec!["b", "a", "c"]]);
+        assert_eq!(app.active, 0);
+        let tree = &app.tabs[0].split.as_ref().unwrap().tree;
+        assert_eq!(tree.panes(), [Pane(1), Pane(2), Pane(0)]);
+    }
+
+    /// A pane dragged by its grip lands where it was dropped, keeps its
+    /// session, and takes the keyboard.
+    #[test]
+    fn a_pane_moved_by_its_grip_lands_where_it_was_dropped() {
+        let mut app = app_of(&["a", "b", "c"]);
+        dock(&mut app, 1, 0, Toward::Right);
+        dock(&mut app, 1, 0, Toward::Right);
+        let at = At {
+            tab: 0,
+            pane: Pane(0),
+        };
+        app.move_pane(at, Pane(2), Toward::Down);
+        let tab = &app.tabs[0];
+        let tree = &tab.split.as_ref().unwrap().tree;
+        assert_eq!(tree.neighbour(Pane(2), Toward::Down), Some(Pane(0)));
+        assert_eq!(tab.focused().profile.name, "a");
+        assert_eq!(strip(&app), [vec!["a", "b", "c"]], "nothing renumbered");
+    }
+
+    /// The grip, driven by the pointer as a user drives it: pressed, dragged
+    /// across to the far side of the other pane, and let go there - the
+    /// release landing over that pane, not over the grip's own.
+    #[test]
+    fn a_pane_dragged_by_its_grip_and_let_go_over_another_moves() {
+        use egui::{Event, PointerButton, RawInput};
+        let ctx = Context::default();
+        let mut app = App::for_snapshot(&ctx, Settings::default(), Vec::new());
+        app.add_snapshot_tab("a", "USER>");
+        app.add_snapshot_tab("b", "USER>");
+        dock(&mut app, 1, 0, Toward::Right);
+        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(900.0, 500.0));
+        let run = |app: &mut App, events: Vec<Event>| {
+            let input = RawInput {
+                screen_rect: Some(screen),
+                events,
+                ..RawInput::default()
+            };
+            let _ = ctx.run(input, |ctx| app.frame(ctx));
+        };
+        run(&mut app, Vec::new());
+        run(&mut app, Vec::new());
+        let rects = app.pane_rects.clone();
+        assert_eq!(rects.len(), 2, "{rects:?}");
+        let grip = egui::pos2(rects[0].center().x, rects[0].top() + 7.0);
+        let target = egui::pos2(rects[1].right() - 10.0, rects[1].center().y);
+        let press = |pressed, pos| Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
+        run(&mut app, vec![Event::PointerMoved(grip)]);
+        run(&mut app, vec![press(true, grip)]);
+        run(
+            &mut app,
+            vec![Event::PointerMoved(grip + egui::vec2(20.0, 20.0))],
+        );
+        run(&mut app, vec![Event::PointerMoved(target)]);
+        run(&mut app, vec![Event::PointerMoved(target)]);
+        run(&mut app, vec![press(false, target)]);
+        run(&mut app, Vec::new());
+        let tree = &app.tabs[0].split.as_ref().unwrap().tree;
+        assert_eq!(tree.panes(), [Pane(1), Pane(0)], "{tree:?}");
+        assert!(app.pane_grab.is_none());
+    }
+
+    #[test]
+    fn a_tab_cannot_be_dropped_into_itself() {
+        let mut app = app_of(&["a", "b"]);
+        dock(&mut app, 1, 1, Toward::Right);
+        assert_eq!(strip(&app), [vec!["a"], vec!["b"]]);
+    }
+
+    /// Past the limit the drop is refused, and both tabs are left whole.
+    #[test]
+    fn a_drop_that_would_overfill_a_tab_is_refused_and_loses_nothing() {
+        let names: Vec<String> = (0..=tab::MAX_PANES).map(|i| i.to_string()).collect();
+        let names: Vec<&str> = names.iter().map(String::as_str).collect();
+        let mut app = app_of(&names);
+        // Fill the first tab to the limit, then try one more.
+        for _ in 1..tab::MAX_PANES {
+            dock(&mut app, 1, 0, Toward::Right);
+        }
+        assert_eq!(app.tabs[0].pane_count(), tab::MAX_PANES);
+        assert_eq!(app.tabs.len(), 2);
+        dock(&mut app, 1, 0, Toward::Right);
+        assert_eq!(app.tabs[0].pane_count(), tab::MAX_PANES);
+        assert_eq!(app.tabs.len(), 2, "the tab dropped is still there");
+    }
+
+    /// Removing the split gives each session a tab of its own just after the
+    /// tab, in pane order, and the tab shown is the one the keyboard was in.
+    #[test]
+    fn removing_a_split_gives_every_pane_a_tab_after_it() {
+        let mut app = app_of(&["a", "b", "c", "z"]);
+        dock(&mut app, 1, 0, Toward::Right);
+        dock(&mut app, 1, 0, Toward::Down);
+        app.tabs[0].focus = Pane(2);
+        app.unsplit_tab(0);
+        assert_eq!(strip(&app), [vec!["a"], vec!["b"], vec!["c"], vec!["z"]]);
+        assert_eq!(app.active, 2);
+    }
+
+    #[test]
+    fn a_detached_pane_gets_the_next_tab_and_is_shown_there() {
+        let mut app = app_of(&["a", "b", "z"]);
+        dock(&mut app, 1, 0, Toward::Right);
+        app.detach_to_tab(At {
+            tab: 0,
+            pane: Pane::FIRST,
+        });
+        assert_eq!(strip(&app), [vec!["b"], vec!["a"], vec!["z"]]);
+        assert_eq!(app.active, 1);
+    }
+
+    /// The keyboard moves to the pane on screen in the direction asked, and
+    /// a swap moves the pane while the keyboard stays with its session.
+    #[test]
+    fn the_keyboard_walks_the_panes_and_a_swap_carries_the_pane_with_it() {
+        let mut app = app_of(&["a", "b"]);
+        dock(&mut app, 1, 0, Toward::Right);
+        app.tabs[0].focus = Pane::FIRST;
+        app.focus_pane(Toward::Right);
+        assert_eq!(app.tabs[0].focus, Pane(1));
+        app.focus_pane(Toward::Right);
+        assert_eq!(app.tabs[0].focus, Pane(1), "nothing further right");
+        app.swap_pane(Toward::Left);
+        assert_eq!(app.tabs[0].focused().profile.name, "b");
+        let tree = &app.tabs[0].split.as_ref().unwrap().tree;
+        assert_eq!(tree.panes(), [Pane(1), Pane(0)], "b is now on the left");
+    }
+
+    fn pane_named(name: &str) -> SavedPane {
+        SavedPane {
+            profile: Profile {
+                name: name.into(),
+                ..Profile::default()
+            },
+            ..SavedPane::default()
+        }
+    }
+
+    /// A file written by a build whose tabs held two sessions at most comes
+    /// back as the same two, the same way round.
+    #[test]
+    fn a_split_saved_by_an_older_build_comes_back_as_it_was() {
+        let entry = SavedTab {
+            split: Some(crate::config::session::SavedSplit {
+                dir: SavedDir::Bottom,
+                ratio: 0.3,
+                profile: pane_named("b").profile,
+                ..Default::default()
+            }),
+            second_focused: true,
+            ..SavedTab::default()
+        };
+        let (panes, tree, focus) = saved_layout(&entry);
+        assert_eq!(panes.len(), 1);
+        assert_eq!(panes[0].profile.name, "b");
+        assert_eq!(tree.map(|t| t.encode()).as_deref(), Some("B0.3(0,1)"));
+        assert_eq!(focus, Pane(1));
+    }
+
+    /// A layout that does not fit the panes the file lists is not trusted:
+    /// the panes come back in a row instead, and a focus past them on the
+    /// first.
+    #[test]
+    fn a_saved_layout_that_does_not_fit_its_panes_falls_back_to_a_row() {
+        let entry = SavedTab {
+            panes: vec![pane_named("b"), pane_named("c")],
+            layout: Some("R0.5(0,1)".into()),
+            focus: 7,
+            ..SavedTab::default()
+        };
+        let (panes, tree, focus) = saved_layout(&entry);
+        assert_eq!(panes.len(), 2);
+        let tree = tree.expect("a layout");
+        assert!(tree.covers(3));
+        assert_eq!(tree.panes(), [Pane(0), Pane(1), Pane(2)]);
+        assert_eq!(focus, Pane::FIRST);
+    }
+
+    #[test]
+    fn a_saved_tab_with_more_panes_than_a_tab_may_hold_is_cut_down() {
+        let entry = SavedTab {
+            panes: (0..20).map(|i| pane_named(&i.to_string())).collect(),
+            ..SavedTab::default()
+        };
+        let (panes, tree, _) = saved_layout(&entry);
+        assert_eq!(panes.len() + 1, tab::MAX_PANES);
+        assert!(tree.expect("a layout").covers(tab::MAX_PANES));
+    }
+
+    /// What is written down for a split tab reads back into the same layout.
+    #[test]
+    fn a_split_tab_saves_a_layout_it_can_be_restored_from() {
+        let mut app = app_of(&["a", "b", "c"]);
+        dock(&mut app, 1, 0, Toward::Down);
+        dock(&mut app, 1, 0, Toward::Left);
+        app.tabs[0].colour = Some(egui::Color32::from_rgb(0x4c, 0xb0, 0x5a));
+        let saved = saved_tab(&app.tabs[0]);
+        assert_eq!(saved.colour.as_deref(), Some("#4cb05a"));
+        assert!(saved.split.is_none(), "the old form is never written");
+        let (panes, tree, focus) = saved_layout(&saved);
+        assert_eq!(panes.len(), 2);
+        assert_eq!(
+            tree.as_ref(),
+            Some(&app.tabs[0].split.as_ref().unwrap().tree)
+        );
+        assert_eq!(focus, app.tabs[0].focus);
+    }
 
     /// The tab's colour stops at the pixel the terminal's edge is in, and the
     /// terminal's at the tab's: a band of the tab's colour reaching a pixel

@@ -174,6 +174,7 @@ pub fn is_reserved(modifiers: Modifiers, key: Key) -> Option<&'static str> {
         return match key {
             Key::T => Some("reopening a closed tab"),
             Key::Q => Some("entering and leaving SQL mode"),
+            Key::Z => Some("zooming a pane"),
             _ => None,
         };
     }

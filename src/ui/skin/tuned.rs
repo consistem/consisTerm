@@ -36,6 +36,8 @@ static XP: Tuned = Tuned(&super::xp::Xp);
 static AQUA: Tuned = Tuned(&super::aqua::Aqua);
 static SYSTEM: Tuned = Tuned(&super::system::System);
 static SNES: Tuned = Tuned(&super::snes::Snes);
+static WINAMP: Tuned = Tuned(&super::winamp::Winamp);
+static CLASSIFIED: Tuned = Tuned(&super::winamp::Classified);
 
 pub fn of(skin: Skin) -> &'static dyn Style {
     match skin {
@@ -45,6 +47,8 @@ pub fn of(skin: Skin) -> &'static dyn Style {
         Skin::Aqua => &AQUA,
         Skin::System => &SYSTEM,
         Skin::Snes => &SNES,
+        Skin::Winamp => &WINAMP,
+        Skin::WinampClassified => &CLASSIFIED,
     }
 }
 
@@ -577,6 +581,14 @@ impl Style for Tuned {
             _ => self.text(k, self.0.tab_text(&plain(k), st)),
         }
     }
+    fn legend_text(&self, k: &Kit) -> Color32 {
+        self.text(k, self.0.legend_text(&plain(k)))
+    }
+    fn tab_mark(&self, k: &Kit, rect: Rect, colour: Color32, st: St) -> Vec<Shape> {
+        // The user's own colour, so not through the cache or the
+        // recolouring: it is not the skin's to tune.
+        self.0.tab_mark(k, rect, colour, st)
+    }
     fn list_text(&self, k: &Kit, st: St) -> Color32 {
         match k.look.paint.select {
             Some(_) if st.on => k.colors().select_text,
@@ -791,6 +803,27 @@ impl Style for Tuned {
 mod tests {
     use super::*;
     use egui::pos2;
+
+    /// What a skin overrides comes through the cache: a method the wrapper
+    /// forgets falls back to the trait's plain rendering, silently, which is
+    /// how XP's legend colour and every skin's tab mark were once lost.
+    #[test]
+    fn a_skins_own_tab_mark_and_legend_come_through_the_wrapper() {
+        let k = Kit::bare(
+            super::super::Look {
+                skin: Skin::Xp,
+                ..Default::default()
+            },
+            1.0,
+        );
+        let rect = Rect::from_min_size(Pos2::ZERO, vec2(80.0, 22.0));
+        let wrapped = of(Skin::Xp);
+        let raw: &dyn Style = &super::super::xp::Xp;
+        assert_eq!(wrapped.legend_text(&k), raw.legend_text(&k));
+        let a = wrapped.tab_mark(&k, rect, Color32::RED, St::default());
+        let b = raw.tab_mark(&k, rect, Color32::RED, St::default());
+        assert_eq!(format!("{a:?}"), format!("{b:?}"));
+    }
 
     #[test]
     fn darkening_keeps_the_order_of_the_greys_and_leaves_the_blues() {

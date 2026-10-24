@@ -1134,6 +1134,38 @@ fn params_rows(card: &mut Card<'_>, c: &mut Ctx<'_>) {
             }
         });
     }
+    // Whether to ask for these values or send them as they are set here. In
+    // this section rather than under General because it is about the values,
+    // and because it is the one section an organization macro leaves the
+    // user: there it is their choice, kept in their settings.
+    let mut ask_changed = None;
+    if !draft.params.is_empty() {
+        let mut ask = !draft.send_directly;
+        let spec = Row::new(tr("Ask for the values before sending")).hint(tr(
+            "Off sends the values set here straight away. Confirm before sending still asks its yes or no.",
+        ));
+        if card.toggle(spec, &mut ask).inner {
+            draft.send_directly = !ask;
+            ask_changed = Some(draft.send_directly);
+        }
+    }
+    if let (Some(send_directly), false) = (ask_changed, editable) {
+        let name = draft.name.clone();
+        if let Some((gi, mi)) = state.selected {
+            if let Some(group) = c.macro_groups.get_mut(gi) {
+                if let Some(m) = group.macros.get_mut(mi) {
+                    m.send_directly = send_directly;
+                }
+                crate::features::macros::set_own_ask(
+                    &mut c.settings.macro_send_directly,
+                    &group.name,
+                    &name,
+                    Some(send_directly),
+                );
+                c.changed = true;
+            }
+        }
+    }
     if !own_changes.is_empty() {
         // Into the list itself as well as the draft - an organization macro's
         // draft is never committed - so the menu and the dialog use it at

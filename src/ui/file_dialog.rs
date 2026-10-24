@@ -35,6 +35,60 @@ pub fn pick(
     rx
 }
 
+/// [`pick`] for a folder rather than a file.
+pub fn pick_folder(ctx: &Context, title: &'static str) -> Receiver<Option<String>> {
+    let (tx, rx) = std::sync::mpsc::channel();
+    let ctx = ctx.clone();
+    std::thread::spawn(move || {
+        let _ = tx.send(open_folder(title));
+        ctx.request_repaint_of(egui::ViewportId::ROOT);
+    });
+    rx
+}
+
+/// The shell's folder browser, in its newer, resizable form. That form wants
+/// COM on the thread that shows it, which is this one and nothing else.
+#[cfg(windows)]
+fn open_folder(title: &str) -> Option<String> {
+    use windows_sys::Win32::System::Com::{
+        CoInitializeEx, CoTaskMemFree, CoUninitialize, COINIT_APARTMENTTHREADED,
+    };
+    use windows_sys::Win32::UI::Shell::{
+        SHBrowseForFolderW, SHGetPathFromIDListW, BIF_NEWDIALOGSTYLE, BIF_RETURNONLYFSDIRS,
+        BROWSEINFOW,
+    };
+    let title: Vec<u16> = title.encode_utf16().chain(Some(0)).collect();
+    // SAFETY: COM is set up for this thread alone and torn down before it
+    // returns; BROWSEINFOW is plain data for which zeroes are "unset", and the
+    // title it points at outlives the call. The list the dialog returns is
+    // freed with the allocator it was made by.
+    unsafe {
+        let com = CoInitializeEx(std::ptr::null(), COINIT_APARTMENTTHREADED as u32);
+        let mut info: BROWSEINFOW = std::mem::zeroed();
+        info.lpszTitle = title.as_ptr();
+        info.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+        let list = SHBrowseForFolderW(&info);
+        let mut picked = None;
+        if !list.is_null() {
+            let mut path = vec![0u16; 1024];
+            if SHGetPathFromIDListW(list, path.as_mut_ptr()) != 0 {
+                let end = path.iter().position(|&c| c == 0).unwrap_or(path.len());
+                picked = Some(String::from_utf16_lossy(&path[..end]));
+            }
+            CoTaskMemFree(list as *const std::ffi::c_void);
+        }
+        if com >= 0 {
+            CoUninitialize();
+        }
+        picked
+    }
+}
+
+#[cfg(not(windows))]
+fn open_folder(_title: &str) -> Option<String> {
+    None
+}
+
 /// Whether there is a dialog to offer at all. Elsewhere the path is typed.
 pub const AVAILABLE: bool = cfg!(windows);
 

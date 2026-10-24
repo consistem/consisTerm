@@ -3,10 +3,10 @@
 //! The icon is drawn with its glow baked in. Split by opacity, it comes apart
 //! into the ring - nearly opaque - and the glow - the faint halo round it -
 //! and the glow can then be drawn behind the ring on its own. It is meant to be
-//! a detail, noticed only after looking a moment: the glow barely breathes, a
-//! faint bloom carries it a little past where the icon stops, and a few dim
-//! lights drift round it both ways, like traffic on a highway seen from far
-//! off. The ring stays still: it is the thing being looked at.
+//! a detail, but one that is there at first sight: the glow is brighter than
+//! the icon's own and barely breathes, a bloom carries it well past where the
+//! icon stops, and a few lights drift round it both ways, like traffic on a
+//! highway seen from far off. The ring stays still: it is the thing being looked at.
 
 use std::f32::consts::{PI, TAU};
 use std::time::Duration;
@@ -28,7 +28,12 @@ const SWAY: f64 = 11.0;
 /// The bloom past the icon's own halo: each copy of the glow larger and
 /// fainter than the last, a blur for the price of a few quads. Small steps,
 /// so no copy's edge shows as a contour of its own.
-const BLOOM: [(f32, f32); 4] = [(1.06, 0.13), (1.12, 0.10), (1.18, 0.07), (1.25, 0.04)];
+const BLOOM: [(f32, f32); 4] = [(1.06, 0.30), (1.13, 0.22), (1.20, 0.14), (1.28, 0.07)];
+
+/// How far past the logo's own square the bloom reaches, which is the room
+/// kept round it: drawn into space the page had given to something else, the
+/// top of the bloom was cut off by whatever clipped the row above.
+const BLOOM_REACH: f32 = 1.28;
 
 /// The traffic: seconds for one lap (negative going the other way), seconds
 /// for one light to come and go, and where each starts. Periods that share
@@ -40,11 +45,11 @@ const LIGHTS: [(f64, f64, f64); 4] = [
     (-17.0, 13.0, 5.3),
 ];
 /// How bright a light is at its brightest, against the glow it rides on.
-const LIGHT_PEAK: f32 = 0.42;
+const LIGHT_PEAK: f32 = 0.58;
 /// Half-width of a light along the ring, in radians.
 const LIGHT_SPREAD: f32 = 0.38;
 /// How far past the glow the lights spill, against the glow's own size.
-const LIGHT_REACH: f32 = 1.08;
+const LIGHT_REACH: f32 = 1.12;
 /// Slices of the fan the lights are drawn on: enough that a light glides
 /// rather than stepping from slice to slice.
 const SLICES: u32 = 96;
@@ -52,7 +57,10 @@ const SLICES: u32 = 96;
 /// Draws the logo `side` points square, glowing, and asks for the next frame
 /// while it is in view.
 pub fn show(ui: &mut Ui, side: f32) {
-    let (rect, _) = ui.allocate_exact_size(Vec2::splat(side), Sense::hover());
+    // The bloom's room, kept clear above and below as well as the logo's.
+    let margin = side * (BLOOM_REACH * LIGHT_REACH - 1.0) / 2.0;
+    let (outer, _) = ui.allocate_exact_size(Vec2::new(side, side + 2.0 * margin), Sense::hover());
+    let rect = Rect::from_center_size(outer.center(), Vec2::splat(side));
     if !ui.is_rect_visible(rect) {
         return;
     }
@@ -112,7 +120,7 @@ impl Look {
         let sway = (0.5 + 0.5 * (time * std::f64::consts::TAU / SWAY).sin()) as f32;
         let lerp = |a: f32, b: f32| (a + (b - a) * sway).round() as u8;
         Look {
-            intensity: 0.94 + 0.12 * breath,
+            intensity: 1.55 + 0.2 * breath,
             scale: 1.0 + 0.015 * breath,
             // Multiplied into the glow, so it can only take colour away: less
             // red leans it cyan, less green leans it magenta.
@@ -260,17 +268,17 @@ mod tests {
     fn the_glow_breathes_between_dim_and_bright_and_back() {
         let dim = Look::at(0.0);
         let bright = Look::at(BREATH / 2.0);
-        assert!(dim.intensity < 1.0 && bright.intensity > 1.0);
+        assert!(bright.intensity > dim.intensity);
         assert!(bright.scale > dim.scale);
         assert_eq!(Look::at(BREATH * SWAY), Look::at(0.0), "it loops");
     }
 
     #[test]
-    fn the_breath_stays_close_to_the_glow_the_icon_has() {
+    fn the_glow_is_stronger_than_the_icons_own_and_its_breath_shallow() {
         for step in 0..100 {
             let look = Look::at(f64::from(step) * BREATH / 100.0);
-            assert!((look.intensity - 1.0).abs() <= 0.1, "{look:?}");
-            assert!(look.scale <= 1.02, "{look:?}");
+            assert!((1.5..=1.8).contains(&look.intensity), "{look:?}");
+            assert!(look.scale <= 1.04, "{look:?}");
         }
     }
 
@@ -333,9 +341,11 @@ mod tests {
             }
         }
         assert!(brightest > 0.1, "a light can be seen: {brightest}");
+        // Against the glow at its dimmest, crossings and all.
+        let glow = Look::at(0.0).intensity;
         assert!(
-            brightest <= 0.6,
-            "but never outshines the glow: {brightest}"
+            brightest <= glow * 0.7,
+            "but never outshines the glow: {brightest} against {glow}"
         );
         assert!(darkest < 0.01, "and somewhere there is no traffic");
     }

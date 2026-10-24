@@ -87,7 +87,9 @@ impl Icon {
                 // what marks it is the glyph, so the cross takes that.
                 WindowButtonStyle::Classic
                 | WindowButtonStyle::System
-                | WindowButtonStyle::Snes => style.icon,
+                | WindowButtonStyle::Snes
+                | WindowButtonStyle::Winamp
+                | WindowButtonStyle::WinampClassified => style.icon,
             }),
         }
     }
@@ -183,6 +185,8 @@ fn button_kit(ctx: &egui::Context, style: &WindowButtons) -> Option<Kit> {
         WindowButtonStyle::Classic => Skin::Win98,
         WindowButtonStyle::System => Skin::System,
         WindowButtonStyle::Snes => Skin::Snes,
+        WindowButtonStyle::Winamp => Skin::Winamp,
+        WindowButtonStyle::WinampClassified => Skin::WinampClassified,
         WindowButtonStyle::Aqua | WindowButtonStyle::Stroke | WindowButtonStyle::Materia => {
             return None
         }
@@ -436,9 +440,10 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowButtons) 
         WindowButtonStyle::Materia => paint_materia(ui, rect, icon, hovered, style),
         WindowButtonStyle::Classic => paint_classic(ui, rect, icon, hovered, style),
         // Drawn by their skins' painters (see `button_kit`); never here.
-        WindowButtonStyle::System | WindowButtonStyle::Snes => {
-            paint_stroked(ui, rect, icon, hovered, style)
-        }
+        WindowButtonStyle::System
+        | WindowButtonStyle::Snes
+        | WindowButtonStyle::Winamp
+        | WindowButtonStyle::WinampClassified => paint_stroked(ui, rect, icon, hovered, style),
     }
 }
 
@@ -913,7 +918,6 @@ pub fn sample_bar(ui: &mut Ui, style: &WindowButtons, middle: &str) {
                 on_top: Some(Pin::Off),
                 new_tab: Some(&mut plus),
                 tabs_fill: false,
-                close_gap: 0.0,
                 close_extra: 0.0,
                 tabs: &mut tabs,
             },
@@ -962,10 +966,6 @@ pub struct TitleBar<'a> {
     /// The tabs fill the bar and move the window themselves - dragged up or
     /// down - so no strip is held back after them to drag it by.
     pub tabs_fill: bool,
-    /// Room a skin keeps before close beyond the gap between two buttons -
-    /// 98 set close two pixels apart. Worked out by [`title_bar`]; callers
-    /// leave it at zero.
-    pub close_gap: f32,
     /// How much wider than the others a skin draws close. Worked out by [`title_bar`]; callers leave it at
     /// zero.
     pub close_extra: f32,
@@ -985,7 +985,7 @@ fn item_width(
     match button {
         TitleButton::LeftSpace | TitleButton::RightSpace => 0.0,
         TitleButton::Tabs => tabs + tabs_gap,
-        TitleButton::Close if drawn(bar, button) => side + gap + bar.close_gap + bar.close_extra,
+        TitleButton::Close if drawn(bar, button) => side + gap + bar.close_extra,
         b if drawn(bar, b) => side + gap,
         _ => 0.0,
     }
@@ -1081,7 +1081,6 @@ pub fn title_bar(ui: &mut Ui, mut bar: TitleBar) -> Option<WindowAction> {
         let m = kit.metrics();
         let scale = bar_scale(ui);
         ui.spacing_mut().item_spacing.x = (m.title_button_gap * kit.u() * scale).round();
-        bar.close_gap = ((m.close_gap - m.title_button_gap).max(0.0) * kit.u() * scale).round();
     }
     let side = button_size(ui, false, &style).x;
     bar.close_extra = button_size(ui, true, &style).x - side;
@@ -1173,9 +1172,6 @@ fn draw_item(
     let window_controls = bar.window_controls;
     match button {
         TitleButton::Close if window_controls => {
-            if bar.close_gap > 0.0 && style.shows(TitleButton::Close) {
-                ui.add_space(bar.close_gap);
-            }
             clicked(optional_button(ui, Icon::Close, tr("Close"), style))
                 .then_some(WindowAction::Close)
         }

@@ -38,6 +38,14 @@ const FASTEST_STEP_MS: u64 = 60;
 /// this, the missed time is simply dropped.
 const MAX_CATCH_UP: Duration = Duration::from_millis(250);
 
+/// How many turns may be waiting for their steps at once.
+///
+/// More than one, so that Up-then-Left pressed faster than a step - a corner
+/// taken in two keys - is two turns on two steps rather than a Left thrown
+/// away. Not many more, because a turn queued far ahead is a turn the player
+/// has already forgotten making by the time the snake acts on it.
+const MAX_PENDING: usize = 3;
+
 /// A cell of the board: row then column, both counted from the top left.
 type Cell = (usize, usize);
 
@@ -88,12 +96,15 @@ pub struct Snake {
     /// back.
     body: VecDeque<Cell>,
     dir: Dir,
-    /// The turn asked for since the last step, applied when that step comes.
+    /// Turns asked for and not yet taken, oldest first, one used per step.
     ///
-    /// Held rather than acted on so that two keys pressed inside one step
-    /// cannot turn the snake twice: with the direction changed on the spot,
-    /// Up-then-Left while heading Right would double back into its own neck.
-    pending: Option<Dir>,
+    /// Queued rather than acted on so that two keys pressed inside one step
+    /// cannot turn the snake twice in one move: with the direction changed on
+    /// the spot, Up-then-Left while heading Right would double back into its
+    /// own neck. Queued rather than kept to one slot, because one slot either
+    /// loses the Left or overwrites the Up, and a quick corner is exactly what
+    /// a player means by pressing both.
+    pending: VecDeque<Dir>,
     /// Where the food is, or `None` when there is nowhere left to put it -
     /// which is the board being full, and the game being won.
     food: Option<Cell>,
@@ -117,7 +128,7 @@ impl Snake {
         let mut game = Snake {
             body: VecDeque::new(),
             dir: Dir::Right,
-            pending: None,
+            pending: VecDeque::new(),
             food: None,
             status: Status::Ready,
             score: 0,
@@ -137,7 +148,7 @@ impl Snake {
         // heading has somewhere to have come from.
         self.body = (0..3).map(|i| (middle, middle - i)).collect();
         self.dir = Dir::Right;
-        self.pending = None;
+        self.pending.clear();
         self.score = 0;
         self.status = Status::Ready;
         self.food = self.place_food();
@@ -194,13 +205,13 @@ impl Snake {
     /// Asks for a turn, which is refused if it would double the snake back
     /// along itself.
     ///
-    /// Measured against the heading rather than against a turn already
-    /// waiting, and that is the exact rule rather than an approximation of it:
-    /// the head has not moved yet, so the neck is still the cell opposite
-    /// `dir` whatever was asked for a moment ago. It is also what stops two
-    /// keys pressed inside one step from adding up to a reversal - Up and then
-    /// Left while heading Right is a Left that is still backwards, and is
-    /// refused.
+    /// Measured against the last turn already waiting, or the heading when
+    /// none is: each queued turn is taken on a step of its own, so by the time
+    /// this one is taken the snake will be heading the way the one before it
+    /// said. Up and then Left while heading Right is therefore a corner, not a
+    /// reversal - and Left alone, while heading Right, still is one and is
+    /// refused. Asking for the way it will already be going adds nothing, and
+    /// would only spend a place in the queue.
     pub fn turn(&mut self, dir: Dir) {
         if self.status == Status::Ready {
             self.start();
@@ -208,10 +219,21 @@ impl Snake {
         if self.status != Status::Running {
             return;
         }
-        if dir == self.dir.opposite() {
+        let heading = self.pending.back().copied().unwrap_or(self.dir);
+        if dir == heading || dir == heading.opposite() {
             return;
         }
-        self.pending = Some(dir);
+        if self.pending.len() < MAX_PENDING {
+            self.pending.push_back(dir);
+        }
+    }
+
+    /// How long until the next step is due, which is when the view should
+    /// next be drawn. Counted from the step's own time rather than from the
+    /// frame that asks, so a frame that came late does not push every step
+    /// after it later still.
+    pub fn until_next_step(&self, now: Instant) -> Duration {
+        (self.stepped_at + self.interval()).saturating_duration_since(now)
     }
 
     /// Takes whatever steps `now` has fallen due, and none at all when the
@@ -238,7 +260,7 @@ impl Snake {
         if self.status != Status::Running {
             return;
         }
-        if let Some(dir) = self.pending.take() {
+        if let Some(dir) = self.pending.pop_front() {
             self.dir = dir;
         }
         let Some(&(row, col)) = self.body.front() else {
@@ -441,15 +463,60 @@ mod tests {
 
     /// Two keys inside one step must not add up to a reversal: Up and then
     /// Left, while heading Right, would otherwise put the head in its own
-    /// neck.
+    /// neck. Each is taken on a step of its own instead.
     #[test]
     fn two_turns_in_one_step_cannot_add_up_to_a_reversal() {
         let mut game = started();
+        game.food = None;
         game.turn(Dir::Up);
         game.turn(Dir::Left);
         game.step();
         assert_eq!(game.dir, Dir::Up);
         assert_eq!(game.status(), Status::Running);
+    }
+
+    /// A corner taken in two quick keys is two turns, not a Left thrown away
+    /// because it arrived before the step that would have made it legal.
+    #[test]
+    fn two_quick_turns_are_both_taken_on_the_steps_that_follow() {
+        let mut game = started();
+        game.food = None;
+        let (row, col) = game.body().next().expect("a head");
+        game.turn(Dir::Up);
+        game.turn(Dir::Left);
+        game.step();
+        game.step();
+        assert_eq!(game.dir, Dir::Left);
+        assert_eq!(game.body().next(), Some((row - 1, col - 1)));
+        assert_eq!(game.status(), Status::Running);
+    }
+
+    /// A reversal of the turn already queued is still a reversal by the time
+    /// it would be taken.
+    #[test]
+    fn a_turn_back_along_a_queued_turn_is_refused() {
+        let mut game = started();
+        game.turn(Dir::Up);
+        game.turn(Dir::Down);
+        assert_eq!(game.pending, VecDeque::from(vec![Dir::Up]));
+    }
+
+    #[test]
+    fn the_queue_of_turns_stops_growing_past_its_limit() {
+        let mut game = started();
+        for dir in [Dir::Up, Dir::Left, Dir::Down, Dir::Right, Dir::Up] {
+            game.turn(dir);
+        }
+        assert_eq!(game.pending.len(), MAX_PENDING);
+    }
+
+    /// The next frame is asked for when the step is due, not a whole step after
+    /// a frame that may itself have come late.
+    #[test]
+    fn a_late_frame_does_not_push_the_next_step_later() {
+        let game = started();
+        let late = game.stepped_at + game.interval() / 2;
+        assert_eq!(game.until_next_step(late), game.interval() / 2);
     }
 
     #[test]

@@ -204,6 +204,49 @@ pub fn store_personal_secrets(
     Ok(now)
 }
 
+/// Whether each organization macro asks for its values, as the user set it
+/// rather than as the shared file does: by group, then macro.
+pub type OwnAsk = std::collections::BTreeMap<String, std::collections::BTreeMap<String, bool>>;
+
+/// Lays the user's choice of asking or not over the organization macros, as
+/// read from the shared file. One the user has made no choice for keeps the
+/// file's.
+pub fn apply_own_ask(groups: &mut [MacroGroup], own: &OwnAsk) {
+    for group in groups.iter_mut() {
+        let Some(by_macro) = own.get(&group.name) else {
+            continue;
+        };
+        for m in group.macros.iter_mut() {
+            if m.origin != Origin::Organization {
+                continue;
+            }
+            if let Some(&choice) = by_macro.get(&m.name) {
+                m.send_directly = choice;
+            }
+        }
+    }
+}
+
+/// Records whether macro `name` in `group` sends directly, or forgets the
+/// choice with `None`, dropping a group left empty.
+pub fn set_own_ask(own: &mut OwnAsk, group: &str, name: &str, send_directly: Option<bool>) {
+    match send_directly {
+        Some(value) => {
+            own.entry(group.to_string())
+                .or_default()
+                .insert(name.to_string(), value);
+        }
+        None => {
+            if let Some(by_macro) = own.get_mut(group) {
+                by_macro.remove(name);
+                if by_macro.is_empty() {
+                    own.remove(group);
+                }
+            }
+        }
+    }
+}
+
 /// Records `value` as the user's own for parameter `param` of macro `name` in
 /// `group`, or forgets it with `None`, dropping tables left empty.
 pub fn set_own_value(
@@ -281,6 +324,14 @@ pub struct Macro {
     /// text can reach the screen and the transcript by that route - this hides
     /// it from the places the app itself would put it.
     pub hide_command: bool,
+    /// Send with the saved values - the defaults, or the user's own - rather
+    /// than asking for them first. `ask="false"` in the file.
+    ///
+    /// Its own switch rather than folded into `confirm`: that one is the
+    /// safety on a macro that writes, and a macro that asks for a value is not
+    /// necessarily one that writes. Off by default, so a macro whose file says
+    /// nothing keeps asking as it always did.
+    pub send_directly: bool,
     pub params: Vec<Param>,
     /// Body lines, already split. Sent one line at a time.
     pub body: Vec<String>,
@@ -382,6 +433,12 @@ impl Macro {
     /// Whether running it has to stop and ask for values first.
     pub fn needs_input(&self) -> bool {
         self.usable_params().next().is_some()
+    }
+
+    /// Whether running it opens the dialog that asks for its values: it has
+    /// some, and has not been told to send the saved ones.
+    pub fn asks_for_values(&self) -> bool {
+        self.needs_input() && !self.send_directly
     }
 
     /// The parameters worth asking for, in declaration order.
@@ -618,6 +675,8 @@ pub fn parse(xml: &str) -> Result<Vec<MacroGroup>> {
                             hide_command: attr(&e, "hide_command")
                                 .map(|v| matches!(v.as_str(), "true" | "1" | "yes"))
                                 .unwrap_or(false),
+                            send_directly: attr(&e, "ask")
+                                .is_some_and(|v| matches!(v.as_str(), "false" | "0" | "no")),
                             params: Vec::new(),
                             body: Vec::new(),
                         });
@@ -823,6 +882,9 @@ pub fn to_xml(groups: &[MacroGroup]) -> String {
             // attribute comes back out byte for byte as it went in.
             if m.hide_command {
                 out.push_str(" hide_command=\"true\"");
+            }
+            if m.send_directly {
+                out.push_str(" ask=\"false\"");
             }
             out.push_str(">\n");
 
@@ -1624,6 +1686,79 @@ mod tests {
         );
     }
 
+    fn asking(params: &[&str], body: &str, send_directly: bool) -> Macro {
+        Macro {
+            params: params
+                .iter()
+                .map(|name| Param {
+                    name: (*name).into(),
+                    default: "v".into(),
+                    ..Param::default()
+                })
+                .collect(),
+            body: vec![body.into()],
+            send_directly,
+            ..Macro::default()
+        }
+    }
+
+    /// Only a macro with a value to fill in asks, and not once it is told to
+    /// send the saved values.
+    #[test]
+    fn a_macro_told_to_send_directly_does_not_ask_for_its_values() {
+        assert!(asking(&["g"], "W ^{{g}}", false).asks_for_values());
+        assert!(!asking(&["g"], "W ^{{g}}", true).asks_for_values());
+        assert!(!asking(&[], "W 1", false).asks_for_values());
+        assert!(!asking(&["unused"], "W 1", false).asks_for_values());
+    }
+
+    /// `ask="false"` in the shared file is read; a file that says nothing
+    /// keeps asking.
+    #[test]
+    fn the_file_says_whether_a_macro_asks() {
+        let xml = r#"<macros><group name="G">
+            <macro name="Quiet" ask="false"><param name="g" default="X"/><body>W ^{{g}}</body></macro>
+            <macro name="Loud"><param name="g" default="X"/><body>W ^{{g}}</body></macro>
+        </group></macros>"#;
+        let groups = parse(xml).expect("parse");
+        let by_name = |n: &str| {
+            groups[0]
+                .macros
+                .iter()
+                .find(|m| m.name == n)
+                .unwrap()
+                .clone()
+        };
+        assert!(by_name("Quiet").send_directly);
+        assert!(!by_name("Loud").send_directly);
+    }
+
+    /// The user's choice on an organization macro wins over the file's, and
+    /// forgetting it puts the file's back on the next load.
+    #[test]
+    fn the_users_choice_overrides_the_shared_file_until_it_is_forgotten() {
+        let shared = || {
+            let mut m = asking(&["g"], "W ^{{g}}", false);
+            m.name = "Show".into();
+            m.origin = Origin::Organization;
+            vec![MacroGroup {
+                name: "Org".into(),
+                origin: Origin::Organization,
+                macros: vec![m],
+            }]
+        };
+        let mut own = OwnAsk::default();
+        set_own_ask(&mut own, "Org", "Show", Some(true));
+        let mut groups = shared();
+        apply_own_ask(&mut groups, &own);
+        assert!(groups[0].macros[0].send_directly);
+        set_own_ask(&mut own, "Org", "Show", None);
+        assert!(own.is_empty(), "nothing left behind");
+        let mut groups = shared();
+        apply_own_ask(&mut groups, &own);
+        assert!(!groups[0].macros[0].send_directly);
+    }
+
     #[test]
     fn personal_macros_round_trip_through_xml() {
         let original = vec![MacroGroup {
@@ -1636,6 +1771,7 @@ mod tests {
                 key: Some("Ctrl+G".into()),
                 confirm: true,
                 hide_command: true,
+                send_directly: true,
                 params: vec![Param {
                     name: "g".into(),
                     prompt: "Global".into(),

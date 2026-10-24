@@ -17,7 +17,19 @@ use crate::ui::skin::{Dir, Glyph, Kit, St};
 
 /// Settings, opened on `category`.
 pub(crate) fn settings(look: &Look, name: &'static str, category: Category) -> Scene {
+    settings_with(look, name, category, |_| {})
+}
+
+/// [`settings`], with the settings changed by `configure` first - a page that
+/// draws differently for a different layout.
+pub(crate) fn settings_with(
+    look: &Look,
+    name: &'static str,
+    category: Category,
+    configure: fn(&mut crate::config::Settings),
+) -> Scene {
     let mut settings = look.settings.clone();
+    configure(&mut settings);
     let mut themes = look.themes.clone();
     let mut groups = Vec::new();
     let mut state = crate::ui::panels::PanelState {
@@ -267,12 +279,7 @@ fn paint_gallery(ui: &mut egui::Ui, k: &Kit) {
         ] {
             let b = Rect::from_min_size(pos2(x - size.x, bar.center().y - size.y / 2.0), size);
             painter.extend(s.title_button(k, b, glyph, st));
-            x -= size.x
-                + if glyph == Glyph::Close {
-                    m.close_gap * u
-                } else {
-                    m.title_button_gap * u
-                };
+            x -= size.x + m.title_button_gap * u;
         }
         let body = Rect::from_min_max(
             pos2(win.left() + inset + 4.0, bar.bottom() + 6.0),
@@ -363,7 +370,11 @@ fn paint_gallery(ui: &mut egui::Ui, k: &Kit) {
         vec2(60.0, 13.0),
     );
     painter.extend(s.group(k, group, Some(legend)));
-    label(pos2(legend.left(), legend.center().y), "Group box", c.text);
+    label(
+        pos2(legend.left(), legend.center().y),
+        "Group box",
+        s.legend_text(k),
+    );
     y += 90.0;
 
     let track = Rect::from_min_size(pos2(origin.x, y), vec2(200.0, 24.0));
@@ -545,10 +556,19 @@ pub(crate) fn all(look: &Look) -> Vec<Scene> {
             },
             None,
         ),
+        main_tiled(look, false),
+        main_tiled(look, true),
         settings(look, "settings-general", Category::General),
         settings_search(look),
         settings(look, "settings-appearance", Category::Appearance),
         settings(look, "settings-themes", Category::Themes),
+        settings_with(look, "settings-themes-bar-below", Category::Themes, |s| {
+            s.bar_position = crate::config::BarPosition::Bottom;
+            s.tabs_in_title_bar = true;
+        }),
+        settings_with(look, "settings-themes-bar-left", Category::Themes, |s| {
+            s.bar_position = crate::config::BarPosition::Left;
+        }),
         settings(look, "settings-terminal", Category::Terminal),
         settings(look, "settings-about", Category::About),
     ]
@@ -626,6 +646,49 @@ fn film_every_scene() {
 /// What a session looks like in the main window's scenes: the prompt, a
 /// command and its answer, as in the screenshots this skin work began from.
 const SESSION: &str = "N\u{f3}: CCSDESDSK095, Configura\u{e7}\u{e3}o: CONSISTEM\n\nCOMP80>w \"Duplica a partir daqui\"\nDuplica a partir daqui\nCOMP80>\n\nCOMP80>w \"ultima linha\"\nultima linha\nCOMP80>";
+
+/// The main window with a tab tiled three ways - an IRIS session on the left,
+/// two shells stacked on the right - and coloured tabs beside it.
+pub(crate) fn main_tiled(look: &Look, renaming: bool) -> Scene {
+    use crate::app::Toward;
+    use crate::ui::tab_colour::SWATCHES;
+    let settings = look.settings.clone();
+    let themes = look.themes.clone();
+    let look = look.clone();
+    let mut app: Option<crate::app::App> = None;
+    Scene {
+        name: if renaming {
+            "main-tiled-rename"
+        } else {
+            "main-tiled"
+        },
+        stage: Stage::new(Vec2::new(960.0, 480.0)),
+        cues: Vec::new(),
+        keep: Keep::Main,
+        draw: Box::new(move |ctx: &Context| {
+            look.prelude(ctx);
+            let app = app.get_or_insert_with(|| {
+                let mut app = crate::app::App::for_snapshot(ctx, settings.clone(), themes.clone());
+                app.add_snapshot_tab("CONSISTEM | COMP80", SESSION);
+                app.add_snapshot_tab("PowerShell", "PS C:\\work> npm run dev\nready on :3000");
+                app.add_snapshot_tab("cmd", "C:\\work>");
+                app.add_snapshot_tab("RDB76-TR", "USER>");
+                app.add_snapshot_tab("Logs", "PS C:\\logs> tail");
+                app.snapshot_dock("PowerShell", 0, Toward::Right);
+                app.snapshot_dock("cmd", 1, Toward::Down);
+                app.snapshot_colour(0, SWATCHES[5].1);
+                app.snapshot_colour(1, SWATCHES[0].1);
+                app.snapshot_colour(2, SWATCHES[3].1);
+                app.activate_snapshot_tab(0);
+                if renaming {
+                    app.snapshot_rename(0);
+                }
+                app
+            });
+            app.frame(ctx);
+        }),
+    }
+}
 
 /// The main window in the background, for the title bar a skin draws when
 /// the window does not have the keyboard.

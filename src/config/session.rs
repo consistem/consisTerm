@@ -29,9 +29,27 @@ pub struct SavedTab {
     // TOML has no way to write a `None`, so each of these is left out instead.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    /// The colour the tab was marked with, as `#rrggbb`.
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub colour: Option<String>,
+    /// The tab's other sessions, in pane order: the first of these is pane 2.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub panes: Vec<SavedPane>,
+    /// Where each pane sat, as the app's tiling writes a layout down - see
+    /// `Node::encode`. Kept as text here: the config tree describes a file,
+    /// and the shape of a layout is the app's business.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub layout: Option<String>,
+    /// Which pane had the keyboard, counted from 0 for the tab's own.
+    #[serde(skip_serializing_if = "is_zero")]
+    pub focus: usize,
+    /// The one other pane a tab could have before a tab could hold several.
+    /// Read, so a session saved by an older build comes back split, and never
+    /// written again.
+    #[serde(skip_serializing)]
     pub split: Option<SavedSplit>,
-    /// Whether the second pane had the keyboard. Meaningless without a split.
+    /// Whether that pane had the keyboard. Read and never written, as `split`.
+    #[serde(skip_serializing)]
     pub second_focused: bool,
     /// The namespace the pane was last seen in, read off its prompt.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -43,6 +61,24 @@ pub struct SavedTab {
     pub screen: String,
 }
 
+/// One of a split tab's other sessions.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct SavedPane {
+    pub profile: Profile,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub namespace: Option<String>,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub screen: String,
+}
+
+fn is_zero(n: &usize) -> bool {
+    *n == 0
+}
+
+/// How an older build wrote a split down. Only ever read.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct SavedSplit {
@@ -139,17 +175,23 @@ mod tests {
                 SavedTab {
                     profile: profile("TWO"),
                     title: Some("renamed".into()),
-                    split: Some(SavedSplit {
-                        dir: SavedDir::Bottom,
-                        ratio: 0.3,
-                        profile: profile("THREE"),
-                        title: None,
-                        screen: "COMP80>w 1\n1".into(),
-                        namespace: Some("DESENV80".into()),
-                    }),
-                    second_focused: true,
-                    namespace: None,
-                    screen: String::new(),
+                    colour: Some("#e04f4f".into()),
+                    panes: vec![
+                        SavedPane {
+                            profile: profile("THREE"),
+                            screen: "COMP80>w 1\n1".into(),
+                            namespace: Some("DESENV80".into()),
+                            ..SavedPane::default()
+                        },
+                        SavedPane {
+                            profile: profile("FOUR"),
+                            title: Some("four".into()),
+                            ..SavedPane::default()
+                        },
+                    ],
+                    layout: Some("R0.3(0,B0.5(1,2))".into()),
+                    focus: 2,
+                    ..SavedTab::default()
                 },
             ],
         };
@@ -158,16 +200,50 @@ mod tests {
         let back = SavedSession::load(&path).expect("load");
         assert_eq!(back.active, 1);
         assert_eq!(back.tabs.len(), 2);
-        assert!(back.tabs[0].split.is_none() && back.tabs[0].title.is_none());
-        assert_eq!(back.tabs[1].title.as_deref(), Some("renamed"));
-        let split = back.tabs[1].split.as_ref().expect("split");
+        assert!(back.tabs[0].panes.is_empty() && back.tabs[0].title.is_none());
+        assert!(back.tabs[0].colour.is_none() && back.tabs[0].layout.is_none());
+        let two = &back.tabs[1];
+        assert_eq!(two.title.as_deref(), Some("renamed"));
+        assert_eq!(two.colour.as_deref(), Some("#e04f4f"));
+        assert_eq!(two.layout.as_deref(), Some("R0.3(0,B0.5(1,2))"));
+        assert_eq!(two.focus, 2);
+        assert_eq!(two.panes.len(), 2);
+        assert_eq!(two.panes[0].profile.instance, "THREE");
+        assert_eq!(two.panes[0].screen, "COMP80>w 1\n1");
+        assert_eq!(two.panes[0].namespace.as_deref(), Some("DESENV80"));
+        assert_eq!(two.panes[1].title.as_deref(), Some("four"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A file written before a tab could hold more than two sessions still
+    /// reads, its one split as it was; and it is never written that way again.
+    #[test]
+    fn a_split_saved_by_an_older_build_is_read_and_not_written_back() {
+        let text = r#"
+            active = 0
+            [[tabs]]
+            second_focused = true
+            [tabs.profile]
+            name = "TWO"
+            instance = "TWO"
+            [tabs.split]
+            dir = "bottom"
+            ratio = 0.3
+            [tabs.split.profile]
+            name = "THREE"
+            instance = "THREE"
+        "#;
+        let back: SavedSession = toml::from_str(text).expect("parse");
+        let split = back.tabs[0].split.as_ref().expect("split");
         assert_eq!(split.dir, SavedDir::Bottom);
         assert_eq!(split.ratio, 0.3);
-        assert_eq!(split.profile.instance, "THREE");
-        assert!(back.tabs[1].second_focused);
-        assert_eq!(split.screen, "COMP80>w 1\n1");
-        assert_eq!(split.namespace.as_deref(), Some("DESENV80"));
-        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(split.profile.name, "THREE");
+        assert!(back.tabs[0].second_focused);
+        let again = toml::to_string_pretty(&back).expect("write");
+        assert!(
+            !again.contains("split") && !again.contains("second_focused"),
+            "{again}"
+        );
     }
 
     #[test]

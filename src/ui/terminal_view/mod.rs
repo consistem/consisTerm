@@ -366,9 +366,13 @@ pub struct PaneRole {
     pub focused: bool,
     /// The active tab changed this frame, so focus should follow it here.
     pub take_focus: bool,
-    /// The tab holds a second session, so the menu can offer both of them and
+    /// The tab holds other sessions, so the menu can offer all of them and
     /// the split can be taken back.
     pub split: bool,
+    /// The tab has room for another pane, so the menu offers to open one.
+    pub can_split: bool,
+    /// This pane is filling the tab for now. See `Split::zoomed`.
+    pub zoomed: bool,
 }
 
 pub struct RenderResult {
@@ -940,7 +944,7 @@ pub fn show(
         });
         // A submenu rather than three entries: the scope is the only question
         // it asks, and asking it in the menu saves a dialog. A split tab is
-        // asked one more - which of its two sessions - and only then, because
+        // asked one more - this session or all of them - and only then, because
         // there is nothing to choose between when there is one pane.
         //
         // Nothing in here explains itself, and that is deliberate: a menu popup
@@ -953,7 +957,7 @@ pub fn show(
         // entry here is short, so the menu is the size of its longest label.
         ui.menu_button(tr("Analyze with Claude"), |ui| {
             if pane.split {
-                for panes in [analyze::Panes::Focused, analyze::Panes::Both] {
+                for panes in [analyze::Panes::Focused, analyze::Panes::All] {
                     ui.menu_button(tr(panes.label()), |ui| {
                         if let Some(chosen) = analyze_scopes(ui, has_selection, panes) {
                             context_action = Some(chosen);
@@ -992,25 +996,15 @@ pub fn show(
         // The layout of the tab this pane is in, offered where the pane is
         // rather than only up in the strip: splitting is something you decide
         // while looking at the output, not while looking at the tab's name.
-        // The same three entries the strip's own menu has, and they do the
-        // same things.
+        // The same entries the strip's own menu has, and they do the same
+        // things - but to this pane: a split here halves this pane, wherever
+        // in the tab it is.
         ui.separator();
-        if pane.split {
-            if ui
-                .button(tr("Remove split"))
-                .tip(tr(
-                    "Gives the second session a tab of its own. Nothing is closed.",
-                ))
-                .clicked()
-            {
-                context_action = Some(ContextAction::Unsplit);
-                ui.close_menu();
-            }
-        } else {
+        if pane.can_split {
             if ui
                 .button(tr("Split to right"))
                 .tip(tr(
-                    "Opens a second session in this tab, beside this one. Click into a pane to type in it.",
+                    "Opens another session in this tab, beside this one. Click into a pane to type in it.",
                 ))
                 .clicked()
             {
@@ -1041,10 +1035,40 @@ pub fn show(
                 });
             }
         }
+        if pane.split {
+            let zoom = if pane.zoomed {
+                tr("Show every pane")
+            } else {
+                tr("Zoom pane")
+            };
+            if ui
+                .add(egui::Button::new(zoom).shortcut_text("Ctrl+Shift+Z"))
+                .clicked()
+            {
+                context_action = Some(ContextAction::ToggleZoom);
+                ui.close_menu();
+            }
+            if ui
+                .button(tr("Move pane to a new tab"))
+                .tip(tr("Gives this session a tab of its own. Nothing is closed."))
+                .clicked()
+            {
+                context_action = Some(ContextAction::DetachPane);
+                ui.close_menu();
+            }
+            if ui
+                .button(tr("Remove split"))
+                .tip(tr("Gives every session in this tab a tab of its own. Nothing is closed."))
+                .clicked()
+            {
+                context_action = Some(ContextAction::Unsplit);
+                ui.close_menu();
+            }
+        }
         if ui
             .button(tr("Close pane"))
             .tip(if pane.split {
-                tr("Closes this session. The other pane stays, in a tab of its own.")
+                tr("Closes this session. The other panes stay where they are.")
             } else {
                 tr("Closes this session.")
             })

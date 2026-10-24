@@ -48,7 +48,7 @@ pub(super) struct WindowFit {
 /// Thickness of the divider between two panes, in points. Wide enough to be
 /// aimed at with a mouse, which it has to be: it is the handle the split is
 /// resized by.
-pub(super) const SPLIT_DIVIDER: f32 = 6.0;
+pub(crate) const SPLIT_DIVIDER: f32 = 6.0;
 
 /// Smallest a pane may be dragged down to, in points.
 ///
@@ -64,7 +64,7 @@ const MIN_PANE: f32 = 80.0;
 /// Clamped here rather than where the ratio is stored: the room a split has
 /// changes with the window, and a ratio that was reachable in a wide window
 /// must not squeeze a pane out of existence in a narrow one.
-pub(super) fn split_extent(usable: f32, ratio: f32) -> f32 {
+pub(crate) fn split_extent(usable: f32, ratio: f32) -> f32 {
     if usable <= MIN_PANE * 2.0 {
         // No room to honour a minimum on both sides, so the only fair split is
         // down the middle.
@@ -85,49 +85,30 @@ fn dragged_ratio(usable: f32, ratio: f32, delta: f32) -> f32 {
     ((split_extent(usable, ratio) + delta) / usable).clamp(0.0, 1.0)
 }
 
-/// Which way the second pane sits next to the first.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum SplitDir {
-    Right,
-    Bottom,
-}
-
-/// A second session inside one tab, and which way it sits.
+/// The other sessions of a split tab, and where each of them sits.
 ///
-/// One split rather than a tree of them: two sessions in one tab is the thing
-/// people actually ask for - a routine running in one and a global inspected in
-/// the other - and a general pane tree would be a window manager inside a
-/// terminal. So a split tab cannot be split again, and the strip entry has only
-/// ever two names to carry.
+/// Held by the tab's own session, which is pane 0 - so a tab that has never
+/// been split is exactly what it always was, and everything that asks a tab
+/// for "its session" gets that one. The rest are kept in the order they were
+/// opened; `others[n - 1]` is `Pane(n)`.
 pub struct Split {
-    pub dir: SplitDir,
-    /// The session the split opened. Boxed: a [`Tab`] holds one of these, so
-    /// the type would otherwise have no size.
-    pub tab: Box<Tab>,
-    /// How much of the room the first pane gets, 0 to 1. Dragged by the
-    /// divider between them; see `split_extent`, which is what turns it into
-    /// a size and keeps either pane from being squeezed away.
-    pub ratio: f32,
+    pub tree: Node,
+    pub others: Vec<Tab>,
+    /// One pane filling the tab for now, the rest still running behind it -
+    /// the monocle of a tiling window manager. Undone by the same gesture, and
+    /// by anything that changes which panes there are.
+    pub zoomed: bool,
 }
 
-/// Which of a tab's two sessions.
-///
-/// `First` is the left or top pane and is the only one an unsplit tab has. The
-/// numbers are what the strip entry shows - `1:` and `2:` - so they are the
-/// panes' names as far as the user is concerned.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum Pane {
-    #[default]
-    First,
-    Second,
-}
-
-impl Pane {
-    /// What the strip entry calls this pane.
-    pub fn number(self) -> u8 {
-        match self {
-            Pane::First => 1,
-            Pane::Second => 2,
+impl Split {
+    /// The layout a tab has before its first split: its own session, filling
+    /// it. Never stored as such - a tab with no others has no `Split` - but
+    /// what one starts from.
+    pub(super) fn unsplit() -> Split {
+        Split {
+            tree: Node::Leaf(Pane::FIRST),
+            others: Vec::new(),
+            zoomed: false,
         }
     }
 }
@@ -141,11 +122,29 @@ impl Pane {
 /// applies them after its loop.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) enum LayoutAction {
-    Split(usize, SplitDir),
-    /// Split with the named shell in the new pane.
-    SplitWithShell(usize, SplitDir, String),
+    /// Opens a new session against one side of a pane.
+    Split(At, Toward),
+    /// [`LayoutAction::Split`] with the named shell in the new pane.
+    SplitWithShell(At, Toward, String),
+    /// Gives every pane of a tab a tab of its own.
     Unsplit(usize),
+    /// Gives one pane a tab of its own.
+    Detach(At),
     ClosePane(At),
+    /// Moves the whole tab with this uid against a side of a pane of
+    /// another - a tab dropped onto the terminal.
+    Dock {
+        tab: u64,
+        onto: At,
+        side: Toward,
+    },
+    /// Moves one pane of a split tab against a side of another of its panes
+    /// - a pane dragged by its grip.
+    MovePane {
+        at: At,
+        onto: Pane,
+        side: Toward,
+    },
 }
 
 /// One session on screen: the tab it is in, and which of its panes.
@@ -175,27 +174,26 @@ pub(super) struct PaneMeasure {
     pub(super) clicked: bool,
 }
 
-/// The handle between two panes: a separator that can be dragged.
+/// The handle between two halves of a split: a separator that can be dragged.
 ///
 /// Returns the new ratio while it is being dragged, and `None` otherwise. A
 /// double-click puts the split back down the middle, which is the way out of a
 /// layout dragged somewhere useless.
-///
-/// `across` is the length of the divider - the height of a left/right split,
-/// the width of a top/bottom one - and `usable` is the room the two panes
-/// share.
-pub(super) fn split_divider(
-    ui: &mut egui::Ui,
-    dir: SplitDir,
-    across: f32,
-    usable: f32,
-    ratio: f32,
-) -> Option<f32> {
-    let size = match dir {
-        SplitDir::Right => egui::Vec2::new(SPLIT_DIVIDER, across),
-        SplitDir::Bottom => egui::Vec2::new(across, SPLIT_DIVIDER),
-    };
-    let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click_and_drag());
+pub(super) fn split_divider(ui: &mut egui::Ui, tab_uid: u64, divider: &Divider) -> Option<f32> {
+    let Divider {
+        id,
+        dir,
+        rect,
+        usable,
+        ratio,
+    } = *divider;
+    // Keyed by the tab as well as the split: the same split number in the next
+    // tab is a different handle, and a drag must not carry over between them.
+    let response = ui.interact(
+        rect,
+        egui::Id::new(("nit-split-divider", tab_uid, id)),
+        egui::Sense::click_and_drag(),
+    );
 
     // A hairline down the middle of the hit area rather than a fill of it: the
     // grab area has to be wide enough to aim a mouse at, and a 6-point band of

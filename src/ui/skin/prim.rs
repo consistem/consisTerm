@@ -616,13 +616,35 @@ pub const fn hex(rgb: u32) -> Color32 {
 }
 
 /// The same with alpha, `rgba(r, g, b, a)` as CSS writes it.
+///
+/// Premultiplied in gamma space, the way a browser composites it, because
+/// that is how egui blends too. `Color32::from_rgba_unmultiplied` premultiplies
+/// in linear light instead, which lifts every translucent colour: a ten
+/// percent grey wash over brushed metal came out twenty points lighter than
+/// the metal rather than a few darker, and every soft edge and shadow drawn
+/// this way read as a pale halo.
 pub fn rgba(r: u8, g: u8, b: u8, a: f32) -> Color32 {
-    Color32::from_rgba_unmultiplied(r, g, b, (a.clamp(0.0, 1.0) * 255.0).round() as u8)
+    let a = a.clamp(0.0, 1.0);
+    let m = |v: u8| (f32::from(v) * a).round() as u8;
+    Color32::from_rgba_premultiplied(m(r), m(g), m(b), (a * 255.0).round() as u8)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A translucent colour composites over a background the way CSS's
+    /// `rgba()` does: ten percent grey over light metal darkens it a little.
+    #[test]
+    fn a_translucent_colour_blends_as_a_browser_blends_it() {
+        let wash = rgba(129, 129, 129, 0.10);
+        let under = 182.0_f32;
+        let a = f32::from(wash.a()) / 255.0;
+        let out = f32::from(wash.r()) + under * (1.0 - a);
+        let css = 129.0 * 0.10 + under * 0.90;
+        assert!((out - css).abs() <= 1.0, "{out} against {css}");
+        assert!(out < under);
+    }
 
     fn rects(shapes: &[Shape]) -> Vec<(Rect, Color32)> {
         shapes

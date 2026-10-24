@@ -811,7 +811,7 @@ pub fn titled_card<R>(
         .map(|g| Rect::from_min_size(pos2(rect.left() + 8.0, top - g.size().y / 2.0), g.size()));
     let mut shapes = kit.style().group(&kit, rect, legend_rect);
     if let (Some(galley), Some(at)) = (legend, legend_rect) {
-        shapes.push(Shape::galley(at.min, galley, c.text));
+        shapes.push(Shape::galley(at.min, galley, kit.style().legend_text(&kit)));
     }
     ui.painter().set(background, Shape::Vec(shapes));
     shown.inner

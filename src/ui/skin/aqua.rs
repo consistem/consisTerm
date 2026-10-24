@@ -14,7 +14,7 @@
 //! graphite, and the controls' bitmaps with it, so that the light text the
 //! dark reading writes on them still reads.
 
-use egui::{pos2, vec2, Color32, Pos2, Rect, Shape, TextureId};
+use egui::{pos2, vec2, Color32, Pos2, Rect, Shape, TextureId, Vec2};
 
 use super::prim::{self, fill, hex, inside_rounded, over, raster, rgba};
 use super::{Colors, Dir, Face, Fonts, Glyph, Kit, Metrics, St, Style};
@@ -164,11 +164,16 @@ struct Metal {
 }
 
 /// `--aqua-metal-base`, the tile's mean.
-const METAL_BASE: Color32 = hex(0xd2d2d2);
+///
+/// 186, as measured off flat metal in Panther's own iTunes and Finder, where
+/// the grain swings only three or four steps either side of it. The tile
+/// this came with sat at 210 with three times the grain, and read as a light,
+/// blotchy plate rather than brushed steel.
+const METAL_BASE: Color32 = hex(0xbababa);
 
-/// The dark reading's metal: the same sheet taken down to a graphite that
-/// light text reads on.
-const DARK_METAL: f32 = 0.42;
+/// The dark reading's metal: the same sheet taken down to a deep graphite
+/// that light text reads on.
+const DARK_METAL: f32 = 0.36;
 
 fn metal(k: &Kit) -> Metal {
     let dark = k.look.dark;
@@ -194,7 +199,11 @@ fn metal(k: &Kit) -> Metal {
     } else {
         Metal {
             tint,
-            rim: hex(0x555555),
+            // The window's edge as Panther's iTunes draws it: one pixel a
+            // shade under the metal (#979797 against #a6a6a6), not a dark
+            // outline - the drop shadow outside it is what sets the window
+            // off, and the screen's edge stands in for that here.
+            rim: hex(0x979797),
             sheen: hex(0xe8e8e8),
             shade: hex(0x7d7d7d),
             light: hex(0xbbbbbb),
@@ -214,6 +223,74 @@ fn window_light(k: &Kit, y: f32) -> f32 {
         .map_or(600.0, |ctx| ctx.screen_rect().height())
         .max(1.0);
     LIGHT.0 + (LIGHT.1 - LIGHT.0) * (y / height).clamp(0.0, 1.0)
+}
+
+/// How Panther's metal is lit across a window: darker at both sides and
+/// brightest down the middle, the brushed sheet catching the light like a
+/// curved plate. Measured off its iTunes, 164 at the sides to 205 in the
+/// middle on a plate of about 186.
+const SHEEN_EDGE: f32 = 0.88;
+const SHEEN_MIDDLE: f32 = 1.10;
+
+/// What the sheen makes of the metal at `x`: across the screen rather than
+/// across the shape, so a patch laid over the sheet - a legend's gap - is lit
+/// exactly as the sheet under it.
+fn sheen_at(k: &Kit, x: f32) -> f32 {
+    let width = k
+        .ctx
+        .as_ref()
+        .map_or(800.0, |ctx| ctx.screen_rect().width())
+        .max(1.0);
+    let s = (x / width * 2.0 - 1.0).clamp(-1.0, 1.0);
+    SHEEN_EDGE + (SHEEN_MIDDLE - SHEEN_EDGE) * (1.0 - s * s)
+}
+
+/// The sheen over `r`, a sheet of metal of about `level` brightness, as thin
+/// columns of black (darkening) or white (lightening) at the alpha that takes
+/// the metal under them to `sheen_at` of itself. Kept off the rounded
+/// corners - `[left, right, top, bottom]` are how far they reach in - which
+/// it would otherwise paint past.
+fn sheen(k: &Kit, r: Rect, corners: [f32; 4], level: f32) -> egui::epaint::Mesh {
+    let [left, right, top, bottom] = corners;
+    let mut mesh = egui::epaint::Mesh::default();
+    let tone = |x: f32| -> Color32 {
+        let f = sheen_at(k, x);
+        if f < 1.0 {
+            Color32::from_rgba_premultiplied(0, 0, 0, ((1.0 - f) * 255.0).round() as u8)
+        } else {
+            let room = (255.0 - level).max(1.0);
+            let a = ((f - 1.0) * level / room).clamp(0.0, 1.0);
+            let v = (a * 255.0).round() as u8;
+            Color32::from_rgba_premultiplied(v, v, v, v)
+        }
+    };
+    let mut band = |x0: f32, x1: f32, y0: f32, y1: f32| {
+        if x1 <= x0 || y1 <= y0 {
+            return;
+        }
+        let steps = 48;
+        for i in 0..steps {
+            let a = x0 + (x1 - x0) * i as f32 / steps as f32;
+            let b = x0 + (x1 - x0) * (i + 1) as f32 / steps as f32;
+            let base = mesh.vertices.len() as u32;
+            for (x, y) in [(a, y0), (b, y0), (b, y1), (a, y1)] {
+                mesh.colored_vertex(pos2(x, y), tone(x));
+            }
+            mesh.add_triangle(base, base + 1, base + 2);
+            mesh.add_triangle(base, base + 2, base + 3);
+        }
+    };
+    // The body between the corners' rows, edge to edge; then the rows the
+    // corners are in, between them.
+    band(r.left(), r.right(), r.top() + top, r.bottom() - bottom);
+    band(r.left() + left, r.right() - right, r.top(), r.top() + top);
+    band(
+        r.left() + left,
+        r.right() - right,
+        r.bottom() - bottom,
+        r.bottom(),
+    );
+    mesh
 }
 
 /// `c` scaled by `f`, alpha kept.
@@ -277,7 +354,16 @@ fn sheet(k: &Kit, rect: Rect, radius: [f32; 4], tint: Color32, light: (f32, f32)
     if let Some(texture) = texture {
         mesh.texture_id = texture;
     }
-    Shape::mesh(mesh)
+    let level = f32::from(METAL_BASE.r()) * f32::from(base.r()) / 255.0 * (light.0 + light.1) / 2.0;
+    Shape::Vec(vec![
+        Shape::mesh(mesh),
+        Shape::mesh(sheen(
+            k,
+            r,
+            [nw.max(sw), ne.max(se), nw.max(ne), sw.max(se)],
+            level,
+        )),
+    ])
 }
 
 /// A one-pixel line just inside the top or the foot of `r`, clear of its
@@ -361,15 +447,36 @@ fn light(k: &Kit, rect: Rect, glyph: Glyph, st: St) -> Vec<Shape> {
     } else {
         1.0
     };
-    let mut out = match texture {
-        Some(texture) => vec![prim::bitmap(
-            place,
-            texture,
-            Color32::WHITE.gamma_multiply(alpha),
-            k.ppp,
-        )],
-        None => vec![Shape::circle_filled(rect.center(), 6.5 * u, hex(0xa3a6ab))],
-    };
+    // `--aqua-gem-shadow`, under a gem that is lit: four soft discs, a
+    // little lower and wider each, standing in for the four box-shadows.
+    // Held, the shallower `--aqua-gem-shadow-active`.
+    let mut out = Vec::new();
+    if !inactive {
+        let layers: &[(f32, f32, f32)] = if st.pressed {
+            &[(0.0, 1.0, 0.40), (1.0, 1.0, 0.30)]
+        } else {
+            &[
+                (0.0, 1.0, 0.50),
+                (1.0, 1.0, 0.55),
+                (2.0, 3.0, 0.50),
+                (3.0, 5.0, 0.35),
+            ]
+        };
+        for &(down, blur, a) in layers {
+            out.push(Shape::circle_filled(
+                rect.center() + vec2(0.0, down * u),
+                (6.5 + blur * 0.5) * u,
+                // Spread over the blur, as a box-shadow fades across it.
+                rgba(0, 0, 0, a * alpha / (1.0 + blur * 0.6)),
+            ));
+        }
+    }
+    out.push(match texture {
+        // `width: 13px; height: 13px; border-radius: 50%` over a 15 px
+        // gem centred in it: the image's outer pixel is clipped away.
+        Some(texture) => disc(k, place, rect.center(), 6.5 * u, texture, alpha),
+        None => Shape::circle_filled(rect.center(), 6.5 * u, hex(0xa3a6ab)),
+    });
     if own {
         let rows = mark(glyph);
         let ink = match k.look.paint.icon {
@@ -385,6 +492,38 @@ fn light(k: &Kit, rect: Rect, glyph: Glyph, st: St) -> Vec<Shape> {
         ));
     }
     out
+}
+
+/// `texture`, laid over `place`, seen through a disc of `radius` round
+/// `centre` - CSS's `border-radius: 50%` clipping a background image. A
+/// tessellated rounded rect with its texture coordinates set from where each
+/// vertex is, so the edge is anti-aliased.
+fn disc(k: &Kit, place: Rect, centre: Pos2, radius: f32, texture: TextureId, alpha: f32) -> Shape {
+    // Untextured while it is tessellated, which the tessellator insists
+    // on; the texture goes on after.
+    let mut mesh = egui::epaint::Mesh::default();
+    let mut tess = egui::epaint::Tessellator::new(
+        k.ppp,
+        egui::epaint::TessellationOptions::default(),
+        [1, 1],
+        vec![],
+    );
+    let circle = Rect::from_center_size(centre, Vec2::splat(2.0 * radius));
+    tess.tessellate_rect(
+        &egui::epaint::RectShape::filled(circle, egui::Rounding::same(radius), Color32::WHITE),
+        &mut mesh,
+    );
+    let tint = Color32::WHITE.gamma_multiply(alpha);
+    for v in &mut mesh.vertices {
+        v.uv = pos2(
+            (v.pos.x - place.left()) / place.width(),
+            (v.pos.y - place.top()) / place.height(),
+        );
+        // The tessellator's alpha is the edge's coverage.
+        v.color = tint.gamma_multiply(f32::from(v.color.a()) / 255.0);
+    }
+    mesh.texture_id = texture;
+    Shape::mesh(mesh)
 }
 
 /// A push button's three bitmaps across `strip` - 14 px caps and the fill
@@ -545,7 +684,6 @@ impl Style for Aqua {
             // below, so the bar keeps to its 26 px with tabs in it too.
             title_button: vec2(15.0, 20.0),
             title_button_gap: 5.0,
-            close_gap: 5.0,
             // The ring round the window, inside it here: a window's edge is
             // the screen's.
             window_border: 1.0,
@@ -625,24 +763,23 @@ impl Style for Aqua {
             (false, true) => vec![rest, held],
             (true, true) => vec![held_default, held],
         };
-        // `--aqua-btn-shadow`, as far as it shows round a 20 px pill: a
-        // soft dark band under it, less of one while it is held.
+        // On metal a button is pressed into the sheet, not standing off it:
+        // what Panther's iTunes draws under one is a single light row, the
+        // sheet's lip catching the light (240 against metal at 172), and no
+        // shadow at all. The two dark bands that were here read as a smudge
+        // under every button. Fainter on graphite, and gone while it is held,
+        // when the button sits down into the lip.
         let u = k.u();
-        let shade = if pressed { 0.18 } else { 0.30 };
-        let mut out = vec![
-            Shape::rect_filled(
-                strip.translate(vec2(0.0, u)),
-                egui::Rounding::same(10.0 * u),
-                rgba(0, 0, 0, shade),
-            ),
-            Shape::rect_filled(
-                strip
-                    .translate(vec2(0.0, 2.0 * u))
-                    .shrink2(vec2(2.0 * u, 0.0)),
-                egui::Rounding::same(10.0 * u),
-                rgba(0, 0, 0, shade * 0.4),
-            ),
-        ];
+        let lip = match (k.look.dark, pressed) {
+            (_, true) => 0.0,
+            (false, false) => 0.75,
+            (true, false) => 0.14,
+        };
+        let mut out = vec![Shape::rect_filled(
+            strip.translate(vec2(0.0, u)),
+            egui::Rounding::same(10.0 * u),
+            rgba(255, 255, 255, lip),
+        )];
         for caps in layers {
             match layer(caps) {
                 Some(shapes) => out.extend(shapes),
@@ -940,10 +1077,45 @@ impl Style for Aqua {
         boxed(k, rect, [7.0, 7.0, 0.0, 0.0], &body, Some(edge))
     }
 
+    fn tab_mark(&self, k: &Kit, rect: Rect, colour: Color32, st: St) -> Vec<Shape> {
+        // A slim bar of the colour along the tab's foot, rounded at its
+        // ends like the controls are: clear of the 7 px top corners and of
+        // the gel's highlight, so the tab still reads as Aqua's.
+        let _ = st;
+        let u = k.u();
+        let r = prim::snap_rect(rect, k.ppp);
+        let bar = Rect::from_min_max(
+            pos2(r.left() + 6.0 * u, r.bottom() - 5.0 * u),
+            pos2(r.right() - 6.0 * u, r.bottom() - 2.0 * u),
+        );
+        vec![Shape::rect_filled(
+            bar,
+            egui::Rounding::same(1.5 * u),
+            colour,
+        )]
+    }
+
     fn tab_panel(&self, k: &Kit, rect: Rect) -> Vec<Shape> {
-        // `.tab-panel`: a 1 px #9a9a9a edge, 5 px corners.
+        // `.tab-panel`: a 1 px #9a9a9a edge, 5 px corners, and
+        // `--aqua-pin-dialog` - the dialog's pinstripes, four rows that
+        // repeat - inside it. The graphite reading keeps its flat face: the
+        // stripes are light greys, and would read as a light panel on it.
         let face = k.colors().face;
-        boxed(k, rect, [5.0; 4], &move |_| face, Some(hex(0x9a9a9a)))
+        let dark = k.look.dark;
+        const PIN: [u32; 4] = [0xdedede, 0xebebeb, 0xdedede, 0xd7d7d7];
+        boxed(
+            k,
+            rect,
+            [5.0; 4],
+            &move |y| {
+                if dark {
+                    face
+                } else {
+                    hex(PIN[(y.max(0.0) as usize) % PIN.len()])
+                }
+            },
+            Some(hex(0x9a9a9a)),
+        )
     }
 
     fn group(&self, k: &Kit, rect: Rect, legend: Option<Rect>) -> Vec<Shape> {
@@ -956,9 +1128,18 @@ impl Style for Aqua {
         };
         let mut out = boxed(k, rect, [5.0; 4], &move |_| wash, Some(edge));
         if let Some(legend) = legend {
-            // `legend { padding: 0 5px }` over the edge: a patch of the
-            // sheet, lit as the window is at that height.
-            let r = prim::snap_rect(legend.expand2(vec2(5.0 * k.u(), 0.0)), k.ppp);
+            // `legend { padding: 0 5px }` over the edge: the top line
+            // stops either side of it. Only the line's own row is covered,
+            // with the sheet lit as the window is at that height - a patch
+            // the legend's full height also wiped out the box's wash under
+            // it, and showed as a box of its own round the legend.
+            let u = k.u();
+            let top = prim::snap_rect(rect, k.ppp).top();
+            let span = legend.expand2(vec2(5.0 * u, 0.0));
+            let r = prim::snap_rect(
+                Rect::from_min_max(pos2(span.left(), top), pos2(span.right(), top + u)),
+                k.ppp,
+            );
             let lit = window_light(k, r.center().y);
             out.push(sheet(k, r, [0.0; 4], metal(k).tint, (lit, lit)));
         }
@@ -976,10 +1157,12 @@ impl Style for Aqua {
         let r = prim::snap_rect(rect, k.ppp);
         let u = k.u();
         let radius = [8.0, 8.0, 6.0, 6.0];
+        // The sheen along the top, and none along the foot: measured off
+        // Panther's iTunes, the metal runs straight to the rim at the bottom,
+        // and the shade line aqua-ui puts there read as a stray border.
         vec![
             sheet(k, r, radius, m.tint, LIGHT),
             edge_line(k, r.shrink(u), 7.0, true, m.sheen),
-            edge_line(k, r.shrink(u), 5.0, false, m.shade),
             Shape::rect_stroke(
                 r.shrink(u / 2.0),
                 egui::Rounding {
@@ -1385,9 +1568,16 @@ mod tests {
         with_kit(true, |k| {
             let rect = Rect::from_min_size(Pos2::ZERO, vec2(1200.0, 800.0));
             let shapes = Aqua.window(k, rect, St::default());
-            let Some(Shape::Mesh(sheet)) = shapes.first() else {
+            // The plate, then the sheen across it.
+            let Some(Shape::Vec(parts)) = shapes.first() else {
                 panic!("no sheet");
             };
+            let (Some(Shape::Mesh(sheet)), Some(Shape::Mesh(sheen))) =
+                (parts.first(), parts.get(1))
+            else {
+                panic!("no sheet and sheen");
+            };
+            assert!(sheen.vertices.len() < 1000, "{}", sheen.vertices.len());
             assert_ne!(sheet.texture_id, egui::TextureId::default());
             assert!(sheet.vertices.len() < 400, "{}", sheet.vertices.len());
             // The dark sheet is the tile taken down, not left white.

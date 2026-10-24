@@ -86,13 +86,12 @@ impl App {
         // the end of the frame.
         self.pane_rects.clear();
 
+        // Every session of every tab, the panes of a split tab and a zoomed
+        // tab's hidden ones included: a session that is not drained stops
+        // reading its PTY, and eventually blocks IRIS.
+        let plugins = &mut self.plugins;
         for tab in &mut self.tabs {
-            tab.pump(&mut self.plugins);
-            // A split tab holds a second session, and one that is not drained
-            // would stop reading its PTY and eventually block IRIS.
-            if let Some(split) = tab.split.as_mut() {
-                split.tab.pump(&mut self.plugins);
-            }
+            tab.for_each_session_mut(|session| session.pump(plugins));
         }
 
         // Plugins may have asked for things while transforming output.
@@ -289,12 +288,17 @@ impl App {
         // border between the two.
         let sunk = kit.as_ref().map_or(0.0, |kit| (2.0 * kit.u()).round());
         // A skin's window frame is the edge a resize is grabbed by, so the
-        // gutter kept clear of the grips is not needed on the far sides: the
-        // scroll bars sit against the frame, as a window's own did.
+        // gutter kept clear of the grips is not needed on any side: the field
+        // sits against the frame all round, as a window's own did. Taken off
+        // every side rather than the far two - left on the near ones, it
+        // showed as a strip of face between frame and field on the left and
+        // at the top only, and the window looked lopsided.
         let mut inset = self.terminal_inset();
         if kit.is_some() {
             let grab = crate::ui::chrome::RESIZE_GRAB + 1.0;
+            inset.left = (inset.left - grab).max(0.0);
             inset.right = (inset.right - grab).max(0.0);
+            inset.top = (inset.top - grab).max(0.0);
             inset.bottom = (inset.bottom - grab).max(0.0);
         }
         let central_fill = match &kit {
@@ -310,7 +314,7 @@ impl App {
             .show(ctx, |ui| {
                 terminal_rect = ui.max_rect();
                 if let Some(kit) = &kit {
-                    let well = terminal_rect + self.terminal_inset();
+                    let well = terminal_rect + inset;
                     let mut shapes = kit
                         .style()
                         .field(kit, well.expand(sunk), Default::default());
@@ -320,7 +324,7 @@ impl App {
                 super::tabs::seal_shown_tab(
                     ui.ctx(),
                     ui.layer_id(),
-                    terminal_rect + self.terminal_inset(),
+                    terminal_rect + inset,
                     self.settings.bar_position,
                     theme.background,
                 );
@@ -329,7 +333,7 @@ impl App {
                 // grips' gutter, and the part of a cell the window is short
                 // of - stayed the flat colour, and showed as a border.
                 self.terminal_backdrop = theme.terminal_gradient().map(|gradient| {
-                    let whole = terminal_rect + self.terminal_inset();
+                    let whole = terminal_rect + inset;
                     crate::ui::shading::ui_gradient(
                         &ui.ctx().layer_painter(ui.layer_id()),
                         whole,
@@ -352,14 +356,9 @@ impl App {
 
                 self.active = self.active.min(self.tabs.len() - 1);
                 let active = self.active;
-                let focus = self.tabs[active].focus;
                 let first = At {
                     tab: active,
-                    pane: Pane::First,
-                };
-                let second = At {
-                    tab: active,
-                    pane: Pane::Second,
+                    pane: Pane::FIRST,
                 };
 
                 // The easter egg is not a session, and none of what follows is
@@ -375,95 +374,7 @@ impl App {
                 // fitted from and what a new session opens at; `shown` is the
                 // focused pane's, which is the size worth reporting because it
                 // is the one being typed in.
-                let (geometry, shown) = match self.tabs[active].split.as_ref().map(|s| s.dir) {
-                    None => {
-                        let measure = self.terminal_pane(ui, ctx, &theme, first, true);
-                        let view = measure.view;
-                        (measure, view)
-                    }
-                    Some(dir) => {
-                        let room = ui.available_size();
-                        let mut top = PaneMeasure::default();
-                        let mut bottom = PaneMeasure::default();
-                        let ratio = self.tabs[active].split_ratio();
-                        // The panes are given exact sizes, so what the divider
-                        // and the spacing around it take comes off the room
-                        // first: a share that did not fit would be clipped at
-                        // the window edge.
-                        let mut dragged = None;
-                        match dir {
-                            SplitDir::Right => {
-                                let gap = ui.spacing().item_spacing.x * 2.0 + SPLIT_DIVIDER;
-                                let usable = room.x - gap;
-                                let first_width = split_extent(usable, ratio);
-                                ui.horizontal(|ui| {
-                                    top = self.sized_pane(
-                                        ui,
-                                        ctx,
-                                        &theme,
-                                        first,
-                                        focus == Pane::First,
-                                        egui::Vec2::new(first_width, room.y),
-                                    );
-                                    dragged = split_divider(ui, dir, room.y, usable, ratio);
-                                    bottom = self.sized_pane(
-                                        ui,
-                                        ctx,
-                                        &theme,
-                                        second,
-                                        focus == Pane::Second,
-                                        egui::Vec2::new(usable - first_width, room.y),
-                                    );
-                                });
-                            }
-                            SplitDir::Bottom => {
-                                let gap = ui.spacing().item_spacing.y * 2.0 + SPLIT_DIVIDER;
-                                let usable = room.y - gap;
-                                let first_height = split_extent(usable, ratio);
-                                top = self.sized_pane(
-                                    ui,
-                                    ctx,
-                                    &theme,
-                                    first,
-                                    focus == Pane::First,
-                                    egui::Vec2::new(room.x, first_height),
-                                );
-                                dragged = split_divider(ui, dir, room.x, usable, ratio);
-                                bottom = self.sized_pane(
-                                    ui,
-                                    ctx,
-                                    &theme,
-                                    second,
-                                    focus == Pane::Second,
-                                    egui::Vec2::new(room.x, usable - first_height),
-                                );
-                            }
-                        }
-                        // Written back after both panes have been drawn: the
-                        // frame the drag happened in is already laid out, and
-                        // the next one opens at the new ratio.
-                        if let Some(ratio) = dragged {
-                            if let Some(split) = self.tabs[active].split.as_mut() {
-                                split.ratio = ratio;
-                            }
-                        }
-                        // Clicking a pane is how the keyboard is moved into it,
-                        // and the strip entry says which one has it - `1:` or
-                        // `2:` in front of that session name.
-                        if top.clicked {
-                            self.tabs[active].focus = Pane::First;
-                        }
-                        if bottom.clicked {
-                            self.tabs[active].focus = Pane::Second;
-                        }
-                        let shown = if focus == Pane::Second {
-                            bottom.view
-                        } else {
-                            top.view
-                        };
-                        (top, shown)
-                    }
-                };
+                let (geometry, shown) = self.tiled_panes(ui, ctx, &theme, active);
 
                 // A pane sizes its own session; every session that is not on
                 // screen follows the first pane, because one left at an old
@@ -494,11 +405,9 @@ impl App {
                     if index == active || minimized {
                         continue;
                     }
-                    tab.resize(width_for(tab.profile.is_shell()), rows);
-                    if let Some(split) = tab.split.as_mut() {
-                        let cols = width_for(split.tab.profile.is_shell());
-                        split.tab.resize(cols, rows);
-                    }
+                    tab.for_each_session_mut(|session| {
+                        session.resize(width_for(session.profile.is_shell()), rows);
+                    });
                 }
             });
 
@@ -507,17 +416,32 @@ impl App {
         // The panes have finished drawing, so the tabs can move again.
         if let Some(asked) = self.pending_layout.take() {
             match asked {
-                LayoutAction::Split(index, dir) => self.split_tab(index, dir),
-                LayoutAction::SplitWithShell(index, dir, shell) => {
-                    self.split_tab_with_shell(index, dir, &shell)
+                LayoutAction::Split(at, side) => self.split_pane(at, side),
+                LayoutAction::SplitWithShell(at, side, shell) => {
+                    self.split_pane_with_shell(at, side, &shell)
                 }
-                LayoutAction::Unsplit(index) => self.remove_split(index),
+                LayoutAction::Unsplit(index) => self.unsplit_tab(index),
+                LayoutAction::Detach(at) => self.detach_to_tab(at),
                 LayoutAction::ClosePane(at) => self.close_pane(at),
+                LayoutAction::Dock { tab, onto, side } => self.dock_tab(tab, onto, side),
+                LayoutAction::MovePane { at, onto, side } => self.move_pane(at, onto, side),
             }
+        }
+
+        // A drag let go anywhere but over a pane is over; one let go over a
+        // pane was dropped above. Either way nothing is held any more.
+        if self.tab_drag.is_some() && !ctx.input(|i| i.pointer.any_down()) {
+            self.tab_drag = None;
+        }
+        if self.pane_grab.is_some() && !ctx.input(|i| i.pointer.any_down()) {
+            self.pane_grab = None;
         }
 
         self.rename_tab_dialog(ctx);
         self.close_confirm_dialog(ctx);
+        if !self.panels.show_settings {
+            crate::ui::log_move_view::show(ctx, &mut self.panels.log_move);
+        }
         if panels::update_dialog(ctx, &mut self.updates) {
             self.apply_update(ctx);
         }
@@ -600,12 +524,7 @@ impl App {
             // what the old rate cost.
             ctx.request_repaint_after(Duration::from_secs(1));
         }
-        let held = |tab: &Tab| tab.awaiting_repaint();
-        if self
-            .tabs
-            .iter()
-            .any(|t| held(t) || t.split.as_ref().is_some_and(|s| held(&s.tab)))
-        {
+        if self.sessions().any(Tab::awaiting_repaint) {
             // A resize held back for a repaint that is late, or never coming.
             // The repaint itself wakes the loop when it arrives; this is for
             // the window lapsing without one, so the pane is not left at the
@@ -634,10 +553,7 @@ impl App {
             SavedSession::clear(&path);
         }
         for tab in &mut self.tabs {
-            close_down(tab);
-            if let Some(split) = tab.split.as_mut() {
-                close_down(&mut split.tab);
-            }
+            tab.for_each_session_mut(close_down);
         }
         self.persist_window_geometry();
     }

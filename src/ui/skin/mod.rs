@@ -25,6 +25,7 @@ mod snes;
 mod system;
 mod tuned;
 mod win98;
+mod winamp;
 mod xp;
 
 use egui::{pos2, vec2, Color32, Context, Id, Pos2, Rect, Rounding, Shape, TextureId, Vec2};
@@ -47,16 +48,22 @@ pub enum Skin {
     System,
     /// The Super Nintendo, after snes.css.
     Snes,
+    /// Winamp 2.91's own skin.
+    Winamp,
+    /// Winamp 5 Classified.
+    WinampClassified,
 }
 
 impl Skin {
-    pub const ALL: [Skin; 6] = [
+    pub const ALL: [Skin; 8] = [
         Skin::None,
         Skin::Win98,
         Skin::Xp,
         Skin::Aqua,
         Skin::System,
         Skin::Snes,
+        Skin::Winamp,
+        Skin::WinampClassified,
     ];
 
     /// Lenient: empty, or anything unrecognised, is no skin, so a theme file
@@ -69,6 +76,8 @@ impl Skin {
             "aqua" | "lion" => Skin::Aqua,
             "system" | "macos" | "classic-mac" => Skin::System,
             "snes" | "super-nintendo" => Skin::Snes,
+            "winamp" | "winamp2" => Skin::Winamp,
+            "winamp5" | "classified" => Skin::WinampClassified,
             _ => Skin::None,
         }
     }
@@ -83,6 +92,8 @@ impl Skin {
             Skin::Aqua => "aqua",
             Skin::System => "system",
             Skin::Snes => "snes",
+            Skin::Winamp => "winamp",
+            Skin::WinampClassified => "winamp5",
         }
     }
 
@@ -96,6 +107,8 @@ impl Skin {
             Skin::Aqua => "Aqua",
             Skin::System => "System",
             Skin::Snes => "SNES",
+            Skin::Winamp => "Winamp",
+            Skin::WinampClassified => "Winamp 5 Classified",
         }
     }
 
@@ -107,6 +120,8 @@ impl Skin {
             Skin::Aqua => &aqua::Aqua,
             Skin::System => &system::System,
             Skin::Snes => &snes::Snes,
+            Skin::Winamp => &winamp::Winamp,
+            Skin::WinampClassified => &winamp::Classified,
         }
     }
 }
@@ -542,9 +557,9 @@ pub struct Metrics {
     pub title_font_size: f32,
     pub title_height: f32,
     pub title_button: Vec2,
-    /// Between two title-bar buttons, and before close.
+    /// Between two title-bar buttons, close included: one gap for all of
+    /// them, so close does not stand apart from the rest.
     pub title_button_gap: f32,
-    pub close_gap: f32,
     /// From a window's outer edge to its title bar and body: the border
     /// rings and the padding inside them.
     pub window_border: f32,
@@ -753,6 +768,29 @@ pub trait Style: Sync {
             ));
         }
         out
+    }
+
+    /// The colour the user marked a tab with, on this skin's tab of `rect`
+    /// (`st.on` the shown one): a band just inside the top of it, clear of
+    /// the corners. A skin whose tab has a border of its own puts the mark
+    /// inside that border, in a form its own art would have.
+    fn tab_mark(&self, k: &Kit, rect: Rect, colour: Color32, st: St) -> Vec<Shape> {
+        let _ = st;
+        let u = k.u();
+        let r = prim::snap_rect(rect, k.ppp);
+        vec![prim::fill(
+            Rect::from_min_max(
+                egui::pos2(r.left() + 3.0 * u, r.top() + 2.0 * u),
+                egui::pos2(r.right() - 3.0 * u, r.top() + 4.0 * u),
+            ),
+            colour,
+        )]
+    }
+
+    /// The colour of a group box's legend. The page's text unless the skin
+    /// says otherwise.
+    fn legend_text(&self, k: &Kit) -> Color32 {
+        k.colors().text
     }
 
     /// The colour of a tab's label; `st.on` is the selected one.
@@ -1034,7 +1072,6 @@ impl Style for Plain {
             title_height: 24.0,
             title_button: vec2(18.0, 18.0),
             title_button_gap: 2.0,
-            close_gap: 2.0,
             window_border: 1.0,
             window_radius: 0.0,
             scrollbar: 12.0,

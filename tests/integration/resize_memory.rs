@@ -80,6 +80,8 @@ fn frame(ctx: &egui::Context, grid: &mut Grid, state: &mut ViewState, width: f32
                     focused: true,
                     take_focus: false,
                     split: false,
+                    can_split: true,
+                    zoomed: false,
                 },
                 &[],
             );

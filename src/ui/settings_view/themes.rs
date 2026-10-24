@@ -19,6 +19,7 @@
 //! disk or the settings goes out, as a [`ThemeAction`], so a theme cannot be
 //! saved or deleted from inside a paint pass.
 
+use crate::ui::illustration::BarLayout;
 use crate::ui::tip::Tip;
 use egui::color_picker::{color_edit_button_srgba, Alpha};
 use egui::{pos2, vec2, Color32, Grid, Rect, Rounding, Sense, Stroke, Ui};
@@ -197,6 +198,7 @@ fn tiles(card: &mut Card<'_>, c: &mut Ctx<'_>, builtin: bool) {
     }
     let showing = c.state.themes.showing(c.themes, &c.settings.theme);
     let active = c.settings.theme.clone();
+    let layout = BarLayout::of(c.settings);
     let themes = &*c.themes;
     let mut clicked = None;
     let mut opened = None;
@@ -206,7 +208,13 @@ fn tiles(card: &mut Card<'_>, c: &mut Ctx<'_>, builtin: bool) {
             for &i in &shown {
                 let theme = &themes[i];
                 let name = theme.name.as_str();
-                let response = tile(ui, theme, showing.as_deref() == Some(name), active == name);
+                let response = tile(
+                    ui,
+                    theme,
+                    layout,
+                    showing.as_deref() == Some(name),
+                    active == name,
+                );
                 if response.clicked() {
                     clicked = Some(name.to_owned());
                 }
@@ -233,7 +241,13 @@ fn tiles(card: &mut Card<'_>, c: &mut Ctx<'_>, builtin: bool) {
 
 /// One thumbnail and the name under it, ringed in the accent when it is the
 /// one the pages are on and marked when it is the one in use.
-fn tile(ui: &mut Ui, theme: &Theme, selected: bool, active: bool) -> egui::Response {
+fn tile(
+    ui: &mut Ui,
+    theme: &Theme,
+    layout: BarLayout,
+    selected: bool,
+    active: bool,
+) -> egui::Response {
     let palette = prefs::Palette::for_ui(ui);
     let font = egui::TextStyle::Body.resolve(ui.style());
     let label_height = font.size + 6.0;
@@ -248,7 +262,7 @@ fn tile(ui: &mut Ui, theme: &Theme, selected: bool, active: bool) -> egui::Respo
         return response;
     }
     let thumb = Rect::from_min_size(rect.min, TILE);
-    paint_thumbnail(ui.painter(), thumb, theme, palette.card_stroke);
+    paint_thumbnail(ui.painter(), thumb, theme, layout, palette.card_stroke);
     let painter = ui.painter();
     if selected {
         painter.rect_stroke(
@@ -290,56 +304,224 @@ fn tile(ui: &mut Ui, theme: &Theme, selected: bool, active: bool) -> egui::Respo
     response
 }
 
-/// A theme in miniature: its title bar with the window buttons in their
-/// colours, a few lines of coloured ObjectScript on its background, the
-/// cursor and a selection, and the eight normal ANSI colours along the foot.
-fn paint_thumbnail(painter: &egui::Painter, rect: Rect, theme: &Theme, outline: Color32) {
-    let painter = painter.with_clip_rect(rect);
-    let bar = Rect::from_min_size(rect.min, vec2(rect.width(), 15.0));
-    let body = Rect::from_min_max(pos2(rect.left(), bar.bottom()), rect.max);
+/// The buttons a theme puts on the title bar either side of the tabs, in its
+/// order: what decides whether its window controls sit on the left, as a Mac
+/// has them, or on the right.
+fn button_groups(theme: &Theme) -> (Vec<TitleButton>, Vec<TitleButton>) {
+    let order = theme.window_buttons.order;
+    let at = order
+        .iter()
+        .position(|b| *b == TitleButton::Tabs)
+        .unwrap_or(order.len());
+    let shown = |b: &&TitleButton| {
+        !matches!(
+            b,
+            TitleButton::Tabs | TitleButton::LeftSpace | TitleButton::RightSpace
+        ) && theme.window_buttons.shows(**b)
+    };
+    (
+        order[..at].iter().filter(shown).copied().collect(),
+        order[at..].iter().filter(shown).copied().collect(),
+    )
+}
 
-    painter.rect_filled(bar, 0.0, theme.ui_background);
-    if let Some(gradient) = theme.ui_gradient.as_ref() {
-        crate::ui::shading::ui_gradient(&painter, bar, gradient);
-    }
-    let tab = Rect::from_min_size(bar.min + vec2(6.0, 3.0), vec2(34.0, bar.height() - 3.0));
-    let lifted = crate::term::palette::blend(theme.ui_background, theme.ui_foreground, 0.22);
-    painter.rect_filled(
-        tab,
-        Rounding {
-            nw: 2.0,
-            ne: 2.0,
-            sw: 0.0,
-            se: 0.0,
-        },
-        theme.tab_selected.unwrap_or(lifted),
-    );
-    let style = theme.window_buttons.style;
-    let dots = [Slot::Close, Slot::Maximize, Slot::Minimize];
-    for (n, slot) in dots.into_iter().enumerate() {
-        let colour = match slot {
-            Slot::Close => theme.window_buttons.close,
-            Slot::Maximize => theme.window_buttons.maximize,
-            _ => theme.window_buttons.minimize,
+/// Where the parts of a thumbnail go, for the user's own bar layout: the bar
+/// with the buttons, the row or column of tabs - none when they share the
+/// bar - and the terminal.
+#[derive(Debug, PartialEq)]
+struct Thumb {
+    bar: Rect,
+    tabs: Option<Rect>,
+    body: Rect,
+}
+
+fn thumb_layout(rect: Rect, layout: BarLayout) -> Thumb {
+    use crate::config::BarPosition;
+    let bar_h = 13.0;
+    let row_h = 11.0;
+    match layout.position {
+        BarPosition::Left | BarPosition::Right => {
+            let column = (rect.width() * 0.3).round();
+            let left = layout.position == BarPosition::Left;
+            let side = if left {
+                Rect::from_min_size(rect.min, vec2(column, rect.height()))
+            } else {
+                Rect::from_min_max(pos2(rect.right() - column, rect.top()), rect.max)
+            };
+            let body = if left {
+                Rect::from_min_max(pos2(side.right(), rect.top()), rect.max)
+            } else {
+                Rect::from_min_max(rect.min, pos2(side.left(), rect.bottom()))
+            };
+            let bar = Rect::from_min_size(side.min, vec2(column, bar_h));
+            let tabs = Rect::from_min_max(pos2(side.left(), bar.bottom()), side.max);
+            Thumb {
+                bar,
+                tabs: Some(tabs),
+                body,
+            }
         }
-        .or(style.default_colour(slot))
-        .unwrap_or(theme.ui_foreground);
-        let x = bar.right() - 7.0 - n as f32 * 9.0;
-        painter.circle_filled(pos2(x, bar.center().y), 3.0, colour);
+        BarPosition::Top | BarPosition::Bottom => {
+            let top = layout.position == BarPosition::Top;
+            let inline = layout.tabs_in_bar;
+            let strip = if inline { bar_h } else { bar_h + row_h };
+            let (band, body) = if top {
+                (
+                    Rect::from_min_size(rect.min, vec2(rect.width(), strip)),
+                    Rect::from_min_max(pos2(rect.left(), rect.top() + strip), rect.max),
+                )
+            } else {
+                (
+                    Rect::from_min_max(pos2(rect.left(), rect.bottom() - strip), rect.max),
+                    Rect::from_min_max(rect.min, pos2(rect.right(), rect.bottom() - strip)),
+                )
+            };
+            if inline {
+                return Thumb {
+                    bar: band,
+                    tabs: None,
+                    body,
+                };
+            }
+            // The title bar keeps to the window's edge, and the tabs run
+            // between it and the terminal.
+            let (bar, tabs) = if top {
+                (
+                    Rect::from_min_size(band.min, vec2(band.width(), bar_h)),
+                    Rect::from_min_max(pos2(band.left(), band.top() + bar_h), band.max),
+                )
+            } else {
+                (
+                    Rect::from_min_max(pos2(band.left(), band.bottom() - bar_h), band.max),
+                    Rect::from_min_max(band.min, pos2(band.right(), band.bottom() - bar_h)),
+                )
+            };
+            Thumb {
+                bar,
+                tabs: Some(tabs),
+                body,
+            }
+        }
+    }
+}
+
+/// A theme in miniature, laid out as the user has the window: its title bar
+/// with the window buttons in their colours and on the side the theme puts
+/// them, the tabs where the bar setting puts them, a few lines of coloured
+/// ObjectScript on its background, the cursor and a selection, and the eight
+/// normal ANSI colours along the foot.
+fn paint_thumbnail(
+    painter: &egui::Painter,
+    rect: Rect,
+    theme: &Theme,
+    layout: BarLayout,
+    outline: Color32,
+) {
+    let painter = painter.with_clip_rect(rect);
+    let parts = thumb_layout(rect, layout);
+    let lifted = crate::term::palette::blend(theme.ui_background, theme.ui_foreground, 0.22);
+    let selected_tab = theme.tab_selected.unwrap_or(lifted);
+    let chrome = |r: Rect| {
+        painter.rect_filled(r, 0.0, theme.ui_background);
+        if let Some(gradient) = theme.ui_gradient.as_ref() {
+            crate::ui::shading::ui_gradient(&painter, r, gradient);
+        }
+    };
+    chrome(parts.bar);
+    if let Some(tabs) = parts.tabs {
+        chrome(tabs);
     }
 
+    // The buttons, either side of where the tabs go, in the theme's order.
+    let style = theme.window_buttons.style;
+    let colour = |b: TitleButton| match b {
+        TitleButton::Close => theme
+            .window_buttons
+            .close
+            .or(style.default_colour(Slot::Close)),
+        TitleButton::Maximize => theme
+            .window_buttons
+            .maximize
+            .or(style.default_colour(Slot::Maximize)),
+        TitleButton::Minimize => theme
+            .window_buttons
+            .minimize
+            .or(style.default_colour(Slot::Minimize)),
+        _ => None,
+    };
+    let dot = |x: f32, b: TitleButton| {
+        let at = pos2(x, parts.bar.center().y);
+        match colour(b) {
+            Some(c) => painter.circle_filled(at, 2.6, c),
+            // The app's own buttons - gear, pin, new tab - as a faint mark:
+            // where they are matters, what they look like does not at this
+            // size.
+            None => painter.circle_filled(at, 1.6, theme.ui_foreground.gamma_multiply(0.45)),
+        }
+    };
+    let (left, right) = button_groups(theme);
+    let step = 8.0;
+    for (n, b) in left.iter().enumerate() {
+        dot(parts.bar.left() + 6.0 + n as f32 * step, *b);
+    }
+    for (n, b) in right.iter().rev().enumerate() {
+        dot(parts.bar.right() - 6.0 - n as f32 * step, *b);
+    }
+
+    // The tabs: two, the first shown. In the bar between the two groups of
+    // buttons, along their own row, or down the column.
+    let tab_round = Rounding {
+        nw: 2.0,
+        ne: 2.0,
+        sw: 0.0,
+        se: 0.0,
+    };
+    match parts.tabs {
+        None => {
+            let from = parts.bar.left() + 6.0 + left.len() as f32 * step;
+            for n in 0..2 {
+                let tab = Rect::from_min_size(
+                    pos2(from + n as f32 * 30.0, parts.bar.top() + 3.0),
+                    vec2(28.0, parts.bar.height() - 3.0),
+                );
+                if n == 0 {
+                    painter.rect_filled(tab, tab_round, selected_tab);
+                }
+            }
+        }
+        Some(row) if row.width() > row.height() * 2.0 => {
+            let tab = Rect::from_min_size(row.min + vec2(4.0, 1.0), vec2(34.0, row.height() - 1.0));
+            painter.rect_filled(tab, tab_round, selected_tab);
+        }
+        Some(column) => {
+            for n in 0..3 {
+                let tab = Rect::from_min_size(
+                    column.min + vec2(3.0, 3.0 + n as f32 * 11.0),
+                    vec2(column.width() - 6.0, 9.0),
+                );
+                if n == 0 {
+                    painter.rect_filled(tab, 1.5, selected_tab);
+                } else {
+                    painter.rect_filled(tab, 1.5, theme.ui_foreground.gamma_multiply(0.12));
+                }
+            }
+        }
+    }
+
+    let body = parts.body;
     painter.rect_filled(body, 0.0, theme.background);
     if let Some(gradient) = theme.terminal_gradient().as_ref() {
         crate::ui::shading::ui_gradient(&painter, body, gradient);
     }
+    let body_painter = painter.with_clip_rect(body);
     let mut y = body.top() + 4.0;
     for line in &SAMPLE[..4] {
-        let galley = painter.layout_job(coloured_line(line, theme, 7.5));
+        let galley = body_painter.layout_job(coloured_line(line, theme, 7.5));
         let height = galley.size().y;
-        painter.galley(pos2(body.left() + 5.0, y), galley, theme.foreground);
+        body_painter.galley(pos2(body.left() + 5.0, y), galley, theme.foreground);
         y += height;
     }
-    let prompt = painter.layout_no_wrap(
+    let prompt = body_painter.layout_no_wrap(
         "USER>".to_owned(),
         egui::FontId::monospace(7.5),
         theme.foreground,
@@ -349,22 +531,23 @@ fn paint_thumbnail(painter: &egui::Painter, rect: Rect, theme: &Theme, outline: 
         at + vec2(prompt.size().x, 1.0),
         vec2(24.0, prompt.size().y - 2.0),
     );
-    painter.galley(at, prompt, theme.foreground);
-    painter.rect_filled(word, 0.0, theme.selection);
-    painter.rect_filled(
+    body_painter.galley(at, prompt, theme.foreground);
+    body_painter.rect_filled(word, 0.0, theme.selection);
+    body_painter.rect_filled(
         Rect::from_min_size(word.right_top() + vec2(1.0, 0.0), vec2(4.0, word.height())),
         0.0,
         theme.cursor,
     );
 
+    // Along the foot of the terminal, wherever the bar has left it.
     let strip = 4.0;
-    let width = rect.width() / 8.0;
+    let width = body.width() / 8.0;
     for slot in 0..8 {
         let cell = Rect::from_min_size(
-            pos2(rect.left() + slot as f32 * width, rect.bottom() - strip),
+            pos2(body.left() + slot as f32 * width, body.bottom() - strip),
             vec2(width + 0.5, strip),
         );
-        painter.rect_filled(cell, 0.0, theme.ansi[slot]);
+        body_painter.rect_filled(cell, 0.0, theme.ansi[slot]);
     }
     painter.rect_stroke(
         rect.shrink(0.5),
@@ -1367,6 +1550,8 @@ fn button_style(ui: &mut Ui, c: &mut Ctx<'_>) {
                 WindowButtonStyle::Classic => "Classic",
                 WindowButtonStyle::System => "System",
                 WindowButtonStyle::Snes => "SNES",
+                WindowButtonStyle::Winamp => "Winamp",
+                WindowButtonStyle::WinampClassified => "Winamp 5",
             };
             (style, tr(label))
         })
@@ -1579,8 +1764,9 @@ fn preview_top(ui: &mut Ui, c: &mut Ctx<'_>) {
     };
     ui.add_space(4.0);
     let theme = &c.themes[index];
+    let layout = BarLayout::of(c.settings);
     prefs::card(ui, "theme-preview", |card| {
-        card.custom(|ui| preview(ui, theme));
+        card.custom(|ui| preview(ui, theme, layout));
     });
     ui.add_space(4.0);
 }
@@ -1605,28 +1791,144 @@ const SAMPLE: &[&str] = &[
 /// global is readable against the background. The lines go through the real
 /// scanner, so what is coloured here is exactly what would be coloured in the
 /// session.
-fn preview(ui: &mut Ui, theme: &Theme) {
-    const SIZE: f32 = 12.0;
+fn preview(ui: &mut Ui, theme: &Theme, layout: BarLayout) {
+    use crate::config::BarPosition;
     ui.spacing_mut().item_spacing.y = 0.0;
-    // The chrome: what the tab strip and the window buttons look like, which
-    // no swatch can show.
-    egui::Frame::none()
-        .fill(theme.ui_background)
-        .inner_margin(egui::Margin::symmetric(6.0, 4.0))
-        .show(ui, |ui| {
-            ui.set_width(ui.available_width());
-            if let Some(gradient) = theme.ui_gradient.as_ref() {
-                crate::ui::shading::ui_gradient(
-                    ui.painter(),
-                    ui.max_rect().expand2(vec2(6.0, 4.0)),
-                    gradient,
-                );
-            }
-            crate::ui::chrome::sample_bar(ui, &theme.window_buttons, "USER  100x30");
-        });
+    // Where the user has the bar: above the terminal, below it, or down one
+    // side of it - the theme drawn as it would be on their window.
+    match layout.position {
+        BarPosition::Top => {
+            preview_bar(ui, theme, layout);
+            preview_terminal(ui, theme);
+        }
+        BarPosition::Bottom => {
+            preview_terminal(ui, theme);
+            preview_bar(ui, theme, layout);
+        }
+        BarPosition::Left | BarPosition::Right => {
+            let column = 150.0;
+            ui.horizontal_top(|ui| {
+                ui.spacing_mut().item_spacing.x = 0.0;
+                let side = |ui: &mut Ui| {
+                    ui.allocate_ui_with_layout(
+                        vec2(column, 0.0),
+                        egui::Layout::top_down(egui::Align::Min),
+                        |ui| {
+                            ui.set_width(column);
+                            preview_bar(ui, theme, layout);
+                        },
+                    );
+                };
+                if layout.position == BarPosition::Left {
+                    side(ui);
+                    ui.vertical(|ui| preview_terminal(ui, theme));
+                } else {
+                    let width = ui.available_width() - column;
+                    ui.allocate_ui_with_layout(
+                        vec2(width, 0.0),
+                        egui::Layout::top_down(egui::Align::Min),
+                        |ui| {
+                            ui.set_width(width);
+                            preview_terminal(ui, theme);
+                        },
+                    );
+                    side(ui);
+                }
+            });
+        }
+    }
+}
 
-    // The terminal itself, with the sixteen ANSI slots beside the sample on
-    // the same background - and the same gradient - they are drawn against.
+/// The chrome: what the title bar, the window buttons and the tabs look like,
+/// which no swatch can show - the buttons on the side the theme puts them,
+/// and the tabs in the bar or on a row of their own, as the user has them.
+fn preview_bar(ui: &mut Ui, theme: &Theme, layout: BarLayout) {
+    let fill = |ui: &mut Ui| {
+        ui.set_width(ui.available_width());
+        if let Some(gradient) = theme.ui_gradient.as_ref() {
+            crate::ui::shading::ui_gradient(
+                ui.painter(),
+                ui.max_rect().expand2(vec2(6.0, 4.0)),
+                gradient,
+            );
+        }
+    };
+    let side = layout.position.is_side();
+    let inline = layout.tabs_in_bar && !side;
+    let tabs_row = |ui: &mut Ui| {
+        egui::Frame::none()
+            .fill(theme.ui_background)
+            .inner_margin(egui::Margin::symmetric(6.0, 2.0))
+            .show(ui, |ui| {
+                fill(ui);
+                let tabs = |ui: &mut Ui| {
+                    sample_tab(ui, theme, "USER", true);
+                    sample_tab(ui, theme, "%SYS", false);
+                };
+                if side {
+                    ui.vertical(tabs);
+                } else {
+                    ui.horizontal(tabs);
+                }
+            });
+    };
+    let bar = |ui: &mut Ui| {
+        egui::Frame::none()
+            .fill(theme.ui_background)
+            .inner_margin(egui::Margin::symmetric(6.0, 4.0))
+            .show(ui, |ui| {
+                fill(ui);
+                // A column has no room for the session's line beside the
+                // buttons, so it shows the buttons alone.
+                let middle = if inline {
+                    "[USER]  %SYS"
+                } else if side {
+                    ""
+                } else {
+                    "USER  100x30"
+                };
+                crate::ui::chrome::sample_bar(ui, &theme.window_buttons, middle);
+            });
+    };
+    // The title bar keeps to the window's edge, the tabs between it and the
+    // terminal.
+    if inline {
+        bar(ui);
+    } else if layout.position == crate::config::BarPosition::Bottom {
+        tabs_row(ui);
+        bar(ui);
+    } else {
+        bar(ui);
+        tabs_row(ui);
+    }
+}
+
+/// One tab of the preview's strip, the shown one in the theme's colours for
+/// it.
+fn sample_tab(ui: &mut Ui, theme: &Theme, name: &str, shown: bool) {
+    let (fill, ink) = if shown {
+        (
+            theme.tab_selected.unwrap_or(theme.background),
+            theme.tab_selected_text.unwrap_or(theme.ui_foreground),
+        )
+    } else {
+        (
+            Color32::TRANSPARENT,
+            theme.ui_foreground.gamma_multiply(0.7),
+        )
+    };
+    egui::Frame::none()
+        .fill(fill)
+        .inner_margin(egui::Margin::symmetric(14.0, 3.0))
+        .show(ui, |ui| {
+            ui.label(egui::RichText::new(name).color(ink));
+        });
+}
+
+/// The terminal itself, with the sixteen ANSI slots beside the sample on the
+/// same background - and the same gradient - they are drawn against.
+fn preview_terminal(ui: &mut Ui, theme: &Theme) {
+    const SIZE: f32 = 12.0;
     egui::Frame::none()
         .fill(theme.background)
         .inner_margin(egui::Margin::same(6.0))
@@ -1749,6 +2051,39 @@ mod tests {
     /// The preview earns its place by showing the syntax colours, so every
     /// sample line has to be one the scanner finds something in - and none of
     /// them may come out entirely in the plain foreground.
+    fn bar(position: crate::config::BarPosition, tabs_in_bar: bool) -> BarLayout {
+        BarLayout {
+            position,
+            tabs_in_bar,
+            fixed_tabs: false,
+            close_left: false,
+            scale: 1.0,
+        }
+    }
+
+    /// The thumbnail puts the bar where the user has it, the tabs in it or
+    /// beside it, and the terminal in what is left - nothing overlapping.
+    #[test]
+    fn a_thumbnail_is_laid_out_as_the_users_window_is() {
+        use crate::config::BarPosition;
+        let rect = Rect::from_min_size(pos2(0.0, 0.0), TILE);
+        let top = thumb_layout(rect, bar(BarPosition::Top, false));
+        assert!(top.bar.bottom() <= top.tabs.unwrap().top());
+        assert!(top.tabs.unwrap().bottom() <= top.body.top());
+        let below = thumb_layout(rect, bar(BarPosition::Bottom, true));
+        assert!(below.tabs.is_none(), "the tabs share the bar");
+        assert_eq!(below.bar.bottom(), rect.bottom());
+        assert!(below.body.bottom() <= below.bar.top());
+        let left = thumb_layout(rect, bar(BarPosition::Left, true));
+        assert!(left.tabs.is_some(), "a column has no room to share");
+        assert!(left.bar.right() <= left.body.left());
+        let right = thumb_layout(rect, bar(BarPosition::Right, false));
+        assert!(right.body.right() <= right.bar.left());
+        for parts in [top, below, left, right] {
+            assert!(rect.contains_rect(parts.body) && rect.contains_rect(parts.bar));
+        }
+    }
+
     #[test]
     fn every_preview_line_is_coloured() {
         let theme = Theme::default();

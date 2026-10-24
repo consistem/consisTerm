@@ -181,6 +181,9 @@ impl App {
         if terminal_focus && consume_exact(ctx, Modifiers::CTRL, Key::Delete) {
             self.clear_active_terminal();
         }
+        if terminal_focus {
+            self.pane_shortcuts(ctx);
+        }
         // Ctrl+Shift+Q, for query: in or out of the IRIS SQL shell. The same
         // entry the right-click menu has.
         if terminal_focus && consume_exact(ctx, Modifiers::CTRL | Modifiers::SHIFT, Key::Q) {
@@ -225,6 +228,61 @@ impl App {
             if let Some(m) = fire {
                 self.handle_request(ctx, UiRequest::RunMacro(m));
             }
+        }
+    }
+
+    /// The panes of the active tab, from the keyboard, the way Windows
+    /// Terminal binds them: Alt and an arrow moves the keyboard to the pane
+    /// that way, Alt+Shift and an arrow swaps this pane with that one,
+    /// Alt+Shift+Plus and Alt+Shift+Minus split it, Alt+Shift+R turns the
+    /// split it is in, and Ctrl+Shift+Z lets it fill the tab.
+    ///
+    /// Only on a split tab, except the two that make one: on a tab with one
+    /// pane every one of them is a key the session is entitled to, and Alt
+    /// and a letter is how a shell is sent meta.
+    fn pane_shortcuts(&mut self, ctx: &Context) {
+        let Some(tab) = self.tabs.get(self.active) else {
+            return;
+        };
+        if tab.is_game() {
+            return;
+        }
+        let split = tab.split.is_some();
+        let at = self.focused_at();
+        let alt = Modifiers::ALT;
+        let alt_shift = Modifiers::ALT | Modifiers::SHIFT;
+        // Plus is Shift and Equals on most layouts, and which of the two the
+        // platform reports for it depends on the layout, so both are taken.
+        if consume_exact(ctx, alt_shift, Key::Plus) | consume_exact(ctx, alt_shift, Key::Equals) {
+            self.split_pane(at, Toward::Right);
+        }
+        if consume_exact(ctx, alt_shift, Key::Minus) {
+            self.split_pane(at, Toward::Down);
+        }
+        if !split {
+            return;
+        }
+        for (key, toward) in [
+            (Key::ArrowLeft, Toward::Left),
+            (Key::ArrowRight, Toward::Right),
+            (Key::ArrowUp, Toward::Up),
+            (Key::ArrowDown, Toward::Down),
+        ] {
+            if consume_exact(ctx, alt, key) {
+                self.focus_pane(toward);
+            }
+            if consume_exact(ctx, alt_shift, key) {
+                self.swap_pane(toward);
+            }
+        }
+        if consume_exact(ctx, alt_shift, Key::R) {
+            let focus = at.pane;
+            if let Some(split) = self.tabs.get_mut(at.tab).and_then(|t| t.split.as_mut()) {
+                split.tree.flip_around(focus);
+            }
+        }
+        if consume_exact(ctx, Modifiers::CTRL | Modifiers::SHIFT, Key::Z) {
+            self.toggle_zoom(at.tab);
         }
     }
 
@@ -491,7 +549,6 @@ impl App {
                         new_tab: Some(&mut new_tab),
                         tabs: &mut middle,
                         tabs_fill,
-                        close_gap: 0.0,
                         close_extra: 0.0,
                     },
                 );
@@ -546,9 +603,19 @@ impl App {
             UiRequest::RunMacro(m) => {
                 // Parameters or a confirmation flag both mean "ask first" - but
                 // only parameters some placeholder uses. A blank or unreferenced
-                // one would open a dialog for a value that goes nowhere.
-                if m.needs_input() || m.confirm {
+                // one would open a dialog for a value that goes nowhere. A
+                // macro told to send its saved values skips the asking, and
+                // still stops for its yes/no when it has one.
+                if m.asks_for_values() {
                     self.panels.pending = Some(PendingMacro::new(m));
+                } else if m.confirm {
+                    let values = m.default_values();
+                    self.panels.pending = Some(PendingMacro::to_confirm(m, values));
+                } else if m.needs_input() {
+                    // Through the same path the dialog sends by, so a hidden
+                    // value is masked where the session echoes it.
+                    let lines = m.expand_for_sending(&m.default_values());
+                    self.send_macro_to_active(&lines);
                 } else {
                     let lines = m.expand(&[]);
                     self.send_lines_to_active(&lines);
@@ -614,6 +681,7 @@ impl App {
                     self.set_status(tr1("Could not save settings: {}", &format!("{e:#}")));
                 }
             }
+            UiRequest::ChangeLogDir(to) => self.change_log_dir(ctx, to),
             UiRequest::ToggleAlwaysOnTop => {
                 self.settings.always_on_top = !self.settings.always_on_top;
                 self.handle_request(ctx, UiRequest::SettingsChanged);

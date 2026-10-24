@@ -1,10 +1,15 @@
 //! One tab: a session, its screen, and everything that belongs to it.
 //!
 //! A tab owns the PTY, the parsed grid, the scrollback view and the log. When
-//! it is split it owns the second session too, in [`Split`] - see
-//! [`super::layout`] for how the two are addressed.
+//! it is split it owns the other sessions too, in [`Split`] - see
+//! [`super::tiling`] for how they are laid out and addressed.
 
 use super::*;
+
+/// How many sessions one tab may hold. The strip names the focused one by a
+/// single digit, and past nine a pane on an ordinary screen is too small to
+/// read anyway.
+pub const MAX_PANES: usize = 9;
 
 /// How long the echo of a resuming `ZN` is waited for - see `Tab::zn_sent`.
 const ZN_ECHO_WAIT: std::time::Duration = std::time::Duration::from_secs(5);
@@ -158,12 +163,16 @@ pub struct Tab {
     /// Set when the child exits, so the tab explains itself instead of freezing.
     pub ended: bool,
     pub error: Option<String>,
-    /// The second session sharing this tab, once it has been split. Always
-    /// `None` on the second session itself: a split tab cannot be split again.
+    /// The other sessions sharing this tab, and their layout, once it has
+    /// been split. Always `None` on those other sessions themselves: the
+    /// layout is the tab's, and a pane is split by adding to it.
     pub split: Option<Split>,
     /// Which pane has the keyboard. Meaningless until the tab is split, and
-    /// what the strip entry's `1:` or `2:` reports.
+    /// what the number in front of the strip entry reports.
     pub focus: Pane,
+    /// The colour the user marked the tab with. The tab's rather than a
+    /// session's, so it is only read on the tab's own session.
+    pub colour: Option<egui::Color32>,
     /// The easter egg, in the tab `/snake` opened. A tab holding one holds no
     /// session and never will: it is drawn by
     /// [`crate::ui::snake_view`] instead of by the terminal, and every path
@@ -256,7 +265,8 @@ impl Tab {
             ended: false,
             error: None,
             split: None,
-            focus: Pane::First,
+            focus: Pane::FIRST,
+            colour: None,
             game: None,
             resume_namespace: None,
             cwd: None,
@@ -295,7 +305,8 @@ impl Tab {
             ended: false,
             error: None,
             split: None,
-            focus: Pane::First,
+            focus: Pane::FIRST,
+            colour: None,
             game: None,
             resume_namespace: None,
             cwd: None,
@@ -342,7 +353,8 @@ impl Tab {
             ended: false,
             error: None,
             split: None,
-            focus: Pane::First,
+            focus: Pane::FIRST,
+            colour: None,
             game: Some(Box::new(game)),
             resume_namespace: None,
             cwd: None,
@@ -471,10 +483,10 @@ impl Tab {
 
     /// What the tab strip calls this tab.
     ///
-    /// A split tab is two sessions in one entry, so the entry says which of
-    /// them the keyboard is in - `1: CONSISTEM | COMP80` for the left or top
-    /// pane, `2: ...` for the other - and follows the focus as it moves. An
-    /// unsplit tab is one session and needs no number.
+    /// A split tab is several sessions in one entry, so the entry says which
+    /// of them the keyboard is in - `1: CONSISTEM | COMP80`, `2: ...` - and
+    /// follows the focus as it moves. An unsplit tab is one session and needs
+    /// no number.
     pub fn strip_label(&self, with_namespace: bool) -> String {
         if self.split.is_none() {
             return self.title(with_namespace);
@@ -486,59 +498,185 @@ impl Tab {
         )
     }
 
-    /// How much of the room the first pane gets. 0.5 when the tab is not
-    /// split, which is the value nothing reads.
-    pub(super) fn split_ratio(&self) -> f32 {
-        self.split.as_ref().map(|split| split.ratio).unwrap_or(0.5)
+    /// How many sessions this tab holds.
+    pub fn pane_count(&self) -> usize {
+        1 + self.split.as_ref().map_or(0, |split| split.others.len())
     }
 
-    /// Drops one of this tab's two sessions, leaving the other as the tab's
-    /// only one.
+    /// Whether another pane can be opened in this tab. Not a game, which
+    /// holds no session to put one beside, and not past `MAX_PANES`.
+    pub fn can_split(&self) -> bool {
+        !self.is_game() && self.pane_count() < MAX_PANES
+    }
+
+    /// Whether one pane fills the tab for now. See [`Split::zoomed`].
+    pub fn zoomed(&self) -> bool {
+        self.split.as_ref().is_some_and(|split| split.zoomed)
+    }
+
+    /// Opens `opened` against the `side` of pane `at`, and returns its pane.
     ///
-    /// Only called on a split tab: a tab with one session in it has nothing
-    /// left to be, so closing that pane closes the tab - see
-    /// [`App::close_pane`], which is where that half of the decision is.
-    pub(super) fn close_pane(&mut self, going: Pane) {
-        match going {
-            // The second pane goes and the tab stops being split.
-            Pane::Second => self.split = None,
-            // The first one goes, so the second takes the tab over: its
-            // session, its scrollback, its name. Its `uid` comes with it, so
-            // the terminal widget it has been drawn as keeps the scroll
-            // position it had.
-            Pane::First => {
-                if let Some(split) = self.split.take() {
-                    *self = *split.tab;
-                }
-            }
+    /// The caller asks [`Tab::can_split`] first; past the limit, or against a
+    /// pane that is not there, `opened` is handed back instead.
+    pub(super) fn add_pane(
+        &mut self,
+        at: Pane,
+        side: Toward,
+        opened: Tab,
+    ) -> Result<Pane, Box<Tab>> {
+        if !self.can_split() || self.pane(at).is_none() {
+            return Err(Box::new(opened));
         }
-        self.focus = Pane::First;
+        let new = Pane(self.pane_count());
+        let split = self.split.get_or_insert_with(Split::unsplit);
+        split.tree.dock(at, side, Node::Leaf(new));
+        split.others.push(opened);
+        split.zoomed = false;
+        Ok(new)
     }
 
-    /// One of this tab's panes. `Second` is there only while the tab is split.
+    /// Takes a whole tab - split or not - into this one, against the `side`
+    /// of pane `at`, its own layout kept as it was. Its sessions are numbered
+    /// on after this tab's; its colour is dropped, as this tab's own is the
+    /// one the entry carries on with.
+    ///
+    /// Refused, with the tab handed back, when the two together would hold
+    /// more than [`MAX_PANES`].
+    pub(super) fn adopt(&mut self, at: Pane, side: Toward, mut other: Tab) -> Result<(), Box<Tab>> {
+        if self.is_game()
+            || other.is_game()
+            || self.pane(at).is_none()
+            || self.pane_count() + other.pane_count() > MAX_PANES
+        {
+            return Err(Box::new(other));
+        }
+        let offset = self.pane_count();
+        let (mut part, mut theirs) = match other.split.take() {
+            Some(split) => (split.tree, split.others),
+            None => (Node::Leaf(Pane::FIRST), Vec::new()),
+        };
+        part.renumber(|pane| Pane(pane.0 + offset));
+        let focus = Pane(other.focus.0 + offset);
+        other.focus = Pane::FIRST;
+        other.colour = None;
+        theirs.insert(0, other);
+        let split = self.split.get_or_insert_with(Split::unsplit);
+        split.tree.dock(at, side, part);
+        split.others.extend(theirs);
+        split.zoomed = false;
+        // The keyboard goes with what was dropped, the way it goes with a
+        // newly opened pane: it is what the user just took hold of.
+        self.focus = focus;
+        Ok(())
+    }
+
+    /// Takes one session out of this split tab and hands it back, the pane
+    /// beside it taking over its room.
+    ///
+    /// When the session going is the tab's own, the next one takes the tab
+    /// over: the colour and the layout are the tab's, not the session's, and
+    /// stay where they are. Its `uid` comes with each session, so the
+    /// terminal widget it has been drawn as keeps the scroll position it had.
+    ///
+    /// `None` on a tab that is not split: its one session is the tab, and
+    /// closing the tab is what takes it - see [`App::close_pane`].
+    pub(super) fn detach_pane(&mut self, going: Pane) -> Option<Tab> {
+        let mut split = self.split.take()?;
+        if going.0 > split.others.len() {
+            self.split = Some(split);
+            return None;
+        }
+        let focus = self.focus;
+        let heir = split.tree.remove(going);
+        let gone = if going == Pane::FIRST {
+            let mut gone = std::mem::replace(self, split.others.remove(0));
+            self.colour = gone.colour.take();
+            gone
+        } else {
+            split.others.remove(going.0 - 1)
+        };
+        self.focus = if focus == going {
+            heir.unwrap_or(Pane::FIRST)
+        } else if focus > going {
+            Pane(focus.0 - 1)
+        } else {
+            focus
+        };
+        split.zoomed = false;
+        if split.others.is_empty() {
+            self.focus = Pane::FIRST;
+        } else {
+            self.split = Some(split);
+        }
+        Some(gone)
+    }
+
+    /// Takes every session but the tab's own out of it, in pane order, and
+    /// leaves the tab unsplit.
+    pub(super) fn detach_all(&mut self) -> Vec<Tab> {
+        self.focus = Pane::FIRST;
+        self.split
+            .take()
+            .map(|split| split.others)
+            .unwrap_or_default()
+    }
+
+    /// One of this tab's panes, while it is there.
     pub fn pane(&self, pane: Pane) -> Option<&Tab> {
-        match pane {
-            Pane::First => Some(self),
-            Pane::Second => self.split.as_ref().map(|split| split.tab.as_ref()),
+        match pane.0 {
+            0 => Some(self),
+            n => self.split.as_ref()?.others.get(n - 1),
         }
     }
 
     pub fn pane_mut(&mut self, pane: Pane) -> Option<&mut Tab> {
-        match pane {
-            Pane::First => Some(self),
-            Pane::Second => self.split.as_mut().map(|split| split.tab.as_mut()),
+        match pane.0 {
+            0 => Some(self),
+            n => self.split.as_mut()?.others.get_mut(n - 1),
         }
     }
 
     /// The session the keyboard is in, which is this one unless the tab is
-    /// split and the second pane has it.
+    /// split and another pane has it.
     pub fn focused(&self) -> &Tab {
         self.pane(self.focus).unwrap_or(self)
     }
 
-    /// Every session this tab holds: itself, and the second pane when split.
+    /// Every session this tab holds: itself first, then its other panes.
     pub fn sessions(&self) -> impl Iterator<Item = &Tab> {
-        std::iter::once(self).chain(self.split.as_ref().map(|split| split.tab.as_ref()))
+        std::iter::once(self).chain(self.split.iter().flat_map(|split| split.others.iter()))
+    }
+
+    /// Runs `f` on every session this tab holds, its own first.
+    ///
+    /// A visitor rather than an iterator of `&mut`: the tab's own session is
+    /// the tab, and the others hang off it, so the two cannot be lent out at
+    /// once.
+    pub fn for_each_session_mut(&mut self, mut f: impl FnMut(&mut Tab)) {
+        f(self);
+        if let Some(split) = self.split.as_mut() {
+            for other in &mut split.others {
+                f(other);
+            }
+        }
+    }
+
+    /// Where the keyboard goes from the focused pane toward `toward`, if
+    /// anywhere. A zoomed tab still has every pane laid out - only one of
+    /// them is drawn - so the focus moves the same way either way.
+    pub fn neighbour(&self, toward: Toward) -> Option<Pane> {
+        self.split.as_ref()?.tree.neighbour(self.focus, toward)
+    }
+
+    /// Closes this session's transcript and starts a new one where the
+    /// settings now say, if it was writing one.
+    pub(super) fn reopen_log(&mut self, settings: &Settings) {
+        if self.log.is_some() {
+            // Closed first, so the old file is flushed and let go of before
+            // anything tries to move it.
+            self.log = None;
+            self.log = open_log(&self.profile, settings);
+        }
     }
 
     /// Remembers a command this session ran, for its own recall.
@@ -947,7 +1085,8 @@ mod tests {
             ended: false,
             error: None,
             split: None,
-            focus: Pane::First,
+            focus: Pane::FIRST,
+            colour: None,
             game: None,
             resume_namespace: None,
             cwd: None,
@@ -1008,37 +1147,116 @@ mod tests {
         );
     }
 
-    fn split_tab_of(first: &str, second: &str) -> Tab {
-        let mut tab = bare_tab(first);
-        tab.split = Some(Split {
-            dir: SplitDir::Right,
-            tab: Box::new(bare_tab(second)),
-            ratio: 0.5,
-        });
-        tab.focus = Pane::Second;
+    /// A tab of bare sessions named by `names`, the first being the tab's
+    /// own, each docked to the right of the one before.
+    fn split_tab_of(names: &[&str]) -> Tab {
+        let mut tab = bare_tab(names[0]);
+        for (i, name) in names.iter().enumerate().skip(1) {
+            let at = Pane(i - 1);
+            assert!(tab.add_pane(at, Toward::Right, bare_tab(name)).is_ok());
+        }
         tab
     }
 
-    /// Closing the second pane leaves the first where it was.
-    #[test]
-    fn closing_the_second_pane_leaves_the_first_in_the_tab() {
-        let mut tab = split_tab_of("left", "right");
-        tab.close_pane(Pane::Second);
-        assert!(tab.split.is_none(), "the tab should no longer be split");
-        assert_eq!(tab.profile.name, "left");
-        assert_eq!(tab.focus, Pane::First);
+    fn names(tab: &Tab) -> Vec<String> {
+        tab.sessions().map(|s| s.profile.name.clone()).collect()
     }
 
-    /// Closing the first pane promotes the second into the tab, session and
+    /// Closing a pane leaves the others where they were.
+    #[test]
+    fn closing_the_second_pane_leaves_the_first_in_the_tab() {
+        let mut tab = split_tab_of(&["left", "right"]);
+        tab.focus = Pane(1);
+        let gone = tab.detach_pane(Pane(1)).expect("a pane");
+        assert_eq!(gone.profile.name, "right");
+        assert!(tab.split.is_none(), "the tab should no longer be split");
+        assert_eq!(tab.profile.name, "left");
+        assert_eq!(tab.focus, Pane::FIRST);
+    }
+
+    /// Closing the first pane promotes the next into the tab, session and
     /// all - it is a live IRIS session, and the click was on the other one.
+    /// The colour is the tab's and stays.
     #[test]
     fn closing_the_first_pane_promotes_the_second_into_the_tab() {
-        let mut tab = split_tab_of("left", "right");
-        let promoted = tab.pane(Pane::Second).map(|pane| pane.uid);
-        tab.close_pane(Pane::First);
+        let mut tab = split_tab_of(&["left", "right"]);
+        tab.colour = Some(egui::Color32::RED);
+        let promoted = tab.pane(Pane(1)).map(|pane| pane.uid);
+        tab.detach_pane(Pane::FIRST);
         assert!(tab.split.is_none(), "the tab should no longer be split");
         assert_eq!(tab.profile.name, "right");
         assert_eq!(Some(tab.uid), promoted, "the pane keeps its own identity");
-        assert_eq!(tab.focus, Pane::First);
+        assert_eq!(tab.focus, Pane::FIRST);
+        assert_eq!(tab.colour, Some(egui::Color32::RED));
+    }
+
+    /// The keyboard stays with the session it was in, whatever number that
+    /// session has once the one before it has gone.
+    #[test]
+    fn the_focus_follows_its_session_when_a_pane_before_it_goes() {
+        let mut tab = split_tab_of(&["a", "b", "c"]);
+        tab.focus = Pane(2);
+        tab.detach_pane(Pane(1));
+        assert_eq!(names(&tab), ["a", "c"]);
+        assert_eq!(tab.focused().profile.name, "c");
+        assert!(tab.split.as_ref().unwrap().tree.covers(2));
+    }
+
+    /// The keyboard in the pane that went moves to the one that took its room.
+    #[test]
+    fn the_focus_in_a_closed_pane_moves_to_the_pane_beside_it() {
+        let mut tab = split_tab_of(&["a", "b", "c"]);
+        tab.focus = Pane(1);
+        tab.detach_pane(Pane(1));
+        assert_eq!(tab.focused().profile.name, "c");
+    }
+
+    /// A whole split tab dropped into another keeps its own layout, and its
+    /// panes are numbered on after the ones already there.
+    #[test]
+    fn an_adopted_tab_keeps_its_layout_and_is_numbered_on() {
+        let mut host = split_tab_of(&["a", "b"]);
+        let mut guest = bare_tab("c");
+        assert!(guest
+            .add_pane(Pane::FIRST, Toward::Down, bare_tab("d"))
+            .is_ok());
+        guest.focus = Pane(1);
+        assert!(host.adopt(Pane::FIRST, Toward::Left, guest).is_ok());
+        assert_eq!(names(&host), ["a", "b", "c", "d"]);
+        let tree = &host.split.as_ref().unwrap().tree;
+        assert!(tree.covers(4));
+        assert_eq!(tree.panes(), [Pane(2), Pane(3), Pane(0), Pane(1)]);
+        assert_eq!(tree.neighbour(Pane(2), Toward::Down), Some(Pane(3)));
+        assert_eq!(host.focused().profile.name, "d", "the keyboard came along");
+        assert!(host.sessions().skip(1).all(|s| s.split.is_none()));
+    }
+
+    #[test]
+    fn a_tab_cannot_hold_more_than_the_limit() {
+        let names: Vec<String> = (0..MAX_PANES).map(|i| i.to_string()).collect();
+        let names: Vec<&str> = names.iter().map(String::as_str).collect();
+        let mut tab = split_tab_of(&names);
+        assert!(!tab.can_split());
+        assert!(tab
+            .add_pane(Pane::FIRST, Toward::Right, bare_tab("x"))
+            .is_err());
+        assert!(tab
+            .adopt(Pane::FIRST, Toward::Right, bare_tab("y"))
+            .is_err());
+        assert_eq!(tab.pane_count(), MAX_PANES);
+    }
+
+    #[test]
+    fn detaching_every_pane_hands_them_back_in_order() {
+        let mut tab = split_tab_of(&["a", "b", "c"]);
+        tab.focus = Pane(2);
+        let others: Vec<String> = tab
+            .detach_all()
+            .into_iter()
+            .map(|t| t.profile.name)
+            .collect();
+        assert_eq!(others, ["b", "c"]);
+        assert!(tab.split.is_none());
+        assert_eq!(tab.focus, Pane::FIRST);
     }
 }

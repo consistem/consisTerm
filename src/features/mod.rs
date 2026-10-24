@@ -29,6 +29,7 @@ pub mod explorer_menu;
 pub mod export;
 pub mod history;
 pub mod iris_terminal;
+pub mod log_move;
 pub mod logging;
 pub mod macros;
 pub mod natives;

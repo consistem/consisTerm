@@ -117,9 +117,10 @@ one of these holds part of `impl App`; the state itself lives in `mod.rs`.
 | `mod.rs` | the `App` struct, `App::new`, and the re-exports the rest of the crate uses |
 | `frame.rs` | `impl eframe::App` — the frame loop, and the repaint pacing at the end of it |
 | `tab.rs` | `Tab`: one session, its grid, its log, its scrollback view |
-| `tabs.rs` | opening, closing, splitting, choosing tabs and panes |
-| `layout.rs` | `At`, `Pane`, `Split`, and fitting the window to a character grid |
-| `pane.rs` | drawing one terminal pane — the hot path |
+| `tabs.rs` | opening, closing, splitting, docking, choosing tabs and panes |
+| `layout.rs` | `At`, `Split`, the divider, and fitting the window to a character grid |
+| `tiling.rs` | `Pane`, `Node`: the tree of splits a tab's panes are laid out by, with no sessions in it |
+| `pane.rs` | drawing the panes of a tab where the tree puts them — the hot path |
 | `edit.rs` | acting on the line being typed, and on the selection |
 | `menu.rs` | the menu bar, the shortcuts, and the `UiRequest`s they raise |
 | `status.rs` | the footer message, and the offer it can carry and set aside |
@@ -189,8 +190,9 @@ left to be rediscovered.
   tessellator against the font atlas at the moment of drawing. Building a mesh
   directly means baking that scale in early, and drawing a frame of garbage
   every time the atlas grows.
-- **Both panes of a split tab must be drained every frame.** A session that is
-  not read will eventually block IRIS.
+- **Every pane of every tab must be drained every frame** - the hidden ones of
+  a zoomed tab included; `Tab::for_each_session_mut` reaches them all. A
+  session that is not read will eventually block IRIS.
 - **The grid's width is what IRIS was told.** `TERMINAL_COLS` is deliberately
   huge for IRIS, which truncates a `Write` at the margin it was given. A shell
   gets the window's real width instead, because a shell *draws* to the width it

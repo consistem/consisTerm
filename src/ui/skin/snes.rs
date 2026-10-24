@@ -4,8 +4,10 @@
 //! `--border-image` round it - a 30 px sheet sliced at 12, laid 6 px outside
 //! the box, its corners cut to a single step - and, on what stands up off the
 //! page, `generate-shadow-shine`: a strip of white at .3 along the inside of
-//! the top and down the left, a strip of black at .2 along the bottom and up
-//! the right, each running into its corner as a stair. Under the pointer the
+//! the top, a strip of black at .2 along the bottom, each turning its corner
+//! as a stair two cells high - the left end of the shine, the right end of
+//! the shadow - and going no further: the pseudo-elements are three cells
+//! tall, so neither runs down a side. Under the pointer the
 //! two deepen to .4 and .3; held, they change places.
 //!
 //! The library's pixel is 6 px at the size a web page sets it, which would
@@ -106,11 +108,17 @@ fn boxed(k: &Kit, rect: Rect, body: Color32, lit: Option<(Color32, Color32)>) ->
         // stair down the left.
         out.push(span(l + p, t, rt - p, t + p, shine));
         out.push(span(l, t + p, l + 2.0 * p, t + 2.0 * p, shine));
-        out.push(span(l, t + 2.0 * p, l + p, b - p, shine));
+        out.push(span(l, t + 2.0 * p, l + p, (t + 3.0 * p).min(b - p), shine));
         // `::before`, the shadow: the bottom row and the stair up the right.
         out.push(span(l + p, b - p, rt - p, b, shadow));
         out.push(span(rt - 2.0 * p, b - 2.0 * p, rt, b - p, shadow));
-        out.push(span(rt - p, t + p, rt, b - 2.0 * p, shadow));
+        out.push(span(
+            rt - p,
+            (b - 3.0 * p).max(t + p),
+            rt,
+            b - 2.0 * p,
+            shadow,
+        ));
     }
     // The corner cell of the sheet, inside the box's corner...
     for (x, y) in [(l, t), (rt - p, t), (l, b - p), (rt - p, b - p)] {
@@ -270,7 +278,6 @@ impl Style for Snes {
             title_height: 24.0,
             title_button: vec2(16.0, 16.0),
             title_button_gap: 6.0,
-            close_gap: 6.0,
             // The line and the step inside it.
             window_border: 2.0 * PX,
             window_radius: 0.0,
@@ -493,6 +500,22 @@ impl Style for Snes {
             ));
         }
         out
+    }
+
+    fn tab_mark(&self, k: &Kit, rect: Rect, colour: Color32, st: St) -> Vec<Shape> {
+        // One pixel of the library's own size along the inside of the top,
+        // where the shine runs - in the colour instead of the white, so the
+        // mark sits on the grid the rest of the tab is drawn on.
+        let _ = st;
+        let p = PX * k.u();
+        let r = prim::snap_rect(rect, k.ppp).shrink(p);
+        vec![fill(
+            Rect::from_min_max(
+                pos2(r.left() + p, r.top()),
+                pos2(r.right() - p, r.top() + p),
+            ),
+            colour,
+        )]
     }
 
     fn tab_text(&self, k: &Kit, st: St) -> Color32 {

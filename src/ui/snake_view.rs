@@ -73,11 +73,16 @@ pub fn show(ui: &mut Ui, game: &mut Snake, theme: &Theme, tab_uid: u64, role: Ro
         }
     }
 
-    game.advance(std::time::Instant::now());
+    let now = std::time::Instant::now();
+    game.advance(now);
     // Only while something is moving: a board waiting to be started, or one
     // with the game over on it, is a still picture and must cost no frames.
+    // Asked for when the next step is due rather than a whole step from now:
+    // a frame always comes a little late, and measured from the frame each
+    // step slipped by that much more, until two landed in one frame and the
+    // snake jumped a cell.
     if game.status() == Status::Running {
-        ui.ctx().request_repaint_after(game.interval());
+        ui.ctx().request_repaint_after(game.until_next_step(now));
     }
 
     paint(ui, &response, outer, game, theme);

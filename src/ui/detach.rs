@@ -352,7 +352,6 @@ fn title_bar(
                 new_tab: None,
                 tabs: &mut name,
                 tabs_fill: false,
-                close_gap: 0.0,
                 close_extra: 0.0,
             },
         );

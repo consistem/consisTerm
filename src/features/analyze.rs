@@ -50,8 +50,8 @@ pub enum Panes {
     /// The pane the keyboard is in.
     #[default]
     Focused,
-    /// Both of a split tab's sessions, each under a heading of its own.
-    Both,
+    /// Every one of a split tab's sessions, each under a heading of its own.
+    All,
 }
 
 impl Panes {
@@ -59,7 +59,7 @@ impl Panes {
     pub fn label(self) -> &'static str {
         match self {
             Panes::Focused => "This pane",
-            Panes::Both => "Both panes",
+            Panes::All => "All panes",
         }
     }
 }

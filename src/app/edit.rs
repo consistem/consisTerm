@@ -662,22 +662,16 @@ impl App {
             self.set_status(tr("No active session."));
             return;
         }
-        // Both panes in the order they are on screen, so "pane 1" in the file
+        // Every pane in the order they are numbered, so "pane 1" in the file
         // is the pane called `1:` in the tab strip - rather than in the order
         // the keyboard happens to be in.
-        let wanted: Vec<At> = match panes {
-            analyze::Panes::Both if self.tabs.get(at.tab).is_some_and(|t| t.split.is_some()) => {
-                vec![
-                    At {
-                        tab: at.tab,
-                        pane: Pane::First,
-                    },
-                    At {
-                        tab: at.tab,
-                        pane: Pane::Second,
-                    },
-                ]
-            }
+        let wanted: Vec<At> = match (panes, self.tabs.get(at.tab)) {
+            (analyze::Panes::All, Some(tab)) if tab.split.is_some() => (0..tab.pane_count())
+                .map(|n| At {
+                    tab: at.tab,
+                    pane: Pane(n),
+                })
+                .collect(),
             _ => vec![at],
         };
 

@@ -75,10 +75,13 @@ impl App {
         // Only the focused pane follows the active session, and only it claims
         // the keyboard when nothing else holds it. Two panes both claiming it
         // would take it from each other every frame.
+        let tab = self.tabs.get(at.tab);
         let role = terminal_view::PaneRole {
             focused,
             take_focus: focused && self.focused_tab != Some(uid),
-            split: self.tabs.get(at.tab).is_some_and(|tab| tab.split.is_some()),
+            split: tab.is_some_and(|tab| tab.split.is_some()),
+            can_split: tab.is_some_and(Tab::can_split),
+            zoomed: tab.is_some_and(Tab::zoomed),
         };
         if focused {
             self.focused_tab = Some(uid);
@@ -205,21 +208,29 @@ impl App {
                 // [`LayoutAction`]. `at` is the pane the menu was opened over,
                 // so Close closes that session and nothing else.
                 ContextAction::SplitRight => {
-                    self.pending_layout = Some(LayoutAction::Split(at.tab, SplitDir::Right));
+                    self.pending_layout = Some(LayoutAction::Split(at, Toward::Right));
                 }
                 ContextAction::SplitBottom => {
-                    self.pending_layout = Some(LayoutAction::Split(at.tab, SplitDir::Bottom));
+                    self.pending_layout = Some(LayoutAction::Split(at, Toward::Down));
                 }
                 ContextAction::SplitWithShell(shell, right) => {
-                    let dir = if right {
-                        SplitDir::Right
-                    } else {
-                        SplitDir::Bottom
-                    };
-                    self.pending_layout = Some(LayoutAction::SplitWithShell(at.tab, dir, shell));
+                    let side = if right { Toward::Right } else { Toward::Down };
+                    self.pending_layout = Some(LayoutAction::SplitWithShell(at, side, shell));
                 }
                 ContextAction::Unsplit => {
                     self.pending_layout = Some(LayoutAction::Unsplit(at.tab));
+                }
+                ContextAction::DetachPane => {
+                    self.pending_layout = Some(LayoutAction::Detach(at));
+                }
+                // Not a change to which panes there are, so nothing is moved
+                // under the loop drawing them; but the pane asking is the one
+                // that is to fill the tab, so it takes the keyboard first.
+                ContextAction::ToggleZoom => {
+                    if let Some(tab) = self.tabs.get_mut(at.tab) {
+                        tab.focus = at.pane;
+                    }
+                    self.toggle_zoom(at.tab);
                 }
                 ContextAction::ClosePane => {
                     self.pending_layout = Some(LayoutAction::ClosePane(at));
@@ -530,6 +541,229 @@ impl App {
 
     /// [`App::terminal_pane`] in a box of a given size, for one half of a
     /// split.
+    /// Draws every pane of the tab at `index` where its layout puts it, and
+    /// the dividers between them; or the focused one filling the room, while
+    /// the tab is zoomed.
+    ///
+    /// Returns the first pane's measure, which is what the window is fitted
+    /// from, and the size of the focused one, which is the one being typed in.
+    pub(super) fn tiled_panes(
+        &mut self,
+        ui: &mut egui::Ui,
+        ctx: &Context,
+        theme: &Theme,
+        index: usize,
+    ) -> (PaneMeasure, (usize, usize)) {
+        let focus = self.tabs[index].focus;
+        let uid = self.tabs[index].uid;
+        let room = ui.available_rect_before_wrap();
+        let tiles = match self.tabs[index].split.as_ref() {
+            None => {
+                let at = At {
+                    tab: index,
+                    pane: Pane::FIRST,
+                };
+                let measure = self.terminal_pane(ui, ctx, theme, at, true);
+                let view = measure.view;
+                self.dock_zones(ui, index, &[(Pane::FIRST, room)]);
+                return (measure, view);
+            }
+            Some(split) if split.zoomed => Tiles {
+                panes: vec![(focus, room)],
+                dividers: Vec::new(),
+            },
+            Some(split) => split.tree.tile(room, ui.spacing().item_spacing),
+        };
+
+        let mut geometry = None;
+        let mut shown = (0, 0);
+        let mut clicked = None;
+        for &(pane, rect) in &tiles.panes {
+            let at = At { tab: index, pane };
+            let measure = ui
+                .allocate_ui_at_rect(rect, |ui| {
+                    self.sized_pane(ui, ctx, theme, at, pane == focus, rect.size())
+                })
+                .inner;
+            if measure.clicked {
+                clicked = Some(pane);
+            }
+            if pane == focus {
+                shown = measure.view;
+            }
+            // The first pane, or - zoomed - the only one there is.
+            if pane == Pane::FIRST || geometry.is_none() {
+                geometry = Some(measure);
+            }
+        }
+        // Drawn after the panes, so they sit over the panes' edges for
+        // hit-testing; each one's ratio is written back once the frame it was
+        // dragged in has been laid out, and the next one opens at it.
+        for divider in &tiles.dividers {
+            if let Some(ratio) = split_divider(ui, uid, divider) {
+                if let Some(split) = self.tabs[index].split.as_mut() {
+                    split.tree.set_ratio(divider.id, ratio);
+                }
+            }
+        }
+        ui.advance_cursor_after_rect(room);
+        if !self.tabs[index].zoomed() {
+            self.pane_grips(ui, index, &tiles.panes);
+        }
+        self.dock_zones(ui, index, &tiles.panes);
+        // Clicking a pane is how the keyboard is moved into it, and the strip
+        // entry says which one has it - the number in front of the name.
+        if let Some(pane) = clicked {
+            self.tabs[index].focus = pane;
+        }
+        (geometry.unwrap_or_default(), shown)
+    }
+
+    /// While a tab is dragged over the terminal: marks the half of the pane
+    /// under the pointer it would take, and docks it there when it is let go.
+    ///
+    /// The mark is the same half the split will start at, so what is shown is
+    /// what is about to happen. In the theme's error colour when the two tabs
+    /// together would hold more panes than one tab may, and a drop there is
+    /// refused with a word in the footer rather than silently ignored.
+    fn dock_zones(&mut self, ui: &egui::Ui, index: usize, panes: &[(Pane, egui::Rect)]) {
+        let Some(drag) = self.tab_drag.filter(|drag| drag.over_terminal) else {
+            return;
+        };
+        let Some(host) = self.tabs.get(index) else {
+            return;
+        };
+        if host.uid == drag.uid {
+            return;
+        }
+        let Some(pointer) = ui.ctx().pointer_latest_pos() else {
+            return;
+        };
+        let Some(&(pane, rect)) = panes.iter().find(|(_, rect)| rect.contains(pointer)) else {
+            return;
+        };
+        let side = drop_side(rect, pointer);
+        let fits = self
+            .tabs
+            .iter()
+            .find(|tab| tab.uid == drag.uid)
+            .is_some_and(|moving| {
+                !moving.is_game()
+                    && !host.is_game()
+                    && moving.pane_count() + host.pane_count() <= tab::MAX_PANES
+            });
+        let visuals = ui.visuals();
+        let colour = if fits {
+            visuals.selection.bg_fill
+        } else {
+            visuals.error_fg_color
+        };
+        let painter = ui.ctx().layer_painter(egui::LayerId::new(
+            egui::Order::Foreground,
+            egui::Id::new("nit-dock-zone"),
+        ));
+        let preview = drop_preview(rect, side).shrink(2.0);
+        painter.rect_filled(preview, 4.0, colour.gamma_multiply(0.3));
+        painter.rect_stroke(preview, 4.0, egui::Stroke::new(2.0_f32, colour));
+        if ui.input(|i| i.pointer.any_released()) {
+            self.pending_layout = Some(LayoutAction::Dock {
+                tab: drag.uid,
+                onto: At { tab: index, pane },
+                side,
+            });
+            self.tab_drag = None;
+        }
+    }
+
+    /// The grip each pane of a split tab is moved by: a small bar at the
+    /// middle of its top edge, shown while the pointer is over the pane.
+    /// Dragged, the half of the pane under the pointer that it would take is
+    /// marked, as a tab dropped on the terminal marks it; let go, the pane
+    /// moves there.
+    ///
+    /// A grip of its own rather than a drag anywhere in the pane: a drag in
+    /// the terminal selects text, and taking that over - even behind a
+    /// modifier - would leave the most ordinary gesture in the app doing two
+    /// things.
+    fn pane_grips(&mut self, ui: &egui::Ui, index: usize, panes: &[(Pane, egui::Rect)]) {
+        let uid = self.tabs[index].uid;
+        let pointer = ui.ctx().pointer_latest_pos();
+        let visuals = ui.visuals().clone();
+        for &(pane, rect) in panes {
+            let grip = egui::Rect::from_center_size(
+                egui::pos2(rect.center().x, rect.top() + 7.0),
+                egui::vec2(40.0, 10.0),
+            );
+            let id = egui::Id::new(("nit-pane-grip", uid, pane.0));
+            // Held from the press until the button is let go, by the app's
+            // own record: egui's drag ends on the release frame, when the
+            // pointer is over another pane and this grip would be skipped.
+            let held = self.pane_grab == Some((uid, pane));
+            let near = pointer.is_some_and(|p| rect.contains(p));
+            if !near && !held {
+                continue;
+            }
+            let response = ui.interact(grip, id, egui::Sense::drag());
+            if response.drag_started() {
+                self.pane_grab = Some((uid, pane));
+            }
+            let held = held || response.drag_started();
+            let lit = response.hovered() || held;
+            ui.ctx().set_cursor_icon(if held {
+                egui::CursorIcon::Grabbing
+            } else if lit {
+                egui::CursorIcon::Grab
+            } else {
+                ui.ctx().output(|o| o.cursor_icon)
+            });
+            let ink = if lit {
+                visuals.strong_text_color()
+            } else {
+                visuals.weak_text_color().gamma_multiply(0.6)
+            };
+            let painter = ui.ctx().layer_painter(egui::LayerId::new(
+                egui::Order::Foreground,
+                egui::Id::new("nit-pane-grips"),
+            ));
+            painter.rect_filled(grip.shrink2(egui::vec2(6.0, 3.0)), 2.0, ink);
+            if !held {
+                continue;
+            }
+            // Where it would go: the pane under the pointer, other than this
+            // one, and the side of it the pointer is nearest.
+            let target = pointer.and_then(|p| {
+                panes
+                    .iter()
+                    .find(|(other, r)| *other != pane && r.contains(p))
+                    .map(|&(other, r)| (other, r, drop_side(r, p)))
+            });
+            if let Some((_, r, side)) = target {
+                let preview = drop_preview(r, side).shrink(2.0);
+                let colour = visuals.selection.bg_fill;
+                painter.rect_filled(preview, 4.0, colour.gamma_multiply(0.3));
+                painter.rect_stroke(preview, 4.0, egui::Stroke::new(2.0_f32, colour));
+            }
+            if ui.input(|i| i.pointer.any_released()) {
+                self.pane_grab = None;
+                if let Some((onto, _, side)) = target {
+                    self.pending_layout = Some(LayoutAction::MovePane {
+                        at: At { tab: index, pane },
+                        onto,
+                        side,
+                    });
+                }
+            }
+        }
+    }
+
+    /// Lets the focused pane fill its tab, or puts the others back. Nothing
+    /// happens on a tab that is not split: its one pane fills it already.
+    pub(super) fn toggle_zoom(&mut self, index: usize) {
+        if let Some(split) = self.tabs.get_mut(index).and_then(|tab| tab.split.as_mut()) {
+            split.zoomed = !split.zoomed;
+        }
+    }
+
     pub(super) fn sized_pane(
         &mut self,
         ui: &mut egui::Ui,

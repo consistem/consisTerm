@@ -85,7 +85,7 @@ pub fn show_with_key(ui: &mut Ui, scene: Scene, animate: bool, key: Option<&str>
     } else {
         scene.still_at()
     };
-    let ink = Ink::of(ui);
+    let ink = Ink::own();
     let painter = ui.painter_at(rect);
     match scene {
         Scene::GlobalTooltip => global_tooltip(&painter, rect, &ink, t),
@@ -328,6 +328,27 @@ struct Ink {
 }
 
 impl Ink {
+    /// The app's own look, whatever theme is in use: the first built-in,
+    /// IRIS Dark. A scene is a little window of the app, and drawn from a
+    /// skin's colours - the face of a Windows 98 dialog, the metal of Aqua -
+    /// its flat shapes stood for controls that look nothing like that
+    /// skin's, and read as broken ones. In the app's own colours they are
+    /// what they are: a picture of the feature.
+    fn own() -> Ink {
+        let hex = |rgb: u32| Color32::from_rgb((rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8);
+        Ink {
+            screen: hex(0x101418),
+            chrome: hex(0x181d23),
+            popup: hex(0x232a32),
+            text: hex(0xd6dbe0),
+            weak: hex(0x8a949e),
+            accent: hex(0x2a4a6b),
+            accent_text: hex(0xffffff),
+            typed: hex(0x4ec9b0),
+            line: hex(0x343c46),
+        }
+    }
+
     fn of(ui: &Ui) -> Ink {
         let v = ui.visuals();
         Ink {

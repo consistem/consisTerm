@@ -84,6 +84,8 @@ fn measure_inner(cols: usize, rows: usize, size: egui::Vec2, fill: Fill) {
                         focused: true,
                         take_focus: false,
                         split: false,
+                        can_split: true,
+                        zoomed: false,
                     },
                     &[],
                 );

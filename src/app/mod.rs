@@ -6,7 +6,7 @@ use egui::{Context, Key, Modifiers};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-use crate::config::session::{SavedDir, SavedSession, SavedSplit, SavedTab};
+use crate::config::session::{SavedDir, SavedPane, SavedSession, SavedTab};
 use crate::config::{self, ensure_config_tree, load_themes, LogMode, Profile, Settings, Theme};
 use crate::features::analyze;
 use crate::features::autocomplete::{self, Completion, Vocabulary};
@@ -40,6 +40,7 @@ mod pane;
 mod status;
 mod tab;
 mod tabs;
+mod tiling;
 mod updates;
 mod window;
 
@@ -49,16 +50,17 @@ mod window;
 // The shell's own API, unchanged by the split: these were reachable as
 // `crate::app::*` when this was one file, and the rest of the crate still
 // names them that way.
-pub use layout::{Pane, Split, SplitDir};
+pub use layout::Split;
 pub use tab::Tab;
+pub use tiling::{drop_preview, drop_side, Divider, Node, Pane, SplitDir, Tiles, Toward};
 pub use updates::UpdateState;
 
 use layout::{
-    draw_pane, fitted_inner_size, split_divider, split_extent, At, LayoutAction, PaneMeasure,
-    WindowFit, FALLBACK_COLS, FALLBACK_ROWS, FIT_ATTEMPTS, SPLIT_DIVIDER,
+    draw_pane, fitted_inner_size, split_divider, At, LayoutAction, PaneMeasure, WindowFit,
+    FALLBACK_COLS, FALLBACK_ROWS, FIT_ATTEMPTS,
 };
 use tab::{close_down, cursor_bytes, one_char, selection_in_line};
-use tabs::Renaming;
+use tabs::{Renaming, TabDrag};
 
 /// Takes one key press out of this frame's events, matching the modifiers
 /// exactly, and reports whether it was there.
@@ -181,6 +183,12 @@ pub struct App {
     font_request: String,
     /// Tab whose name is being edited, if any.
     renaming: Option<Renaming>,
+    /// A tab being dragged out of the strip toward the terminal, to be docked
+    /// beside the panes of another.
+    tab_drag: Option<TabDrag>,
+    /// The pane taken hold of by its grip, by its tab's uid, until the
+    /// button is let go - wherever the pointer is by then.
+    pane_grab: Option<(u64, Pane)>,
     /// Size and position of the Settings window: restored from the settings
     /// file at startup, and written back on exit for whichever of the two
     /// window switches is on.
@@ -380,6 +388,8 @@ impl App {
             font_family: String::new(),
             font_request: String::new(),
             renaming: None,
+            tab_drag: None,
+            pane_grab: None,
             pending_layout: None,
             screensaver: None,
             settings_placement,
@@ -475,6 +485,8 @@ impl App {
             font_family: String::new(),
             font_request: String::new(),
             renaming: None,
+            tab_drag: None,
+            pane_grab: None,
             pending_layout: None,
             screensaver: None,
             settings_placement: crate::ui::detach::Placement::default(),
@@ -498,6 +510,52 @@ impl App {
         self.tabs.push(Tab::for_snapshot(name, text));
     }
 
+    /// Docks the snapshot tab named `name` into the first tab, against the
+    /// `side` of its pane `at` - what dropping it there does.
+    pub(crate) fn snapshot_dock(&mut self, name: &str, at: usize, side: Toward) {
+        let Some(uid) = self
+            .tabs
+            .iter()
+            .find(|tab| tab.profile.name == name)
+            .map(|tab| tab.uid)
+        else {
+            return;
+        };
+        self.dock_tab(
+            uid,
+            At {
+                tab: 0,
+                pane: Pane(at),
+            },
+            side,
+        );
+    }
+
+    /// Shows the tab at `index`.
+    pub(crate) fn activate_snapshot_tab(&mut self, index: usize) {
+        self.activate_tab(index);
+    }
+
+    /// Opens the rename dialog on the tab at `index`, as a double-click on
+    /// it does.
+    pub(crate) fn snapshot_rename(&mut self, index: usize) {
+        if let Some(tab) = self.tabs.get(index) {
+            self.renaming = Some(Renaming {
+                tab: tab.uid,
+                names: tab.sessions().map(|s| (s.uid, s.title(false))).collect(),
+                colour: tab.colour,
+                focus: true,
+            });
+        }
+    }
+
+    /// Marks the snapshot tab at `index` with a colour.
+    pub(crate) fn snapshot_colour(&mut self, index: usize, colour: egui::Color32) {
+        if let Some(tab) = self.tabs.get_mut(index) {
+            tab.colour = Some(colour);
+        }
+    }
+
     /// Puts a message in the footer.
     pub(crate) fn snapshot_status(&mut self, text: &str) {
         self.set_status(text.to_owned());
@@ -515,6 +573,7 @@ fn load_macros(settings: &Settings) -> macros::LoadReport {
     macros::ensure_personal_file(&personal);
     let mut report = macros::load_all(settings.org_macros().as_deref(), &personal);
     macros::apply_own_values(&mut report.groups, &settings.macro_values, &macros::Keyring);
+    macros::apply_own_ask(&mut report.groups, &settings.macro_send_directly);
     report
 }
 

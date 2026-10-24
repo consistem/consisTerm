@@ -8,16 +8,27 @@
 -->
 ## Novidades
 
-- **Novos temas, com a janela de cada época:** System e System Dark, no estilo
-  do Mac clássico; SNES e SNES Dark, com a fonte pixelada do Super Nintendo; e
-  Windows XP Dark. Tiger Aqua agora traz também a janela Aqua do Mac OS X, com
-  os botões em gota.
-- **Terminal drop-down sem piscar:** a janela não mostra mais um contorno branco
-  antes de aparecer, e desce e sobe suavemente em qualquer velocidade de
-  animação (Rápido, Normal ou Lento).
-- **Redimensionar não duplica mais a tela:** arrastar a borda da janela para
-  diminuir e aumentar não empilha mais cópias do conteúdo no histórico.
-- **Ctrl+clique abre endereços web** escritos no terminal.
+- **Abas lado a lado, em qualquer arranjo:** uma aba pode ter até 9 painéis,
+  divididos em qualquer direção. Arraste uma aba para o terminal ou para o meio
+  de outra aba para juntá-las; segure sobre uma aba por um instante e ela se
+  abre para você soltar ao lado do painel que quiser. Arraste a alça no topo de
+  um painel para mudá-lo de lugar. Pelo teclado: Alt+setas trocam de painel,
+  Alt+Shift+setas trocam painéis de lugar, Alt+Shift+Mais/Menos dividem,
+  Alt+Shift+R gira a divisão e Ctrl+Shift+Z amplia o painel.
+- **Cor nas abas:** escolha uma cor no clique duplo (junto com o nome) ou no
+  menu do botão direito. Cada tema desenha a marca no seu próprio estilo.
+- **Temas Winamp e Winamp 5 Classified**, com os controles de cada skin.
+- **Aqua mais fiel:** metal escovado mais escuro e com o brilho do iTunes da
+  época, sem bordas estranhas; Tiger Graphite mais escuro. As sombras e
+  transparências de todos os temas foram corrigidas.
+- **Pasta dos logs:** escolha uma nova pasta em Configurações; o programa
+  oferece mover os logs existentes, com uma janela de cópia animada.
+- **Macros sem perguntar:** a nova opção "Pedir os valores antes de enviar"
+  permite enviar uma macro direto com os valores salvos.
+- **Proteção de tela:** GIFs agora tocam até 2 minutos.
+- **Executável menor:** cerca de 30% menos, sem perder nada.
+- Arrastar uma aba não move mais a janela; o botão de fechar fica alinhado aos
+  outros; as prévias dos temas mostram a sua disposição de abas e botões.
 
 ## Instalação
 

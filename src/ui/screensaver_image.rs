@@ -19,8 +19,16 @@ use crate::i18n::{tr, tr1};
 /// width times height times four bytes of video memory.
 const MAX_SIDE: u32 = 1024;
 
-/// More frames than this are dropped; the animation loops on those it kept.
-const MAX_FRAMES: usize = 600;
+/// How much of an animation is kept: frames past two minutes of play are
+/// dropped, and it loops on those it kept. Measured in time rather than in
+/// frames, because a frame count is a different length at every frame rate -
+/// 600 of them was a minute at the usual ten a second.
+const MAX_PLAY: Duration = Duration::from_secs(120);
+
+/// And however short the frames, no more than this much decoded picture is
+/// held - each frame is width times height times four bytes - so a long GIF
+/// at full size cannot take the machine's memory with it.
+const MAX_BYTES: usize = 1024 * 1024 * 1024;
 
 /// A GIF that asks for less than this between frames gets [`SLOW_DEFAULT`]
 /// instead, as every browser does: a delay of 0 or 1 is how old encoders said
@@ -102,10 +110,18 @@ pub fn decode(bytes: &[u8]) -> Result<Vec<Frame>, String> {
             let decoder =
                 image::codecs::gif::GifDecoder::new(std::io::Cursor::new(bytes)).map_err(broken)?;
             let mut frames = Vec::new();
-            for frame in decoder.into_frames().take(MAX_FRAMES) {
+            let mut played = Duration::ZERO;
+            let mut bytes = 0;
+            for frame in decoder.into_frames() {
                 let frame = frame.map_err(broken)?;
-                let delay = Duration::from(frame.delay());
-                frames.push((frame.into_buffer(), frame_delay(delay)));
+                let delay = frame_delay(Duration::from(frame.delay()));
+                let rgba = shrunk(frame.into_buffer());
+                bytes += rgba.as_raw().len();
+                if !frames.is_empty() && (played >= MAX_PLAY || bytes > MAX_BYTES) {
+                    break;
+                }
+                played += delay;
+                frames.push((rgba, delay));
             }
             frames
         }
@@ -117,6 +133,8 @@ pub fn decode(bytes: &[u8]) -> Result<Vec<Frame>, String> {
     Ok(frames
         .into_iter()
         .map(|(rgba, delay)| {
+            // A GIF's frames were shrunk as they were read, so the budget
+            // above counted what is kept; this is a PNG's one frame.
             let rgba = shrunk(rgba);
             let size = [rgba.width() as usize, rgba.height() as usize];
             Frame {
@@ -298,6 +316,28 @@ mod tests {
         let frames = decode(&bytes).unwrap();
         let delays: Vec<Duration> = frames.iter().map(|f| f.delay).collect();
         assert_eq!(delays, vec![ms(70), ms(250)]);
+    }
+
+    /// Three minutes of GIF at a second a frame plays its first two, all of
+    /// them - not the first minute, as a count of frames once made it.
+    #[test]
+    fn a_long_gif_plays_up_to_two_minutes() {
+        let mut bytes = Vec::new();
+        {
+            let mut encoder = image::codecs::gif::GifEncoder::new(&mut bytes);
+            for i in 0..180u32 {
+                let shade = (i % 2 * 255) as u8;
+                let buffer =
+                    image::RgbaImage::from_pixel(1, 1, image::Rgba([shade, shade, shade, 255]));
+                let delay = image::Delay::from_numer_denom_ms(1000, 1);
+                encoder
+                    .encode_frame(image::Frame::from_parts(buffer, 0, 0, delay))
+                    .unwrap();
+            }
+        }
+        let frames = decode(&bytes).unwrap();
+        let played: Duration = frames.iter().map(|f| f.delay).sum();
+        assert_eq!(played, MAX_PLAY);
     }
 
     #[test]
