@@ -160,7 +160,8 @@ jobs:
     name: macOS universal
     needs: [version, test]
     runs-on: macos-15
-    timeout-minutes: 45
+    # A universal build compiles twice; 45 minutes was too close for comfort.
+    timeout-minutes: 60
     env:
       CONSISTERM_VERSION: ${{ needs.version.outputs.version }}
     steps:
