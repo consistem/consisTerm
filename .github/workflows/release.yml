@@ -144,7 +144,7 @@ jobs:
   macos:
     name: macOS universal
     needs: [version, test]
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       CONSISTERM_VERSION: ${{ needs.version.outputs.version }}
     steps:
