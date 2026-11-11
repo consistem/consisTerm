@@ -31,6 +31,7 @@ jobs:
   version:
     name: version
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       version: ${{ steps.v.outputs.version }}
       prerelease: ${{ steps.v.outputs.prerelease }}
@@ -64,6 +65,8 @@ jobs:
   test:
     name: test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    # Without a timeout a hung step (an apt mirror once stalled for 45 min) holds the run for 6 h.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -103,6 +106,7 @@ jobs:
     needs: [version, test]
     # The oldest GitHub-hosted image, so the binary only needs glibc >= 2.35.
     runs-on: ubuntu-22.04
+    timeout-minutes: 45
     env:
       CONSISTERM_VERSION: ${{ needs.version.outputs.version }}
     steps:
@@ -145,6 +149,8 @@ jobs:
     name: macOS universal
     needs: [version, test]
     runs-on: macos-15
+    # A universal build compiles twice; the slowest job of a normal run is well under this.
+    timeout-minutes: 60
     env:
       CONSISTERM_VERSION: ${{ needs.version.outputs.version }}
     steps:
@@ -181,6 +187,7 @@ jobs:
     name: Windows x64
     needs: [version, test]
     runs-on: windows-latest
+    timeout-minutes: 45
     env:
       CONSISTERM_VERSION: ${{ needs.version.outputs.version }}
     steps:
@@ -202,6 +209,7 @@ jobs:
     name: Draft GitHub Release
     needs: [version, linux, macos, windows]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
     env:
