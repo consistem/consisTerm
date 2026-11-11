@@ -15,9 +15,9 @@
   scripts em Python, PowerShell, shell ou ObjectScript. Quando uma verificação
   sabe corrigir o problema, o botão **Corrigir** roda a correção numa aba do
   terminal, à vista, e **Conferir** diz se ela funcionou.
-- **Abas na barra de título da janela** agora é o padrão em instalações novas. Ao ligar a
-  opção, uma animação mostra que a janela pode ser arrastada segurando os botões
-  da barra (fechar, minimizar...).
+- **Abas na barra de título da janela:** ao ligar a opção, uma animação mostra
+  que a janela pode ser arrastada segurando os botões da barra (fechar,
+  minimizar...).
 
 ## Instalação
 
