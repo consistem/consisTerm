@@ -150,7 +150,7 @@ jobs:
             # Starts and exits before opening a window, so it runs headless.
             APPIMAGE_EXTRACT_AND_RUN=1 "$GITHUB_WORKSPACE/$appimage" --version | grep -F "$CONSISTERM_VERSION"
           done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-linux
           path: dist/release/*
@@ -183,7 +183,7 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: packaging/macos/package.sh --arch universal
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-macos
           path: dist/release/*
@@ -209,7 +209,7 @@ jobs:
       - name: Build and package
         shell: pwsh
         run: ./packaging/windows/package.ps1
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-windows
           path: dist/release/*
@@ -252,7 +252,7 @@ jobs:
           sha256sum -- * | tee SHA256SUMS.txt
       - name: Keep the checksums of a dry run
         if: github.ref_type != 'tag'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: checksums
           path: artifacts/SHA256SUMS.txt
