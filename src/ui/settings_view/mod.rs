@@ -56,6 +56,7 @@ use crate::ui::icons::Symbol;
 use crate::ui::panels::{PanelState, UiRequest};
 use crate::ui::prefs::{self, Card, Row};
 
+pub mod doctor;
 pub mod macros;
 pub mod screensaver;
 pub mod themes;
@@ -72,6 +73,9 @@ const HIGHLIGHT_SECS: f64 = 1.6;
 /// The categories down the sidebar, in the order they run.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum Category {
+    /// First in the list, as Clawd has it: the page to look at when
+    /// something in the environment is off.
+    Doctor,
     #[default]
     General,
     Appearance,
@@ -87,7 +91,8 @@ pub enum Category {
 }
 
 impl Category {
-    pub const ALL: [Category; 11] = [
+    pub const ALL: [Category; 12] = [
+        Category::Doctor,
         Category::General,
         Category::Appearance,
         Category::Themes,
@@ -104,6 +109,7 @@ impl Category {
     /// The category's name, untranslated.
     pub fn label(self) -> &'static str {
         match self {
+            Category::Doctor => "Doctor",
             Category::General => "General",
             Category::Appearance => "Appearance",
             Category::Themes => "Themes",
@@ -120,6 +126,7 @@ impl Category {
 
     fn symbol(self) -> Symbol {
         match self {
+            Category::Doctor => Symbol::Pulse,
             Category::General => Symbol::Gear,
             Category::Appearance => Symbol::Contrast,
             Category::Themes => Symbol::Swatch,
@@ -140,6 +147,7 @@ impl Category {
     fn tile(self) -> egui::Color32 {
         let rgb = egui::Color32::from_rgb;
         match self {
+            Category::Doctor => rgb(0xff, 0x3b, 0x30),
             Category::General => rgb(0x8e, 0x8e, 0x93),
             Category::Appearance => rgb(0x00, 0x7a, 0xff),
             Category::Themes => rgb(0xaf, 0x52, 0xde),
@@ -264,6 +272,10 @@ struct Item {
     /// Whether the row applies at all just now - a proxy password with no
     /// proxy to give it to does not.
     when: Option<fn(&Ctx<'_>) -> bool>,
+    /// The row folds open while this holds and shut when it stops, instead of
+    /// appearing and vanishing at once - for one that explains the switch
+    /// above it. Unlike `when`, a shut row is still drawn while it closes.
+    open: Option<fn(&Ctx<'_>) -> bool>,
     /// The row edits the theme or macro its page is open on, so a search
     /// result shows it only as the way to that page. See the module's notes.
     contextual: bool,
@@ -279,6 +291,7 @@ impl Item {
             keywords: &[],
             kind,
             when: None,
+            open: None,
             contextual: matches!(kind, Kind::Colour(_) | Kind::Fallback(..)),
         }
     }
@@ -341,8 +354,32 @@ impl Item {
         self
     }
 
+    fn opens_when(mut self, open: fn(&Ctx<'_>) -> bool) -> Self {
+        self.open = Some(open);
+        self
+    }
+
     fn applies(&self, ctx: &Ctx<'_>) -> bool {
         self.when.is_none_or(|when| when(ctx))
+    }
+
+    /// Whether a search should offer the row: a folded one has nothing to
+    /// show, and a result that leads to nothing reads as broken.
+    fn findable(&self, ctx: &Ctx<'_>) -> bool {
+        self.applies(ctx) && self.open.is_none_or(|open| open(ctx))
+    }
+}
+
+/// One row, folded into a [`Card::reveal`] when it opens and shuts.
+fn draw_row(card: &mut Card<'_>, page: &Page, item: &Item, ctx: &mut Ctx<'_>, view: &mut View) {
+    match item.open {
+        Some(open) => {
+            let open = open(ctx);
+            card.reveal(item.key, open, |card| {
+                draw_item(card, page, item, ctx, view)
+            });
+        }
+        None => draw_item(card, page, item, ctx, view),
     }
 }
 
@@ -661,7 +698,7 @@ fn draw_sections(ui: &mut Ui, page: &Page, c: &mut Ctx<'_>, view: &mut View) {
         let enabled = section.enabled.is_none_or(|enabled| enabled(c));
         prefs::titled_card(ui, section.heading.map(tr), enabled, index, |card| {
             for item in items {
-                draw_item(card, page, item, c, view);
+                draw_row(card, page, item, c, view);
             }
         });
         if let Some(footer) = section.footer {
@@ -706,6 +743,7 @@ pub fn settings_dialog(
     macros::forget_stale_selection(&mut c);
     screensaver::collect_picked_image(ctx, &mut c);
     macros::collect_picked_org_file(ctx, &mut c);
+    doctor::collect_picked_file(ctx, &mut c);
     collect_picked_log_dir(ctx, &mut c);
     crate::ui::detach::shell(
         ctx,
@@ -790,12 +828,16 @@ fn window(ui: &mut Ui, c: &mut Ctx<'_>) {
     let side = egui::Rect::from_min_size(full.min, egui::vec2(side_width, full.height()));
     let content = egui::Rect::from_min_max(egui::pos2(side.right() + 16.0, full.top()), full.max);
 
+    // Taken in here rather than only on the Doctor's page, so its tile
+    // follows a run while another page is open.
+    c.state.doctor.poll();
     let items: Vec<prefs::SidebarItem<'_>> = Category::ALL
         .iter()
         .map(|category| prefs::SidebarItem {
             label: tr(category.label()),
             symbol: category.symbol(),
             tile: category.tile(),
+            light: (*category == Category::Doctor).then(|| doctor::light(&c.state.doctor)),
         })
         .collect();
     let searching = !c.state.settings_search.trim().is_empty();
@@ -907,7 +949,7 @@ fn results_view(ui: &mut Ui, c: &mut Ctx<'_>, view: &mut View, query: &str) {
     prefs::scroll_column(ui, "nit-settings-results", COLUMN, |ui| {
         let mut found = false;
         for (page, hits) in search(query, tr) {
-            let hits: Vec<&Item> = hits.into_iter().filter(|item| item.applies(c)).collect();
+            let hits: Vec<&Item> = hits.into_iter().filter(|item| item.findable(c)).collect();
             if hits.is_empty() {
                 continue;
             }
@@ -917,7 +959,7 @@ fn results_view(ui: &mut Ui, c: &mut Ctx<'_>, view: &mut View, query: &str) {
             }
             prefs::card(ui, ("result", page.category, page.sub), |card| {
                 for item in hits {
-                    draw_item(card, page, item, c, view);
+                    draw_row(card, page, item, c, view);
                 }
             });
         }
@@ -936,6 +978,7 @@ fn pages() -> &'static [Page] {
 
 fn build_pages() -> Vec<Page> {
     let mut pages = vec![
+        page(Category::Doctor, doctor::sections()).with_top(doctor::top),
         page(Category::General, general()),
         page(Category::Appearance, appearance()),
     ];
@@ -1334,6 +1377,13 @@ fn title_bar() -> Vec<Section> {
                 .when(|c| !c.settings.bar_position.is_side())
                 .hint("Puts the tabs on the same row as the window buttons, from the new-session button across to the gear. One row instead of two; the session line - instance, PID and size - goes, since the tabs already say which session it is.")
                 .keys(&["tabs", "abas"]),
+                // Under the switch it explains, and only while it is on: it
+                // is about what the switch takes away - most of the empty
+                // bar the window used to be dragged by.
+                Item::rows("bar_drag_picture", "Moving the window", show_bar_drag)
+                    .when(|c| !c.settings.bar_position.is_side())
+                    .opens_when(|c| c.settings.tabs_in_title_bar)
+                    .keys(&["drag", "arrastar", "move", "mover", "janela", "window", "buttons", "botões", "close", "fechar"]),
                 Item::control("tab_width", "Tab width", tab_width)
                     .when(|c| !c.settings.bar_position.is_side())
                     .hint("Fill the bar: the tabs share the whole row between them. Fixed size: each tab is as wide as its name, within limits, and the rest of the row is left free - in the title bar, somewhere to drag the window by. The tabs look the same either way.")
@@ -1478,6 +1528,19 @@ fn show_drop_down(card: &mut Card<'_>, c: &mut Ctx<'_>) {
             true,
             key,
         )
+    });
+}
+
+/// The window dragged by its close button, and what that picture is saying.
+fn show_bar_drag(card: &mut Card<'_>, c: &mut Ctx<'_>) {
+    let bottom = c.settings.bar_position == crate::config::BarPosition::Bottom;
+    card.custom(|ui| {
+        crate::ui::illustration::show(
+            ui,
+            crate::ui::illustration::Scene::BarDrag { bottom },
+            true,
+        );
+        prefs::explanation(ui, tr("With the tabs filling the bar there is little empty bar left to take hold of, so every button on it is a handle too - close, maximize, minimize, the gear, the pin and the +. Press one, keep the button held down and drag: the window follows the pointer. A plain click still does what the button says. Tabs of a fixed size also leave the end of the bar free to drag by."));
     });
 }
 

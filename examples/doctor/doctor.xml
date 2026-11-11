@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Exemplo de arquivo de verificações do Diagnóstico (Doctor) do consisTerm.
+
+  Cada <check> roda um script e lê a última linha JSON que ele imprime:
+    {"status": "ok|warn|error|skip|unknown", "summary": "uma linha", "detail": "texto ou lista"}
+
+  <requires> diz o que precisa estar saudável antes; o Doctor acrescenta sozinho
+  o ambiente de execução (Python, Git Bash, PowerShell, IRIS) de cada check.
+  <fix> roda numa aba, à vista; <after> diz o que precisa valer depois dele.
+
+  Referência completa: docs/doctor.md
+-->
+<doctor>
+  <!-- Variáveis: {{nome}} no comando, DOCTOR_NOME no ambiente do script. -->
+  <var name="comp" value="COMP80"/>
+  <var name="desenv" value="DESENV"/>
+
+  <group name="Docker">
+    <!-- O mesmo check, um script por sistema operacional. -->
+    <check id="docker.daemon" title="Docker"
+           objective="O Docker está instalado e o serviço responde">
+      <run kind="powershell" os="windows">docker/daemon.ps1</run>
+      <run kind="shell" os="linux macos">docker/daemon.sh</run>
+    </check>
+
+    <check id="docker.network" title="Rede csw_default"
+           objective="A rede que os containers da Consistem usam existe">
+      <requires check="docker.daemon"/>
+      <run kind="python">docker/network.py</run>
+      <fix title="Criar a rede (consistem start)" kind="shell">fixes/consistem.sh start</fix>
+    </check>
+
+    <check id="docker.containers" title="Containers"
+           objective="Todo serviço do docker-compose.yml está rodando" timeout="60">
+      <requires check="docker.network"/>
+      <run kind="python">docker/containers.py</run>
+      <fix title="Subir os containers (consistem start)" kind="shell">fixes/consistem.sh start</fix>
+      <after check="docker.containers"/>
+      <after check="docker.network"/>
+    </check>
+
+    <!-- Lê só arquivos: não precisa do Docker rodando, só do gh. -->
+    <check id="docker.images" title="Imagens atualizadas"
+           objective="Cada imagem csw é a última liberada para o ambiente de desenvolvimento" timeout="120">
+      <run kind="python">docker/images.py</run>
+      <fix title="Atualizar as imagens (consistem recreate)" kind="python">fixes/update_images.py</fix>
+      <after check="docker.images"/>
+      <after check="docker.containers"/>
+    </check>
+  </group>
+
+  <group name="IRIS">
+    <!-- ObjectScript: uma expressão que devolve o JSON. Roda sem login (autenticação do SO). -->
+    <!-- Lê config.xml do repositório config: os namespaces que o time usa e a versão de cada um. -->
+    <check id="iris.versions" title="Versões do ERP"
+           objective="Quais DESENV (versões do ERP) existem nesta máquina, e a última liberação de cada uma">
+      <requires check="runtime.iris"/>
+      <run kind="python">iris/versions.py</run>
+    </check>
+
+    <check id="iris.comp" title="Namespace {{comp}}"
+           objective="O namespace de compilação existe">
+      <run kind="objectscript" namespace="%SYS">$select(##class(%SYS.Namespace).Exists("{{comp}}"):"{""status"":""ok"",""summary"":""{{comp}} existe""}",1:"{""status"":""error"",""summary"":""{{comp}} não existe""}")</run>
+    </check>
+
+    <check id="iris.desenv" title="Namespace {{desenv}}"
+           objective="O namespace de desenvolvimento existe">
+      <run kind="objectscript" namespace="%SYS">$select(##class(%SYS.Namespace).Exists("{{desenv}}"):"{""status"":""ok"",""summary"":""{{desenv}} existe""}",1:"{""status"":""error"",""summary"":""{{desenv}} não existe""}")</run>
+    </check>
+  </group>
+</doctor>

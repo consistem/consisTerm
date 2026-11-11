@@ -187,6 +187,21 @@ pub fn bundled_org_macros() -> Option<PathBuf> {
     Some(exe.parent()?.join(ORG_MACROS_FILE))
 }
 
+/// What the Doctor's checks file is called when it is shipped beside the
+/// program.
+pub const DOCTOR_FILE: &str = "org-doctor.xml";
+
+/// Where the Doctor's checks are looked for when Settings names no file:
+/// beside the executable, for the same reason as [`bundled_org_macros`].
+pub fn bundled_doctor() -> Option<PathBuf> {
+    let exe = crate::features::update::running_file().ok()?;
+    Some(exe.parent()?.join(DOCTOR_FILE))
+}
+
+fn path_is_empty(path: &Path) -> bool {
+    path.as_os_str().is_empty()
+}
+
 /// Commands typed at an IRIS prompt, one per line, oldest first.
 pub fn command_history_path() -> PathBuf {
     config_dir().join("history.txt")
@@ -665,6 +680,10 @@ pub struct Settings {
     /// Never written to: it is shared, so the app treats it as read-only and
     /// keeps personal edits in [`personal_macros_path`].
     pub org_macros_path: PathBuf,
+    /// The Doctor's checks file. Empty means the one shipped beside the
+    /// program, as for the organisation's macros - see [`bundled_doctor`].
+    #[serde(skip_serializing_if = "path_is_empty")]
+    pub doctor_path: PathBuf,
     /// Chord that opens Settings on the macros, e.g. `Ctrl+Shift+M`. `None`
     /// means they are only reached through the settings window. Named for the
     /// manager window it used to open, so a settings file that set it keeps it.
@@ -690,6 +709,8 @@ pub struct Settings {
     /// output. What it costs is the session line - instance, PID, geometry -
     /// because the two cannot both have the middle of the bar; the tabs name
     /// the session anyway, which is most of what that line was for.
+    ///
+    /// On by default.
     pub tabs_in_title_bar: bool,
     /// Whether the tabs share their row out between them or each keep a
     /// width of its own. Only the space they take: they are drawn the same.
@@ -842,6 +863,7 @@ impl Default for Settings {
             default_log_mode: LogMode::Off,
             log_retention_days: 30,
             org_macros_path: PathBuf::new(),
+            doctor_path: PathBuf::new(),
             // Nothing by default: a shortcut the user did not ask for is one
             // that shadows whatever they were using it for.
             macro_manager_shortcut: None,
@@ -850,7 +872,10 @@ impl Default for Settings {
             open_on_start: true,
             confirm_close_with_live_session: true,
             close_to_tray: false,
-            tabs_in_title_bar: false,
+            // On for a new install: one row instead of two is the better
+            // first impression on a laptop screen. A settings file always
+            // writes this field, so an existing install keeps what it had.
+            tabs_in_title_bar: true,
             tab_width: TabWidth::default(),
             tab_close_side: TabCloseSide::default(),
             bar_position: BarPosition::default(),
@@ -964,6 +989,15 @@ impl Settings {
             return Some(self.org_macros_path.clone());
         }
         bundled_org_macros().filter(|path| path.is_file())
+    }
+
+    /// The Doctor's checks file: the one configured, or else the one shipped
+    /// beside the program.
+    pub fn doctor_file(&self) -> Option<PathBuf> {
+        if !self.doctor_path.as_os_str().is_empty() {
+            return Some(self.doctor_path.clone());
+        }
+        bundled_doctor().filter(|path| path.is_file())
     }
 
     /// Terminal size a new window opens at, in characters.

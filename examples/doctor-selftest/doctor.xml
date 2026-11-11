@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Autoteste do Diagnóstico: cada ambiente de execução (Python, shell, PowerShell,
+  ObjectScript) fazendo o que um check ou uma correção de verdade faz - pastas e
+  arquivos, mover, copiar, editar uma linha específica, git pull, privilégios.
+
+  Tudo numa pasta temporária, apagada no fim: nada da máquina muda. O ObjectScript
+  usa só arquivos temporários e uma global privada do processo (^||), que não
+  grava em base nenhuma.
+
+  Para rodar: aponte Configurações › Diagnóstico › Arquivo de verificações para
+  este arquivo. Pelo cargo (sem o IRIS):
+    cargo test - -lib selftest_pack - - -ignored - -nocapture   (sem os espaços)
+-->
+<doctor>
+  <group name="Python">
+    <check id="py.files" title="Python: arquivos e pastas"
+           objective="Cria, copia, move, renomeia, edita uma linha e apaga">
+      <run kind="python">python/files.py</run>
+    </check>
+    <check id="py.git" title="Python: git pull" timeout="60"
+           objective="Um clone é atualizado com git pull">
+      <run kind="python">python/git.py</run>
+      <expect status="ok skip"/>
+    </check>
+    <check id="py.privileges" title="Python: privilégios"
+           objective="Diz se o check roda como administrador">
+      <run kind="python">python/privileges.py</run>
+    </check>
+  </group>
+
+  <group name="Shell">
+    <check id="sh.files" title="Shell: arquivos e pastas"
+           objective="mkdir, cp, mv, sed na linha certa, rm">
+      <run kind="shell">shell/files.sh</run>
+    </check>
+    <check id="sh.git" title="Shell: git pull" timeout="60"
+           objective="Um clone é atualizado com git pull">
+      <run kind="shell">shell/git.sh</run>
+      <expect status="ok skip"/>
+    </check>
+    <check id="sh.privileges" title="Shell: privilégios"
+           objective="Diz se o check roda como administrador (net session / id -u)">
+      <run kind="shell">shell/privileges.sh</run>
+    </check>
+  </group>
+
+  <group name="PowerShell">
+    <check id="ps.files" title="PowerShell: arquivos e pastas"
+           objective="New-Item, Copy-Item, Move-Item, -replace numa linha, Remove-Item">
+      <run kind="powershell">powershell/files.ps1</run>
+    </check>
+    <check id="ps.git" title="PowerShell: git pull" timeout="60"
+           objective="Um clone é atualizado com git pull">
+      <run kind="powershell">powershell/git.ps1</run>
+      <expect status="ok skip"/>
+    </check>
+    <check id="ps.privileges" title="PowerShell: privilégios"
+           objective="Diz se o check roda como administrador">
+      <run kind="powershell">powershell/privileges.ps1</run>
+    </check>
+    <!-- Avisa quando não está elevado, para oferecer a correção que pede administrador (UAC). -->
+    <check id="ps.elevation" title="PowerShell: correção que pede administrador"
+           objective="Sem elevação, oferece uma correção que pede o administrador ao Windows">
+      <run kind="powershell" os="windows">powershell/privileges.ps1 -Require</run>
+      <fix title="Executar como administrador" kind="powershell" os="windows">powershell/elevated_fix.ps1</fix>
+      <after check="ps.files"/>
+    </check>
+  </group>
+
+  <group name="ObjectScript">
+    <!-- Uma expressão: $XECUTE roda um bloco inteiro e devolve o JSON. -->
+    <check id="cos.files" title="ObjectScript: arquivos, stream e global privada"
+           objective="Cria pasta, grava com %Stream, renomeia, lê, edita a versão numa global ^|| e apaga tudo">
+      <run kind="objectscript"><![CDATA[$XECUTE("() set dir=##class(%File).NormalizeDirectory(""consisterm-selftest-""_$JOB,$SYSTEM.Util.ManagerDirectory()_""Temp""),ok=##class(%File).CreateDirectoryChain(dir),f=dir_""consistem.env"",g=dir_""moved.env"",s=##class(%Stream.FileCharacter).%New() do s.LinkToFile(f),s.WriteLine(""CSW_DESENV_VERSION=8.0.46b2""),s.%Save() kill s set ok=ok&&##class(%File).Rename(f,g),s=##class(%Stream.FileCharacter).%New() do s.LinkToFile(g) set ^||selftest=$REPLACE(s.ReadLine(),""8.0.46b2"",""8.0.46b3"") kill s set ok=ok&&(^||selftest=""CSW_DESENV_VERSION=8.0.46b3""),ok=ok&&##class(%File).RemoveDirectoryTree(dir) kill ^||selftest set o=##class(%DynamicObject).%New() do o.%Set(""status"",$SELECT(ok:""ok"",1:""error"")),o.%Set(""summary"",$SELECT(ok:""pasta, stream, rename, global privada e texto editado"",1:""uma operacao falhou"")) quit o.%ToJSON()")]]></run>
+    </check>
+    <check id="cos.privileges" title="ObjectScript: usuário e papéis"
+           objective="O usuário da sessão e se ele tem %All">
+      <run kind="objectscript"><![CDATA[$XECUTE("() set o=##class(%DynamicObject).%New() do o.%Set(""status"",""ok""),o.%Set(""summary"",""usuario ""_$USERNAME_$SELECT($ROLES[""%All"":"" com %All"",1:"" sem %All"")),o.%Set(""detail"",""namespace ""_$NAMESPACE_"", papeis ""_$ROLES) quit o.%ToJSON()")]]></run>
+    </check>
+  </group>
+</doctor>

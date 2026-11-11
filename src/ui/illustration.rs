@@ -33,6 +33,9 @@ pub enum Scene {
     Shells,
     /// A key pressed and the terminal coming down from the top of the screen.
     DropDown,
+    /// The window taken by its close button and dragged across the desktop
+    /// and back, the tabs filling its bar - along the bottom when `bottom`.
+    BarDrag { bottom: bool },
 }
 
 impl Scene {
@@ -52,6 +55,8 @@ impl Scene {
             Scene::Macros => 0.66,
             Scene::Shells => 0.5,
             Scene::DropDown => 0.5,
+            // Held, and most of the way across.
+            Scene::BarDrag { .. } => 0.42,
         }
     }
 }
@@ -93,6 +98,7 @@ pub fn show_with_key(ui: &mut Ui, scene: Scene, animate: bool, key: Option<&str>
         Scene::Macros => macros(&painter, rect, &ink, t),
         Scene::Shells => shells(&painter, rect, &ink, t),
         Scene::DropDown => drop_down(&painter, rect, &ink, t, key),
+        Scene::BarDrag { bottom } => bar_drag(&painter, rect, &ink, t, bottom),
     }
 }
 
@@ -803,6 +809,153 @@ fn drop_down(painter: &Painter, rect: Rect, ink: &Ink, t: f32, key: Option<&str>
     }
 }
 
+/// The press, held from here to the release: the button is down, and the
+/// window goes where the pointer goes.
+const BAR_DRAG_HELD: std::ops::Range<f32> = 0.22..0.76;
+
+/// How far the window is from home, 0 to 1: out and back again while the
+/// button is held, so the loop ends where it began.
+fn bar_drag_out(t: f32) -> f32 {
+    ease(t, 0.28, 0.48) * (1.0 - ease(t, 0.54, 0.74))
+}
+
+fn bar_drag(painter: &Painter, rect: Rect, ink: &Ink, t: f32, bottom: bool) {
+    // The desktop, a shade off the window's bar so the two do not merge.
+    painter.rect_filled(rect, Rounding::same(6.0), ink.popup);
+    let home = Rect::from_min_size(
+        rect.min + Vec2::new(rect.width() * 0.08, rect.height() * 0.2),
+        Vec2::new(rect.width() * 0.56, rect.height() * 0.6),
+    );
+    let away = Vec2::new(rect.width() * 0.28, rect.height() * 0.1);
+    let held = BAR_DRAG_HELD.contains(&t);
+    let out = bar_drag_out(t);
+    if out > 0.0 {
+        // Where it was, faintly, so the move reads as one.
+        painter.rect_stroke(
+            home,
+            Rounding::same(6.0),
+            Stroke::new(1.0_f32, faded(ink.weak, out * 0.6)),
+        );
+    }
+    let close = bar_window(painter, home.translate(away * out), ink, bottom, held);
+    let caption = during(t, 0.26, 0.74);
+    if caption > 0.0 {
+        // In the corner that neither the window at home nor the window away
+        // covers.
+        let font = FontId::proportional((rect.height() * 0.065).clamp(8.0, 11.0));
+        popup(
+            painter,
+            rect.min + Vec2::new(8.0, 8.0),
+            &[tr("Hold and drag")],
+            None,
+            &font,
+            ink,
+            caption,
+        );
+    }
+    let rest = rect.right_bottom() - Vec2::new(24.0, 20.0);
+    let reach = ease(t, 0.03, 0.2) * (1.0 - ease(t, 0.8, 0.97));
+    let tip = lerp(rest, close.center() + Vec2::new(1.0, 1.0), reach);
+    pointer(painter, tip, ink, held);
+}
+
+/// A window whose bar holds its tabs and, at the right-hand end, minimize,
+/// maximize and close - the last one down while `pressed`. Returns the close
+/// button.
+fn bar_window(painter: &Painter, win: Rect, ink: &Ink, bottom: bool, pressed: bool) -> Rect {
+    painter.rect(
+        win,
+        Rounding::same(6.0),
+        ink.screen,
+        Stroke::new(1.0_f32, ink.line),
+    );
+    let bar_h = (win.height() * 0.17).max(12.0);
+    let round = |top: bool| Rounding {
+        nw: if top { 6.0 } else { 0.0 },
+        ne: if top { 6.0 } else { 0.0 },
+        sw: if top { 0.0 } else { 6.0 },
+        se: if top { 0.0 } else { 6.0 },
+    };
+    let (bar, screen) = if bottom {
+        let bar = Rect::from_min_size(
+            win.left_bottom() - Vec2::new(0.0, bar_h),
+            Vec2::new(win.width(), bar_h),
+        );
+        (
+            bar,
+            Rect::from_min_max(win.min, Pos2::new(win.right(), bar.top())),
+        )
+    } else {
+        let bar = Rect::from_min_size(win.min, Vec2::new(win.width(), bar_h));
+        (
+            bar,
+            Rect::from_min_max(Pos2::new(win.left(), bar.bottom()), win.max),
+        )
+    };
+    painter.rect_filled(bar, round(!bottom), ink.chrome);
+    painter.text(
+        screen.min + Vec2::new(8.0, 6.0),
+        Align2::LEFT_TOP,
+        "USER>",
+        FontId::monospace((screen.height() * 0.13).clamp(7.0, 11.0)),
+        ink.weak,
+    );
+    // The buttons, right to left: close at the very end.
+    let size = Vec2::new(bar_h * 1.15, bar_h);
+    let slot = |i: usize| {
+        Rect::from_min_size(
+            bar.right_top() - Vec2::new(size.x * (i + 1) as f32 + 2.0, 0.0),
+            size,
+        )
+    };
+    let (close, maximize, minimize) = (slot(0), slot(1), slot(2));
+    let arm = (bar_h * 0.16).clamp(1.5, 3.5);
+    let glyph = Stroke::new(1.0_f32, ink.text);
+    if pressed {
+        painter.rect_filled(close.shrink(1.5), Rounding::same(3.0), ink.accent);
+    }
+    let cross = Stroke::new(1.0_f32, if pressed { ink.accent_text } else { ink.text });
+    let c = close.center();
+    painter.line_segment([c + Vec2::new(-arm, -arm), c + Vec2::new(arm, arm)], cross);
+    painter.line_segment([c + Vec2::new(-arm, arm), c + Vec2::new(arm, -arm)], cross);
+    painter.rect_stroke(
+        Rect::from_center_size(maximize.center(), Vec2::splat(arm * 2.0)),
+        Rounding::ZERO,
+        glyph,
+    );
+    let m = minimize.center();
+    painter.line_segment([m + Vec2::new(-arm, 0.0), m + Vec2::new(arm, 0.0)], glyph);
+    // The tabs share what the buttons leave, the first one the one shown.
+    let names = ["IRIS", "USER", "%SYS"];
+    let start = bar.left() + 4.0;
+    let w = (minimize.left() - 4.0 - start) / names.len() as f32;
+    let font = FontId::proportional((bar_h * 0.5).clamp(6.0, 11.0));
+    for (i, name) in names.iter().enumerate() {
+        let tab = Rect::from_min_size(
+            Pos2::new(start + i as f32 * w, bar.top() + 2.0),
+            Vec2::new(w - 2.0, bar_h - 4.0),
+        );
+        let shown = i == 0;
+        painter.rect_filled(
+            tab,
+            Rounding::same(3.0),
+            if shown {
+                ink.screen
+            } else {
+                faded(ink.popup, 0.6)
+            },
+        );
+        painter.text(
+            tab.center(),
+            Align2::CENTER_CENTER,
+            *name,
+            font.clone(),
+            if shown { ink.text } else { ink.weak },
+        );
+    }
+    close
+}
+
 #[cfg(test)]
 mod svg;
 
@@ -819,6 +972,8 @@ mod tests {
             Scene::Macros,
             Scene::Shells,
             Scene::DropDown,
+            Scene::BarDrag { bottom: false },
+            Scene::BarDrag { bottom: true },
         ] {
             for animate in [false, true] {
                 let _ = ctx.run(egui::RawInput::default(), |ctx| {
@@ -842,6 +997,7 @@ mod tests {
                                 drop_down(&painter, rect, &ink, t, Some("Ctrl+Shift+F12"));
                                 drop_down(&painter, rect, &ink, t, None);
                             }
+                            Scene::BarDrag { bottom } => bar_drag(&painter, rect, &ink, t, bottom),
                         }
                     }
                 });
@@ -872,6 +1028,15 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn the_dragged_window_is_home_again_before_the_button_is_let_go() {
+        // Let go away from home, and the next pass of the loop would show
+        // the window jumping back to where it started.
+        assert_eq!(bar_drag_out(BAR_DRAG_HELD.start), 0.0);
+        assert_eq!(bar_drag_out(BAR_DRAG_HELD.end), 0.0);
+        assert!(bar_drag_out(Scene::BarDrag { bottom: false }.still_at()) > 0.5);
     }
 
     #[test]

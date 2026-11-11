@@ -15,7 +15,7 @@ use egui::{
 use crate::config::theme::{TitleButton, WindowButtonSlot, WindowButtonStyle, WindowButtons};
 use crate::i18n::tr;
 use crate::ui::icons::{self, Glyph};
-use crate::ui::shading::{darken, gloss, gradient, lighten, radial, white};
+use crate::ui::shading::{aqua_bubble, darken, gradient, lighten, white};
 use crate::ui::skin::{Glyph as SkinGlyph, Kit, Skin, St};
 
 /// How wide the grab area along each window edge is.
@@ -514,34 +514,7 @@ fn paint_aqua(ui: &Ui, rect: Rect, icon: Icon, hovered: bool, style: &WindowButt
         base = lighten(base, 0.12);
     }
 
-    // The body. The bright spot sits below the middle because the strongest
-    // light in an Aqua button is the bounce coming back up into it.
-    radial(
-        painter,
-        center,
-        radius,
-        Vec2::new(0.0, radius * 0.30),
-        lighten(base, 0.30),
-        darken(base, 0.72),
-    );
-    // The bottom rim light, brightest directly under the bubble.
-    radial(
-        painter,
-        center + Vec2::new(0.0, radius * 0.55),
-        radius * 0.62,
-        Vec2::ZERO,
-        white(70),
-        white(0),
-    );
-    painter.circle_stroke(center, radius, Stroke::new(1.0_f32, darken(base, 0.45)));
-    // The gloss: a white cap over the top half, the whole of Aqua's look.
-    gloss(
-        painter,
-        center - Vec2::new(0.0, radius * 0.34),
-        radius * 0.72,
-        radius * 0.50,
-        215,
-    );
+    aqua_bubble(painter, center, radius, base);
 
     // Tiger showed the marks only under the pointer - x to close, - to
     // minimize, + to zoom - and hid them the rest of the time. The app's own

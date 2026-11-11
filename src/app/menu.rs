@@ -709,6 +709,7 @@ impl App {
                 self.screensaver = Some(crate::ui::screensaver_view::Running::new(config));
             }
             UiRequest::OpenSettings(route) => self.panels.open_settings(route),
+            UiRequest::OpenTab(profile) => self.open_tab(*profile),
             UiRequest::SendUsageReport(to) => self.send_usage_report(ctx, to),
             UiRequest::StopAskingUsageReport => {
                 self.settings.ask_usage_report = false;
