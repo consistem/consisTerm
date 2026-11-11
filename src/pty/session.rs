@@ -150,7 +150,7 @@ impl PtySession {
             .context("cloning the PTY reader")?;
         let writer = pair.master.take_writer().context("taking the PTY writer")?;
 
-        let (tx, rx) = crossbeam_channel::unbounded();
+        let (tx, rx) = crossbeam_channel::bounded(CHANNEL_DEPTH);
         let closed = Arc::new(AtomicBool::new(false));
         #[cfg(windows)]
         if let Some(process) = child.as_raw_handle() {
@@ -277,10 +277,32 @@ impl Drop for PtySession {
 
 /// Non-blocking drain shared by both transports: the reader threads differ,
 /// the channel they push into does not.
+/// The most a session hands over per frame.
+///
+/// A `zw` of a large global, or an hour of output behind a minimised window,
+/// used to arrive as one block: parsed, logged and decoded inside a single
+/// frame, with the UI frozen for as long as that took. What is over the cap
+/// stays in the channel, and the frame asks for another; the screen moves
+/// while the output pours, and the user can still press Ctrl+C.
+pub const MAX_DRAIN: usize = 256 * 1024;
+
+/// How many reads a reader thread may run ahead of the UI before it waits.
+///
+/// Bounded, so a window that is not drawing (hidden, or another process
+/// holding the desktop) stops the reader rather than the process growing by
+/// whatever the session prints meanwhile. A blocked reader eventually blocks
+/// IRIS, which is what every terminal does with output nobody is reading.
+pub const CHANNEL_DEPTH: usize = 512;
+
 fn drain_events(events: &Receiver<SessionEvent>) -> (Vec<u8>, bool) {
     let mut bytes = Vec::new();
     let mut ended = false;
     loop {
+        if bytes.len() >= MAX_DRAIN {
+            // The rest is next frame's; make sure there is one.
+            crate::pty::wake();
+            break;
+        }
         match events.try_recv() {
             Ok(SessionEvent::Output(chunk)) => bytes.extend_from_slice(&chunk),
             Ok(SessionEvent::Closed) => {
@@ -572,4 +594,42 @@ fn spawn_reader(
             crate::pty::wake();
         })
         .expect("spawning the PTY reader thread");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_flood_of_output_is_handed_over_a_frame_at_a_time() {
+        let (tx, rx) = crossbeam_channel::bounded(CHANNEL_DEPTH);
+        let chunk = vec![b'x'; 8192];
+        let chunks = MAX_DRAIN / chunk.len() * 3;
+        for _ in 0..chunks {
+            tx.send(SessionEvent::Output(chunk.clone())).unwrap();
+        }
+        let (first, ended) = drain_events(&rx);
+        assert!(!ended);
+        assert!(first.len() >= MAX_DRAIN && first.len() < MAX_DRAIN + chunk.len());
+        // What was over the cap is still there for the next frame, in order.
+        let mut rest = 0;
+        loop {
+            let (more, _) = drain_events(&rx);
+            if more.is_empty() {
+                break;
+            }
+            rest += more.len();
+        }
+        assert_eq!(first.len() + rest, chunks * chunk.len());
+    }
+
+    #[test]
+    fn the_end_of_a_session_is_seen_even_behind_a_full_frame() {
+        let (tx, rx) = crossbeam_channel::bounded(CHANNEL_DEPTH);
+        tx.send(SessionEvent::Output(vec![0; 10])).unwrap();
+        tx.send(SessionEvent::Closed).unwrap();
+        let (bytes, ended) = drain_events(&rx);
+        assert_eq!(bytes.len(), 10);
+        assert!(ended);
+    }
 }

@@ -167,6 +167,35 @@ pub fn settings_path() -> PathBuf {
     config_dir().join("settings.toml")
 }
 
+/// Writes a file whole or not at all.
+///
+/// `std::fs::write` truncates the file first and fills it second, so a crash,
+/// a full disk or a power cut between the two leaves it empty - and an empty
+/// `settings.toml` reads as a fresh install, every preference gone. The text
+/// goes to a sibling first and is renamed over the file, which the filesystem
+/// does in one step on every platform built for.
+pub fn write_atomic(path: &Path, text: impl AsRef<[u8]>) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut staged = path.as_os_str().to_os_string();
+    staged.push(".tmp");
+    let staged = PathBuf::from(staged);
+    {
+        let mut file = std::fs::File::create(&staged)
+            .with_context(|| format!("creating {}", staged.display()))?;
+        use std::io::Write;
+        file.write_all(text.as_ref())
+            .and_then(|()| file.sync_all())
+            .with_context(|| format!("writing {}", staged.display()))?;
+    }
+    std::fs::rename(&staged, path).with_context(|| {
+        let _ = std::fs::remove_file(&staged);
+        format!("replacing {}", path.display())
+    })
+}
+
 /// The user's own macros. Editable from the app.
 pub fn personal_macros_path() -> PathBuf {
     config_dir().join("macros.xml")
@@ -962,14 +991,8 @@ impl Settings {
     }
 
     pub fn save(&self) -> Result<()> {
-        let path = settings_path();
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)
-                .with_context(|| format!("creating {}", parent.display()))?;
-        }
         let text = toml::to_string_pretty(self).context("serialising settings")?;
-        std::fs::write(&path, text).with_context(|| format!("writing {}", path.display()))?;
-        Ok(())
+        write_atomic(&settings_path(), text)
     }
 
     pub fn profile(&self, name: &str) -> Option<&Profile> {
@@ -1164,8 +1187,7 @@ pub fn theme_path_for(name: &str) -> PathBuf {
 pub fn save_theme(theme: &Theme, path: &std::path::Path) -> Result<()> {
     std::fs::create_dir_all(themes_dir())?;
     let text = toml::to_string_pretty(&theme.to_file()).context("serialising theme")?;
-    std::fs::write(path, text).with_context(|| format!("writing {}", path.display()))?;
-    Ok(())
+    write_atomic(path, text)
 }
 
 fn slugify(name: &str) -> String {

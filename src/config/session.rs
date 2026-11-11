@@ -121,12 +121,8 @@ impl SavedSession {
     }
 
     pub fn save(&self, path: &Path) -> Result<()> {
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)
-                .with_context(|| format!("creating {}", parent.display()))?;
-        }
         let text = toml::to_string_pretty(self).context("serialising the session")?;
-        std::fs::write(path, text).with_context(|| format!("writing {}", path.display()))
+        super::write_atomic(path, text)
     }
 
     /// Forgets the saved session, so a switch turned off leaves nothing behind

@@ -77,6 +77,9 @@ const DOWNLOAD_STALL: std::time::Duration = std::time::Duration::from_secs(60);
 /// The suffix a replaced executable is parked under until the next start.
 const OLD_SUFFIX: &str = ".old";
 
+/// The checksum file the release workflow publishes beside the assets.
+const SUMS_NAME: &str = "SHA256SUMS.txt";
+
 /// A published release, reduced to what the app does something with.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Release {
@@ -84,6 +87,9 @@ pub struct Release {
     pub version: String,
     /// Direct download for this platform's executable.
     pub download: String,
+    /// The release's `SHA256SUMS.txt`, which names every asset with its
+    /// checksum. A download is only installed once it matches its line.
+    pub sums: Option<String>,
     /// How big that download is, as GitHub reports it. `0` when the release
     /// does not say, which is what the dialog checks before showing a share of
     /// it rather than a byte count.
@@ -448,9 +454,14 @@ pub fn latest() -> Result<Release> {
         .trim_start_matches(['v', 'V'])
         .to_string();
 
-    let (download, size) = body
-        .get("assets")
-        .and_then(|a| a.as_array())
+    let assets = body.get("assets").and_then(|a| a.as_array());
+    let sums = assets
+        .into_iter()
+        .flatten()
+        .find(|asset| asset.get("name").and_then(|n| n.as_str()) == Some(SUMS_NAME))
+        .and_then(|asset| asset.get("browser_download_url")?.as_str())
+        .map(str::to_string);
+    let (download, size) = assets
         .into_iter()
         .flatten()
         .find_map(|asset| {
@@ -483,6 +494,7 @@ pub fn latest() -> Result<Release> {
     Ok(Release {
         version,
         download,
+        sums,
         size,
         notes,
         page,
@@ -560,6 +572,13 @@ pub fn fetch(release: &Release, into: &Path, progress: &AtomicU64) -> Result<u64
         let _ = std::fs::remove_file(into);
         bail!("the download stopped after {copied} bytes");
     }
+    // Over TLS, but through whatever proxy the machine has, and a proxy that
+    // terminates TLS can answer with anything: a login page, a block page, a
+    // build of its own. Only what the release vouches for gets installed.
+    if let Err(e) = check_sum(release, into) {
+        let _ = std::fs::remove_file(into);
+        return Err(e);
+    }
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -567,6 +586,66 @@ pub fn fetch(release: &Release, into: &Path, progress: &AtomicU64) -> Result<u64
             .context("making the download executable")?;
     }
     Ok(copied)
+}
+
+/// Fetches the release's checksums and compares the download with its line.
+///
+/// A release with no checksum file is refused: every release so far has
+/// published one, and a missing file is more likely an answer that was not
+/// the release page than a release without it.
+fn check_sum(release: &Release, file: &Path) -> Result<()> {
+    let Some(sums) = release.sums.as_deref() else {
+        bail!("release {} publishes no {SUMS_NAME}", release.version);
+    };
+    let text = download_agent()
+        .get(sums)
+        .call()
+        .map_err(proxy_hint)
+        .with_context(|| format!("downloading {SUMS_NAME}"))?
+        .into_string()
+        .with_context(|| format!("reading {SUMS_NAME}"))?;
+    let name = release
+        .download
+        .rsplit('/')
+        .next()
+        .unwrap_or(&release.download);
+    verify(file, &text, name)
+}
+
+/// Whether `file` is the one `sums` (the text of a `SHA256SUMS.txt`) lists
+/// under `name`.
+fn verify(file: &Path, sums: &str, name: &str) -> Result<()> {
+    let expected =
+        checksum_of(sums, name).ok_or_else(|| anyhow!("{SUMS_NAME} has no line for {name}"))?;
+    let actual = sha256_hex(file)?;
+    if actual != expected {
+        bail!("{name} does not match the checksum the release publishes");
+    }
+    Ok(())
+}
+
+/// The checksum `sums` gives for `name`: `sha256sum` writes one per line,
+/// `<hex>  <name>`, with a `*` before the name when it hashed in binary mode.
+fn checksum_of(sums: &str, name: &str) -> Option<String> {
+    sums.lines().find_map(|line| {
+        let (hex, file) = line.trim().split_once(char::is_whitespace)?;
+        let file = file.trim().trim_start_matches('*');
+        (file == name && hex.len() == 64).then(|| hex.to_ascii_lowercase())
+    })
+}
+
+fn sha256_hex(file: &Path) -> Result<String> {
+    use sha2::Digest;
+    let mut reader =
+        std::fs::File::open(file).with_context(|| format!("reading {}", file.display()))?;
+    let mut hasher = sha2::Sha256::new();
+    std::io::copy(&mut reader, &mut hasher)
+        .with_context(|| format!("hashing {}", file.display()))?;
+    Ok(hasher
+        .finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect())
 }
 
 /// Turns a proxy refusal into something that says what to do about it.
@@ -828,6 +907,52 @@ mod tests {
         let copied = copy_reporting(&mut [].as_slice(), &mut out, &progress).expect("copy");
         assert_eq!(copied, 0);
         assert_eq!(progress.load(Ordering::Relaxed), 0);
+    }
+
+    const ABC: &str = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+
+    fn scratch(tag: &str, body: &[u8]) -> (PathBuf, PathBuf) {
+        let dir = std::env::temp_dir().join(format!("consisterm-sum-{tag}-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("consisterm-9.9.9-windows-x64.exe");
+        std::fs::write(&file, body).unwrap();
+        (dir, file)
+    }
+
+    #[test]
+    fn a_download_that_matches_its_published_checksum_is_accepted() {
+        let (dir, file) = scratch("ok", b"abc");
+        // sha256("abc"), as any reference gives it; the other line is what
+        // sha256sum writes for the checksum file itself.
+        let sums = format!(
+            "{ABC}  consisterm-9.9.9-windows-x64.exe\n{}  SHA256SUMS.txt\n",
+            "0".repeat(64)
+        );
+        verify(&file, &sums, "consisterm-9.9.9-windows-x64.exe").expect("the right file");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_download_that_does_not_match_or_is_not_listed_is_refused() {
+        let (dir, file) = scratch("no", b"abd");
+        let sums = format!("{ABC} *consisterm-9.9.9-windows-x64.exe\n");
+        assert!(verify(&file, &sums, "consisterm-9.9.9-windows-x64.exe").is_err());
+        assert!(verify(&file, &sums, "consisterm-9.9.9-linux-x86_64.AppImage").is_err());
+        assert!(verify(&file, "", "consisterm-9.9.9-windows-x64.exe").is_err());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_checksum_line_is_read_in_both_the_text_and_the_binary_form() {
+        assert_eq!(
+            checksum_of("abc  one.exe\n", "one.exe"),
+            None,
+            "a short hash is no hash"
+        );
+        let h = "A".repeat(64);
+        let sums = format!("{h}  one.exe\n{h} *two.exe\n");
+        assert_eq!(checksum_of(&sums, "one.exe"), Some(h.to_ascii_lowercase()));
+        assert_eq!(checksum_of(&sums, "two.exe"), Some(h.to_ascii_lowercase()));
     }
 
     /// The staged download and the file the running build is parked in have to

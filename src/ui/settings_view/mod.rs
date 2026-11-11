@@ -828,9 +828,6 @@ fn window(ui: &mut Ui, c: &mut Ctx<'_>) {
     let side = egui::Rect::from_min_size(full.min, egui::vec2(side_width, full.height()));
     let content = egui::Rect::from_min_max(egui::pos2(side.right() + 16.0, full.top()), full.max);
 
-    // Taken in here rather than only on the Doctor's page, so its tile
-    // follows a run while another page is open.
-    c.state.doctor.poll();
     let items: Vec<prefs::SidebarItem<'_>> = Category::ALL
         .iter()
         .map(|category| prefs::SidebarItem {

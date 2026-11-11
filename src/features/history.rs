@@ -142,12 +142,9 @@ impl History {
         let Some(path) = self.file.as_ref() else {
             return;
         };
-        if let Some(parent) = path.parent() {
-            let _ = std::fs::create_dir_all(parent);
-        }
         let mut text = self.entries.join("\n");
         text.push('\n');
-        if let Err(e) = std::fs::write(path, text) {
+        if let Err(e) = crate::config::write_atomic(path, text) {
             // Worth a line in the log, but never worth interrupting a session
             // over: the history is a convenience.
             log::warn!("could not save command history to {}: {e}", path.display());

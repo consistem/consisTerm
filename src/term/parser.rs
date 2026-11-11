@@ -170,7 +170,7 @@ impl Perform for Performer<'_> {
         let Some(kind) = params.first() else { return };
         if matches!(*kind, b"0" | b"2") {
             if let Some(text) = params.get(1) {
-                self.grid.title = Some(String::from_utf8_lossy(text).into_owned());
+                self.grid.title = Some(window_title(text));
             }
         }
     }
@@ -178,6 +178,22 @@ impl Perform for Performer<'_> {
     fn hook(&mut self, _: &Params, _: &[u8], _: bool, _: char) {}
     fn put(&mut self, _: u8) {}
     fn unhook(&mut self) {}
+}
+
+/// The longest title a host may set. Anything a title bar can show fits in
+/// far less; a remote host that sends a megabyte of it was not naming a window.
+const MAX_TITLE: usize = 256;
+
+/// A title as the host sent it, cut to size and with the control characters
+/// out: the title bar, the tab strip and the taskbar print it as text, and a
+/// host is the one party in the room that must not be able to put a bell or
+/// an escape in any of them.
+fn window_title(text: &[u8]) -> String {
+    String::from_utf8_lossy(text)
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(MAX_TITLE)
+        .collect()
 }
 
 impl Performer<'_> {
@@ -823,6 +839,20 @@ mod tests {
         assert!(!grid.cursor.visible);
         let grid = run(10, 2, b"\x1b[?25l\x1b[?25h");
         assert!(grid.cursor.visible);
+    }
+
+    #[test]
+    fn a_title_is_cut_to_size_and_stripped_of_controls() {
+        // A bell would end the sequence; the controls a host can smuggle in
+        // are the others, and a DEL.
+        let mut input = b"]2;ab".to_vec();
+        input.extend(std::iter::repeat_n(b'x', 1000));
+        input.extend(b"");
+        let grid = run(10, 2, &input);
+        let title = grid.title.unwrap();
+        assert_eq!(title.len(), MAX_TITLE);
+        assert!(title.starts_with("abx"));
+        assert!(title.chars().all(|c| !c.is_control()));
     }
 
     #[test]

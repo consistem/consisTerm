@@ -40,6 +40,10 @@ image = { version = "0.24", default-features = false, features = ["png", "gif", 
 # async runtime - which matters for a check that runs once at startup.
 ureq = { version = "2", features = ["json"] }
 serde_json = "1"
+# The checksum of a downloaded update, against the SHA256SUMS.txt the release
+# publishes beside it: a proxy that answers a download with something else
+# must not become the program.
+sha2 = "0.10"
 # The main window's HWND, for pinning it to the desktop. Already in the tree
 # through eframe, which does not re-export it.
 raw-window-handle = "0.6"

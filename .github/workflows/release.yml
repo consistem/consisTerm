@@ -31,6 +31,7 @@ jobs:
   version:
     name: version
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     outputs:
       version: ${{ steps.v.outputs.version }}
       prerelease: ${{ steps.v.outputs.prerelease }}
@@ -64,6 +65,7 @@ jobs:
   test:
     name: test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -97,12 +99,19 @@ jobs:
       # The plugin host is behind a feature flag, so it would otherwise rot.
       - name: Test with plugins
         run: cargo test --features plugins --lib --tests
+      # The Doctor's attacks on each runtime start real interpreters, so they
+      # are ignored in the everyday suite; a release runs them once, where
+      # Python, PowerShell and Git Bash are all installed.
+      - name: Test the Doctor against every runtime
+        if: runner.os == 'Windows'
+        run: cargo test --lib adversarial_kinds -- --ignored
 
   linux:
     name: Linux x86_64
     needs: [version, test]
     # The oldest GitHub-hosted image, so the binary only needs glibc >= 2.35.
     runs-on: ubuntu-22.04
+    timeout-minutes: 45
     env:
       CONSISTERM_VERSION: ${{ needs.version.outputs.version }}
     steps:
@@ -145,6 +154,7 @@ jobs:
     name: macOS universal
     needs: [version, test]
     runs-on: macos-15
+    timeout-minutes: 45
     env:
       CONSISTERM_VERSION: ${{ needs.version.outputs.version }}
     steps:
@@ -181,6 +191,7 @@ jobs:
     name: Windows x64
     needs: [version, test]
     runs-on: windows-latest
+    timeout-minutes: 45
     env:
       CONSISTERM_VERSION: ${{ needs.version.outputs.version }}
     steps:
@@ -202,6 +213,7 @@ jobs:
     name: Draft GitHub Release
     needs: [version, linux, macos, windows]
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: write
     env:

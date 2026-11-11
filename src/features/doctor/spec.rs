@@ -202,6 +202,10 @@ pub struct Check {
     pub expect: Vec<Status>,
     pub fix: Option<Fix>,
     pub timeout: Duration,
+    /// Whether a problem here counts against the page's overall status. An
+    /// optional check (a cleanup the user may or may not want) still shows its
+    /// own light and offers its fix, but leaves the summary green.
+    pub mandatory: bool,
 }
 
 impl Check {
@@ -326,7 +330,15 @@ pub fn parse(text: &str, path: &Path, os: Os) -> Result<Spec> {
                             },
                             None => DEFAULT_TIMEOUT,
                         };
+                        let mandatory = match attr(e, "mandatory").as_deref().map(str::trim) {
+                            None | Some("true" | "1" | "yes") => true,
+                            Some("false" | "0" | "no") => false,
+                            Some(other) => {
+                                bail!("check {id}: mandatory {other:?} is neither true nor false")
+                            }
+                        };
                         check = Some(Check {
+                            mandatory,
                             title: attr(e, "title").unwrap_or_else(|| id.clone()),
                             objective: attr(e, "objective").unwrap_or_default(),
                             group: group.clone(),
@@ -637,6 +649,7 @@ fn runtime(kind: Kind) -> Check {
         expect: vec![Status::Ok],
         fix: None,
         timeout: Duration::from_secs(20),
+        mandatory: true,
     }
 }
 

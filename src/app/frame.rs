@@ -94,6 +94,12 @@ impl App {
             tab.for_each_session_mut(|session| session.pump(plugins));
         }
 
+        // What the Doctor's checks have reported since the last frame. Taken
+        // in here, with the other drains, rather than by its page: the worker
+        // wakes the UI when it has something, and the sidebar's light has to
+        // follow a run while another page is open - or none is.
+        self.panels.doctor.poll();
+
         // Plugins may have asked for things while transforming output.
         for hook in self.plugins.take_requests() {
             match hook {

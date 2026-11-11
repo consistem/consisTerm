@@ -40,7 +40,7 @@ folder. A working example lives in [`examples/doctor/`](../examples/doctor/).
 | --- | --- |
 | `<var name value>` | A variable. Written `{{name}}` in a command, a title or an objective; given to every check's script as `DOCTOR_<NAME>`. `instance` and `namespace` are also where ObjectScript runs by default. |
 | `<group name>` | A card of checks on the page, in the order the file gives. |
-| `<check id title objective timeout>` | One check. `id` is unique and is what `<requires>` and `<after>` name. |
+| `<check id title objective timeout mandatory>` | One check. `id` is unique and is what `<requires>` and `<after>` name. `mandatory="false"` makes it optional: a warning or an error still shows on its own light and offers its fix, but leaves the page's overall status and issue count alone - for cleanups a user may or may not want. `true` when left out. |
 | `<run kind os instance namespace>` | How the check runs. Several are allowed, one per system: the first whose `os` matches runs. None matching makes the check `skip`. |
 | `<requires check status>` | Another check that has to be in `status` (by default: whatever that check calls healthy) before this one runs. When it is not, this one is `blocked`, saying what it waits on. |
 | `<expect status>` | The statuses that count as healthy, e.g. `ok skip`. |
@@ -163,6 +163,14 @@ CONSISTERM_SELFTEST_IRIS=1 cargo test --lib selftest_pack -- --ignored --nocaptu
 ```
 
 The second form opens a session on the first local instance, so it is opt-in.
+
+The engine's own attacks on each runtime (`src/features/doctor/adversarial_kinds.rs`) start real
+interpreters too, so they are ignored in the everyday suite and run on request, as the release
+workflow does on Windows:
+
+```bash
+cargo test --lib adversarial_kinds -- --ignored
+```
 
 A check runs as the user who opened the app: the Doctor never elevates one. A fix that needs an
 administrator asks for one itself, as `elevated_fix.ps1` shows.

@@ -4,25 +4,32 @@ fn main() {
     // Windows machine then tried to embed a Windows icon and failed.
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
         let mut res = winres::WindowsResource::new();
-        // Tem que ser o arquivo .ico aqui, o Windows não aceita .png no executável
+        // Windows takes only an .ico inside an executable, never a .png.
         res.set_icon("assets/icon.ico");
-        res.compile().unwrap();
+        if let Err(e) = res.compile() {
+            // A message, not a panic with a backtrace: the one way this fails
+            // is `windres` missing from PATH, and the fix is in CLAUDE.md.
+            eprintln!("error: could not embed the icon: {e}");
+            eprintln!("       on the GNU toolchain, `windres` (from MinGW) must be on PATH;");
+            eprintln!("       see CLAUDE.md, Build and test.");
+            std::process::exit(1);
+        }
 
-        // No toolchain GNU (x86_64-pc-windows-gnu), o winres compila o ícone
-        // para OUT_DIR/resource.o e empacota numa lib estática linkada via
-        // `-lresource`. Só que esse objeto só tem dados de recurso (sem
-        // símbolo que alguém referencie), e o `ld` só puxa membros de uma lib
-        // estática que resolvem símbolo pendente — então ele descarta o
-        // objeto ao resolver a lib e o ícone some do .exe sem erro de build.
-        // Linkar o .o diretamente (fora de arquivo .a) evita essa seleção por
-        // símbolo: um objeto passado direto pro linker é sempre incluído.
+        // On the GNU toolchain (x86_64-pc-windows-gnu), winres compiles the
+        // icon into OUT_DIR/resource.o and packs it into a static library
+        // linked with `-lresource`. That object holds only resource data, with
+        // no symbol anything references, and `ld` pulls a member out of a
+        // static library only to resolve a pending symbol - so it drops the
+        // object and the icon vanishes from the .exe with no build error.
+        // Linking the .o directly (outside an archive) sidesteps that
+        // selection: an object passed straight to the linker is always kept.
         if std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("gnu") {
-            let out_dir = std::env::var("OUT_DIR").unwrap();
+            let out_dir = std::env::var("OUT_DIR").expect("cargo sets OUT_DIR");
             println!("cargo:rustc-link-arg-bins={out_dir}/resource.o");
         }
     }
 
-    // Isso avisa o Cargo para recompilar o exe se você trocar a imagem depois
+    // So the executable is rebuilt when the picture changes.
     println!("cargo:rerun-if-changed=assets/icon.ico");
     println!("cargo:rerun-if-changed=build.rs");
 }

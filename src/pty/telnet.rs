@@ -434,7 +434,7 @@ impl TelnetSession {
             .context("cloning the socket for reading")?;
 
         let codec = Arc::new(Mutex::new(codec));
-        let (tx, rx) = crossbeam_channel::unbounded();
+        let (tx, rx) = crossbeam_channel::bounded(super::session::CHANNEL_DEPTH);
         let closed = Arc::new(AtomicBool::new(false));
 
         {

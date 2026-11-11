@@ -2,6 +2,14 @@
 //! ObjectScript check can do wrong in its own language, and what the Doctor
 //! must make of it - a run that ends, and nothing green that is not.
 //!
+//! Every one starts a real interpreter, which is what makes them worth having
+//! and what kept the whole suite twice as long as it was: they are ignored by
+//! default and run on request, as the release workflow does on Windows:
+//!
+//! ```bash
+//! cargo test --lib adversarial_kinds -- --ignored
+//! ```
+//!
 //! A runtime that is not on the machine skips its ten. The ObjectScript ten
 //! open a session on the first local instance, so they run only with
 //! `CONSISTERM_SELFTEST_IRIS=1`; they touch nothing that persists.
@@ -104,6 +112,7 @@ fn quick(started: Instant, limit: u64) {
 // ---------------------------------------------------------------------------
 
 #[test]
+#[ignore]
 fn py_an_answer_with_no_newline_after_it_is_read() {
     let Some(o) = py(
         "py-nonl",
@@ -116,6 +125,7 @@ fn py_an_answer_with_no_newline_after_it_is_read() {
 }
 
 #[test]
+#[ignore]
 fn py_pretty_printed_json_is_not_an_answer() {
     let Some(o) = py(
         "py-pretty",
@@ -128,6 +138,7 @@ fn py_pretty_printed_json_is_not_an_answer() {
 }
 
 #[test]
+#[ignore]
 fn py_a_silent_exit_is_unknown() {
     let Some(o) = py("py-silent", "import sys\nsys.exit(0)\n", 10) else {
         return;
@@ -136,6 +147,7 @@ fn py_a_silent_exit_is_unknown() {
 }
 
 #[test]
+#[ignore]
 fn py_a_syntax_error_is_unknown_with_the_traceback_kept() {
     let Some(o) = py("py-syntax", "def broken(:\n    pass\n", 10) else {
         return;
@@ -145,6 +157,7 @@ fn py_a_syntax_error_is_unknown_with_the_traceback_kept() {
 }
 
 #[test]
+#[ignore]
 fn py_an_answer_then_a_hang_is_stopped_and_not_green() {
     let started = Instant::now();
     let Some(o) = py(
@@ -159,6 +172,7 @@ fn py_an_answer_then_a_hang_is_stopped_and_not_green() {
 }
 
 #[test]
+#[ignore]
 fn py_emoji_and_accents_in_the_answer_come_through() {
     let Some(o) = py(
         "py-emoji",
@@ -171,6 +185,7 @@ fn py_emoji_and_accents_in_the_answer_come_through() {
 }
 
 #[test]
+#[ignore]
 fn py_fifty_child_processes_do_not_stall_the_answer() {
     let started = Instant::now();
     let Some(o) = py(
@@ -185,6 +200,7 @@ fn py_fifty_child_processes_do_not_stall_the_answer() {
 }
 
 #[test]
+#[ignore]
 fn py_a_megabyte_on_stderr_does_not_block_the_answer_on_stdout() {
     let Some(o) = py(
         "py-stderr",
@@ -197,6 +213,7 @@ fn py_a_megabyte_on_stderr_does_not_block_the_answer_on_stdout() {
 }
 
 #[test]
+#[ignore]
 fn py_the_check_is_told_where_it_is_and_what_it_is() {
     let Some(o) = py(
         "py-env",
@@ -209,6 +226,7 @@ fn py_the_check_is_told_where_it_is_and_what_it_is() {
 }
 
 #[test]
+#[ignore]
 fn py_characters_a_windows_shell_would_read_arrive_as_written() {
     let dir_args = r#"c.py "a&b|c<d>e^f" %PATH% "say ""hi"""#;
     let Some(o) = attack(
@@ -233,6 +251,7 @@ fn py_characters_a_windows_shell_would_read_arrive_as_written() {
 // ---------------------------------------------------------------------------
 
 #[test]
+#[ignore]
 fn sh_a_script_saved_with_crlf_is_read_not_mistaken() {
     let Some(o) = sh(
         "sh-crlf",
@@ -245,6 +264,7 @@ fn sh_a_script_saved_with_crlf_is_read_not_mistaken() {
 }
 
 #[test]
+#[ignore]
 fn sh_a_silent_failure_is_unknown() {
     let Some(o) = sh("sh-exit", "exit 1\n", 10) else {
         return;
@@ -253,6 +273,7 @@ fn sh_a_silent_failure_is_unknown() {
 }
 
 #[test]
+#[ignore]
 fn sh_a_job_left_in_the_background_does_not_hold_the_run() {
     let started = Instant::now();
     let Some(o) = sh("sh-bg", "sleep 30 &\necho '{\"status\":\"ok\"}'\n", 40) else {
@@ -263,6 +284,7 @@ fn sh_a_job_left_in_the_background_does_not_hold_the_run() {
 }
 
 #[test]
+#[ignore]
 fn sh_an_unset_variable_under_set_u_is_unknown() {
     let Some(o) = sh(
         "sh-unset",
@@ -275,6 +297,7 @@ fn sh_an_unset_variable_under_set_u_is_unknown() {
 }
 
 #[test]
+#[ignore]
 fn sh_a_read_with_no_input_goes_on() {
     let Some(o) = sh("sh-read", "read -r line\necho '{\"status\":\"ok\"}'\n", 10) else {
         return;
@@ -283,6 +306,7 @@ fn sh_a_read_with_no_input_goes_on() {
 }
 
 #[test]
+#[ignore]
 fn sh_five_megabytes_from_yes_then_the_answer() {
     let Some(o) = sh(
         "sh-yes",
@@ -295,6 +319,7 @@ fn sh_five_megabytes_from_yes_then_the_answer() {
 }
 
 #[test]
+#[ignore]
 fn sh_printf_with_no_newline_is_read() {
     let Some(o) = sh("sh-printf", "printf '%s' '{\"status\":\"ok\"}'\n", 10) else {
         return;
@@ -303,6 +328,7 @@ fn sh_printf_with_no_newline_is_read() {
 }
 
 #[test]
+#[ignore]
 fn sh_an_answer_from_an_exit_trap_counts() {
     let Some(o) = sh(
         "sh-trap",
@@ -315,6 +341,7 @@ fn sh_an_answer_from_an_exit_trap_counts() {
 }
 
 #[test]
+#[ignore]
 fn sh_a_star_in_the_arguments_is_not_expanded() {
     let Some(o) = attack(
         "sh-glob",
@@ -329,6 +356,7 @@ fn sh_a_star_in_the_arguments_is_not_expanded() {
 }
 
 #[test]
+#[ignore]
 fn sh_a_script_that_kills_itself_is_unknown() {
     let Some(o) = sh("sh-kill", "kill -9 $$\necho '{\"status\":\"ok\"}'\n", 10) else {
         return;
@@ -341,6 +369,7 @@ fn sh_a_script_that_kills_itself_is_unknown() {
 // ---------------------------------------------------------------------------
 
 #[test]
+#[ignore]
 fn ps_a_thrown_exception_is_unknown_with_its_message() {
     let Some(o) = ps("ps-throw", "throw 'disco cheio'\n", 20) else {
         return;
@@ -350,6 +379,7 @@ fn ps_a_thrown_exception_is_unknown_with_its_message() {
 }
 
 #[test]
+#[ignore]
 fn ps_a_non_terminating_error_then_an_answer_keeps_the_answer() {
     let Some(o) = ps(
         "ps-error",
@@ -362,6 +392,7 @@ fn ps_a_non_terminating_error_then_an_answer_keeps_the_answer() {
 }
 
 #[test]
+#[ignore]
 fn ps_an_object_written_out_is_not_an_answer() {
     let Some(o) = ps("ps-object", "@{ status = 'ok' }\n", 20) else {
         return;
@@ -370,6 +401,7 @@ fn ps_an_object_written_out_is_not_an_answer() {
 }
 
 #[test]
+#[ignore]
 fn ps_nested_json_converts_and_reads() {
     let Some(o) = ps(
         "ps-nested",
@@ -382,6 +414,7 @@ fn ps_nested_json_converts_and_reads() {
 }
 
 #[test]
+#[ignore]
 fn ps_a_process_started_and_left_does_not_hold_the_run() {
     let started = Instant::now();
     let Some(o) = ps(
@@ -396,6 +429,7 @@ fn ps_a_process_started_and_left_does_not_hold_the_run() {
 }
 
 #[test]
+#[ignore]
 fn ps_asking_for_input_does_not_wait_for_it() {
     let started = Instant::now();
     let Some(o) = ps(
@@ -418,6 +452,7 @@ fn ps_asking_for_input_does_not_wait_for_it() {
 }
 
 #[test]
+#[ignore]
 fn ps_an_answer_written_with_write_host_is_read() {
     let Some(o) = ps("ps-host", "Write-Host '{\"status\":\"ok\"}'\n", 20) else {
         return;
@@ -426,6 +461,7 @@ fn ps_an_answer_written_with_write_host_is_read() {
 }
 
 #[test]
+#[ignore]
 fn ps_an_exit_code_after_the_answer_keeps_the_answer() {
     let Some(o) = ps("ps-exit", "'{\"status\":\"error\"}'\nexit 3\n", 20) else {
         return;
@@ -434,6 +470,7 @@ fn ps_an_exit_code_after_the_answer_keeps_the_answer() {
 }
 
 #[test]
+#[ignore]
 fn ps_output_forced_to_utf8_is_read_as_utf8() {
     let Some(o) = ps(
         "ps-utf8",
@@ -446,6 +483,7 @@ fn ps_output_forced_to_utf8_is_read_as_utf8() {
 }
 
 #[test]
+#[ignore]
 fn ps_an_endless_loop_is_stopped_at_the_timeout() {
     let started = Instant::now();
     let Some(o) = ps("ps-loop", "while ($true) { }\n", 3) else {
@@ -460,6 +498,7 @@ fn ps_an_endless_loop_is_stopped_at_the_timeout() {
 // ---------------------------------------------------------------------------
 
 #[test]
+#[ignore]
 fn cos_an_undefined_variable_is_unknown_and_does_not_hang() {
     let started = Instant::now();
     let Some(o) = cos("cos-undef", "notDefinedAnywhere", 20) else {
@@ -470,6 +509,7 @@ fn cos_an_undefined_variable_is_unknown_and_does_not_hang() {
 }
 
 #[test]
+#[ignore]
 fn cos_a_syntax_error_is_unknown() {
     let Some(o) = cos("cos-syntax", "$$$(((", 20) else {
         return;
@@ -478,6 +518,7 @@ fn cos_a_syntax_error_is_unknown() {
 }
 
 #[test]
+#[ignore]
 fn cos_a_value_that_is_not_json_is_unknown() {
     let Some(o) = cos("cos-one", "1", 20) else {
         return;
@@ -486,6 +527,7 @@ fn cos_a_value_that_is_not_json_is_unknown() {
 }
 
 #[test]
+#[ignore]
 fn cos_quotes_in_the_answer_survive() {
     let Some(o) = cos(
         "cos-quotes",
@@ -502,6 +544,7 @@ fn cos_quotes_in_the_answer_survive() {
 }
 
 #[test]
+#[ignore]
 fn cos_an_endless_loop_is_stopped_at_the_timeout() {
     let started = Instant::now();
     let Some(o) = cos("cos-loop", r#"$XECUTE("() for { } quit 1")"#, 3) else {
@@ -512,6 +555,7 @@ fn cos_an_endless_loop_is_stopped_at_the_timeout() {
 }
 
 #[test]
+#[ignore]
 fn cos_a_read_that_swallows_the_halt_is_stopped_at_the_timeout() {
     let started = Instant::now();
     let Some(o) = cos("cos-read", r#"$XECUTE("() read x quit x")"#, 3) else {
@@ -522,6 +566,7 @@ fn cos_a_read_that_swallows_the_halt_is_stopped_at_the_timeout() {
 }
 
 #[test]
+#[ignore]
 fn cos_noise_written_before_the_value_does_not_matter() {
     let Some(o) = cos(
         "cos-noise",
@@ -534,6 +579,7 @@ fn cos_noise_written_before_the_value_does_not_matter() {
 }
 
 #[test]
+#[ignore]
 fn cos_a_halt_inside_the_expression_is_unknown() {
     let Some(o) = cos("cos-halt", r#"$XECUTE("() halt")"#, 20) else {
         return;
@@ -542,6 +588,7 @@ fn cos_a_halt_inside_the_expression_is_unknown() {
 }
 
 #[test]
+#[ignore]
 fn cos_changing_namespace_inside_still_answers() {
     let Some(o) = cos(
         "cos-zn",
@@ -558,6 +605,7 @@ fn cos_changing_namespace_inside_still_answers() {
 }
 
 #[test]
+#[ignore]
 fn cos_a_value_of_a_hundred_kilobytes_is_read_whole() {
     let Some(o) = cos(
         "cos-long",

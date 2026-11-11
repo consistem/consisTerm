@@ -1,0 +1,9 @@
+# Actions and runner images age out - macos-14 was retired under the v0.2.1
+# release - so their majors are proposed as they appear. Crates are left to a
+# person: an egui upgrade is a task, not a pull request.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

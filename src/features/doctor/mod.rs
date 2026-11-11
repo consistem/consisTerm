@@ -283,14 +283,15 @@ impl Doctor {
         })
     }
 
-    /// The checks that are not healthy, not counting ones that do not apply
-    /// or could not run for want of another.
+    /// The checks that are not healthy, not counting ones that do not apply,
+    /// could not run for want of another, or are not mandatory.
     pub fn issues(&self) -> usize {
         let Some(spec) = self.spec() else {
             return 0;
         };
         spec.checks
             .iter()
+            .filter(|c| c.mandatory)
             .filter(|c| {
                 self.results
                     .get(&c.id)
@@ -312,7 +313,13 @@ impl Doctor {
         spec.checks
             .iter()
             .filter_map(|c| self.results.get(&c.id).map(|o| (c, o.status)))
-            .map(|(c, s)| if c.healthy(s) { Status::Ok } else { s })
+            .map(|(c, s)| {
+                if c.healthy(s) || !c.mandatory {
+                    Status::Ok
+                } else {
+                    s
+                }
+            })
             .max_by_key(|s| rank(*s))
     }
 
@@ -522,6 +529,38 @@ mod tests {
         let report = doctor.report();
         assert!(report.contains("ERROR    docker"), "{report}");
         assert!(report.contains("BLOCKED  images"), "{report}");
+    }
+
+    #[test]
+    fn an_optional_check_in_trouble_leaves_the_summary_green_but_keeps_its_fix() {
+        let mut doctor = loaded(
+            r#"<doctor>
+              <check id="req"><run kind="objectscript">1</run></check>
+              <check id="opt" mandatory="false"><run kind="objectscript">1</run>
+                <fix kind="objectscript">Fix^X</fix></check>
+            </doctor>"#,
+        );
+        doctor
+            .results
+            .insert("runtime.iris".into(), outcome(Status::Ok));
+        doctor.results.insert("req".into(), outcome(Status::Ok));
+        for status in [Status::Warn, Status::Error] {
+            doctor.results.insert("opt".into(), outcome(status));
+            assert_eq!(doctor.overall(), Some(Status::Ok));
+            assert_eq!(doctor.issues(), 0);
+            let opt = doctor.spec().unwrap().check("opt").unwrap();
+            // The page offers a fix to whatever is_issue calls a problem.
+            assert!(is_issue(opt, status));
+        }
+        doctor.results.insert("req".into(), outcome(Status::Warn));
+        assert_eq!(doctor.overall(), Some(Status::Warn));
+    }
+
+    #[test]
+    fn a_mandatory_that_is_neither_true_nor_false_is_refused() {
+        let xml = r#"<doctor><check id="c" mandatory="maybe"><run kind="objectscript">1</run></check></doctor>"#;
+        let error = spec::parse(xml, Path::new("doctor.xml"), Os::current()).unwrap_err();
+        assert!(error.to_string().contains("mandatory"), "{error}");
     }
 
     #[test]

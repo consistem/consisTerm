@@ -19,15 +19,32 @@ use super::api::{unpack, Hook, Manifest, PluginInfo};
 /// nonsensical length must not make the host allocate without limit.
 const MAX_BUFFER: u32 = 8 * 1024 * 1024;
 
-/// Shared between the host functions and the loop that drains them.
+/// How much a plugin may compute per call, in wasmtime's fuel - roughly one
+/// unit per instruction. Enough to rewrite a screenful many times over, and
+/// nowhere near enough for a loop that never ends to hold the UI thread,
+/// which is where every call runs, between two frames.
+const FUEL_PER_CALL: u64 = 50_000_000;
+
+/// The most linear memory a plugin may grow to. Its buffers are capped at
+/// [`MAX_BUFFER`] each way, so a plugin that wants more than this is not
+/// transforming output.
+const MAX_MEMORY: usize = 64 * 1024 * 1024;
+
 #[derive(Default)]
 struct HostState {
     requests: Vec<Hook>,
 }
 
+/// What a store carries: the requests the plugin queues, and the limits the
+/// engine checks its memory against.
+struct Guest {
+    state: Arc<Mutex<HostState>>,
+    limits: wasmtime::StoreLimits,
+}
+
 struct LoadedPlugin {
     info: PluginInfo,
-    store: Store<Arc<Mutex<HostState>>>,
+    store: Store<Guest>,
     memory: Memory,
     alloc: Option<TypedFunc<i32, i32>>,
     on_output: Option<TypedFunc<(i32, i32), i64>>,
@@ -90,14 +107,31 @@ impl PluginHost {
     }
 
     fn load_one(&mut self, path: &Path) -> Result<LoadedPlugin> {
-        let engine = Engine::default();
+        // Fuel, so a call that never returns is a trap and not a hang.
+        let mut config = wasmtime::Config::new();
+        config.consume_fuel(true);
+        let engine = Engine::new(&config).context("configuring the plugin engine")?;
         let module = Module::from_file(&engine, path)
             .with_context(|| format!("compiling {}", path.display()))?;
 
         let state = Arc::new(Mutex::new(HostState::default()));
-        let mut store = Store::new(&engine, Arc::clone(&state));
+        let limits = wasmtime::StoreLimitsBuilder::new()
+            .memory_size(MAX_MEMORY)
+            .instances(1)
+            .build();
+        let mut store = Store::new(
+            &engine,
+            Guest {
+                state: Arc::clone(&state),
+                limits,
+            },
+        );
+        store.limiter(|guest| &mut guest.limits);
+        store
+            .set_fuel(FUEL_PER_CALL)
+            .context("fuelling the plugin")?;
         // No WASI: the sandbox is the point.
-        let mut linker: Linker<Arc<Mutex<HostState>>> = Linker::new(&engine);
+        let mut linker: Linker<Guest> = Linker::new(&engine);
 
         register_host_fn(&mut linker, "send_text", Hook::SendText)?;
         register_host_fn(&mut linker, "set_status", Hook::SetStatus)?;
@@ -240,6 +274,7 @@ impl LoadedPlugin {
         func: TypedFunc<(i32, i32), i64>,
         bytes: &[u8],
     ) -> Result<Option<Vec<u8>>> {
+        self.refuel()?;
         let ptr = self.write_guest(bytes)?;
         let packed = func
             .call(&mut self.store, (ptr as i32, bytes.len() as i32))
@@ -262,9 +297,19 @@ impl LoadedPlugin {
     }
 
     fn call_command(&mut self, func: TypedFunc<(i32, i32), ()>, name: &str) -> Result<()> {
+        self.refuel()?;
         let ptr = self.write_guest(name.as_bytes())?;
         func.call(&mut self.store, (ptr as i32, name.len() as i32))
             .map_err(|e| anyhow::anyhow!("{e}"))
+    }
+
+    /// A full tank for the next call. Every call gets the same budget, so a
+    /// plugin that spends it all in one traps there, and the call after is
+    /// not starved by what the last one burnt.
+    fn refuel(&mut self) -> Result<()> {
+        self.store
+            .set_fuel(FUEL_PER_CALL)
+            .map_err(|e| anyhow::anyhow!("fuelling the plugin: {e}"))
     }
 
     /// Asks the guest to allocate, then copies into that allocation.
@@ -286,14 +331,14 @@ impl LoadedPlugin {
 
 /// Wires one host function that takes a (ptr, len) string and queues a [`Hook`].
 fn register_host_fn(
-    linker: &mut Linker<Arc<Mutex<HostState>>>,
+    linker: &mut Linker<Guest>,
     name: &'static str,
     make: fn(String) -> Hook,
 ) -> Result<()> {
     linker.func_wrap(
         "nit",
         name,
-        move |mut caller: Caller<'_, Arc<Mutex<HostState>>>, ptr: i32, len: i32| {
+        move |mut caller: Caller<'_, Guest>, ptr: i32, len: i32| {
             let Some(Extern::Memory(memory)) = caller.get_export("memory") else {
                 return;
             };
@@ -310,7 +355,7 @@ fn register_host_fn(
             };
             let text = String::from_utf8_lossy(&data[start..end]).into_owned();
 
-            if let Ok(mut state) = caller.data().lock() {
+            if let Ok(mut state) = caller.data().state.lock() {
                 state.requests.push(make(text));
             }
         },
