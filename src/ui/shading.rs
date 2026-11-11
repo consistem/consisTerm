@@ -129,6 +129,76 @@ pub fn gloss(painter: &Painter, center: Pos2, rx: f32, ry: f32, alpha: u8) {
     painter.add(Shape::mesh(mesh));
 }
 
+/// An Aqua bubble of `base`: the body shaded from a bright spot low down
+/// (the light bouncing back up off the desk), a rim light along the bottom, a
+/// dark ring, and the white gloss over the top half that is the whole of
+/// Aqua's look. The window buttons' bubble, and the Doctor's status light.
+pub fn aqua_bubble(painter: &Painter, center: Pos2, radius: f32, base: Color32) {
+    radial(
+        painter,
+        center,
+        radius,
+        Vec2::new(0.0, radius * 0.30),
+        lighten(base, 0.30),
+        darken(base, 0.72),
+    );
+    radial(
+        painter,
+        center + Vec2::new(0.0, radius * 0.55),
+        radius * 0.62,
+        Vec2::ZERO,
+        white(70),
+        white(0),
+    );
+    painter.circle_stroke(center, radius, Stroke::new(1.0_f32, darken(base, 0.45)));
+    gloss(
+        painter,
+        center - Vec2::new(0.0, radius * 0.34),
+        radius * 0.72,
+        radius * 0.50,
+        215,
+    );
+}
+
+/// A status light: an [`aqua_bubble`] of `colour`, lit - a halo of its own
+/// colour round it, as a lamp behind coloured glass throws, the way the About
+/// page's logo glows. `lit` false is a lamp that is off: the bubble grey and
+/// no halo.
+///
+/// On a dark page the halo adds light to what is under it rather than
+/// covering it, as the logo's does; covered, its fading edge read as a dark
+/// ring round the glow.
+pub fn status_light(
+    painter: &Painter,
+    center: Pos2,
+    radius: f32,
+    colour: Color32,
+    lit: bool,
+    dark: bool,
+) {
+    if !lit {
+        aqua_bubble(painter, center, radius, Color32::from_gray(0x8e));
+        return;
+    }
+    for (reach, strength) in [(2.3, 0.30), (1.6, 0.45)] {
+        let inner = colour.gamma_multiply(strength);
+        let inner = if dark {
+            Color32::from_rgba_premultiplied(inner.r(), inner.g(), inner.b(), 0)
+        } else {
+            inner
+        };
+        radial(
+            painter,
+            center,
+            radius * reach,
+            Vec2::ZERO,
+            inner,
+            Color32::TRANSPARENT,
+        );
+    }
+    aqua_bubble(painter, center, radius, lighten(colour, 0.12));
+}
+
 /// The Aqua scroll handle: a blue capsule, lit from the left, with a white cap
 /// over its top end and a dark rim all round.
 ///

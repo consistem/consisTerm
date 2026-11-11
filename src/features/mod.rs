@@ -20,11 +20,13 @@
 //! - [`iris_terminal`] stands this app in for the IRIS tray's Terminal.
 //! - [`update`] checks for a newer release and installs it.
 //! - [`usage`] reports which settings are in use, by e-mail, when asked to.
+//! - [`doctor`] runs the organisation's environment checks and their fixes.
 
 pub mod analyze;
 pub mod autocomplete;
 pub mod autologon;
 pub mod doc_lookup;
+pub mod doctor;
 pub mod explorer_menu;
 pub mod export;
 pub mod history;

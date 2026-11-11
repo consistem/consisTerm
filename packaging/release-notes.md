@@ -8,27 +8,16 @@
 -->
 ## Novidades
 
-- **Abas lado a lado, em qualquer arranjo:** uma aba pode ter até 9 painéis,
-  divididos em qualquer direção. Arraste uma aba para o terminal ou para o meio
-  de outra aba para juntá-las; segure sobre uma aba por um instante e ela se
-  abre para você soltar ao lado do painel que quiser. Arraste a alça no topo de
-  um painel para mudá-lo de lugar. Pelo teclado: Alt+setas trocam de painel,
-  Alt+Shift+setas trocam painéis de lugar, Alt+Shift+Mais/Menos dividem,
-  Alt+Shift+R gira a divisão e Ctrl+Shift+Z amplia o painel.
-- **Cor nas abas:** escolha uma cor no clique duplo (junto com o nome) ou no
-  menu do botão direito. Cada tema desenha a marca no seu próprio estilo.
-- **Temas Winamp e Winamp 5 Classified**, com os controles de cada skin.
-- **Aqua mais fiel:** metal escovado mais escuro e com o brilho do iTunes da
-  época, sem bordas estranhas; Tiger Graphite mais escuro. As sombras e
-  transparências de todos os temas foram corrigidas.
-- **Pasta dos logs:** escolha uma nova pasta em Configurações; o programa
-  oferece mover os logs existentes, com uma janela de cópia animada.
-- **Macros sem perguntar:** a nova opção "Pedir os valores antes de enviar"
-  permite enviar uma macro direto com os valores salvos.
-- **Proteção de tela:** GIFs agora tocam até 2 minutos.
-- **Executável menor:** cerca de 30% menos, sem perder nada.
-- Arrastar uma aba não move mais a janela; o botão de fechar fica alinhado aos
-  outros; as prévias dos temas mostram a sua disposição de abas e botões.
+- **Diagnóstico:** uma nova página no topo das Configurações verifica o ambiente
+  (namespaces do IRIS, contêineres e versões das imagens do Docker, e o que mais
+  a sua empresa definir) e mostra cada item com uma luz de status. As
+  verificações vêm de um arquivo XML da empresa, distribuído como as macros, com
+  scripts em Python, PowerShell, shell ou ObjectScript. Quando uma verificação
+  sabe corrigir o problema, o botão **Corrigir** roda a correção numa aba do
+  terminal, à vista, e **Conferir** diz se ela funcionou.
+- **Abas na barra de título da janela** agora é o padrão em instalações novas. Ao ligar a
+  opção, uma animação mostra que a janela pode ser arrastada segurando os botões
+  da barra (fechar, minimizar...).
 
 ## Instalação
 

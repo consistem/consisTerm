@@ -269,10 +269,12 @@ pub enum Symbol {
     ChevronRight,
     /// The pair of chevrons on a pop-up menu, saying it opens either way.
     ChevronUpDown,
+    /// A heartbeat trace - the Doctor's mark.
+    Pulse,
 }
 
 impl Symbol {
-    pub const ALL: [Symbol; 15] = [
+    pub const ALL: [Symbol; 16] = [
         Symbol::Gear,
         Symbol::Contrast,
         Symbol::Swatch,
@@ -288,6 +290,7 @@ impl Symbol {
         Symbol::Magnifier,
         Symbol::ChevronRight,
         Symbol::ChevronUpDown,
+        Symbol::Pulse,
     ];
 }
 
@@ -372,6 +375,18 @@ pub fn symbol(painter: &Painter, rect: Rect, symbol: Symbol, colour: Color32) {
             ] {
                 painter.add(egui::Shape::convex_polygon(points, colour, Stroke::NONE));
             }
+        }
+        Symbol::Pulse => {
+            let trace = [
+                at(0.08, 0.55),
+                at(0.30, 0.55),
+                at(0.40, 0.28),
+                at(0.54, 0.80),
+                at(0.64, 0.45),
+                at(0.70, 0.55),
+                at(0.92, 0.55),
+            ];
+            painter.add(egui::Shape::line(trace.to_vec(), stroke));
         }
         Symbol::Prompt => {
             painter.line_segment([at(0.18, 0.30), at(0.42, 0.50)], stroke);
