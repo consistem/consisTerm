@@ -820,9 +820,9 @@ mod tests {
         // What irissession prints for a piped command: the command echoed
         // after the prompt, marker and all, then the value it wrote.
         let out = format!(
-            "COMP80>write !,\"{MARK}\",$select(1:\"{{\"\"status\"\":1}}\"),!
+            "USER>write !,\"{MARK}\",$select(1:\"{{\"\"status\"\":1}}\"),!
 {MARK}{{\"status\":\"ok\",\"summary\":\"yes\"}}
-COMP80>halt
+USER>halt
 "
         );
         let outcome = marked(&out).and_then(answer).unwrap();

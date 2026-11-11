@@ -9,14 +9,14 @@ step() {
 
 root=$(mktemp -d "${TMPDIR:-/tmp}/consisterm-selftest-sh-XXXXXX")
 mkdir -p "$root/a/b/c"; step "criar pastas aninhadas" $?
-printf 'COMPOSE_PROJECT_NAME=csw\nCSW_DESENV_VERSION=8.0.46b2\nTZ=America/Sao_Paulo\n' > "$root/a/b/c/consistem.env"
+printf 'APP_NAME=example\nAPP_VERSION=8.0.46b2\nTZ=America/Sao_Paulo\n' > "$root/a/b/c/settings.env"
 step "gravar arquivo" $?
-cp "$root/a/b/c/consistem.env" "$root/consistem.env.bak"; step "copiar arquivo" $?
-mkdir -p "$root/moved" && mv "$root/a/b/c/consistem.env" "$root/moved/"
-[ -f "$root/moved/consistem.env" ] && [ ! -e "$root/a/b/c/consistem.env" ]; step "mover arquivo" $?
-sed -i 's/^CSW_DESENV_VERSION=.*/CSW_DESENV_VERSION=8.0.46b3/' "$root/moved/consistem.env"
-grep -qx 'CSW_DESENV_VERSION=8.0.46b3' "$root/moved/consistem.env" \
-    && grep -qx 'TZ=America/Sao_Paulo' "$root/moved/consistem.env"
+cp "$root/a/b/c/settings.env" "$root/settings.env.bak"; step "copiar arquivo" $?
+mkdir -p "$root/moved" && mv "$root/a/b/c/settings.env" "$root/moved/"
+[ -f "$root/moved/settings.env" ] && [ ! -e "$root/a/b/c/settings.env" ]; step "mover arquivo" $?
+sed -i 's/^APP_VERSION=.*/APP_VERSION=8.0.46b3/' "$root/moved/settings.env"
+grep -qx 'APP_VERSION=8.0.46b3' "$root/moved/settings.env" \
+    && grep -qx 'TZ=America/Sao_Paulo' "$root/moved/settings.env"
 step "editar uma linha específica (sed)" $?
 mv "$root/moved" "$root/renamed"; step "renomear pasta" $?
 rm -rf "$root"

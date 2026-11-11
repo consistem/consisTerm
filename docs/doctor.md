@@ -13,7 +13,7 @@ in one of two places:
 - `org-doctor.xml` beside the program, when that path is empty.
 
 Scripts are named relative to the checks file, so the file and its scripts travel together as one
-folder. A working example lives in [`examples/doctor/`](../examples/doctor/).
+folder. A working example is the self-test pack, [`examples/doctor-selftest/`](../examples/doctor-selftest/).
 
 ## The file
 
@@ -28,7 +28,7 @@ folder. A working example lives in [`examples/doctor/`](../examples/doctor/).
       <requires check="docker.network"/>     <!-- run only once that one is healthy -->
       <run kind="python">docker/containers.py</run>
       <expect status="ok"/>                  <!-- what counts as healthy; "ok" when left out -->
-      <fix title="Start the containers" kind="shell" confirm="true">fixes/consistem.sh start</fix>
+      <fix title="Start the containers" kind="shell" confirm="true">fixes/start.sh</fix>
       <after check="docker.containers"/>     <!-- what must hold once the fix has run -->
       <after check="docker.network" status="ok"/>
     </check>
@@ -77,7 +77,7 @@ A check answers with **one line of JSON on standard output**: the last line that
 object with a `status`. Anything printed before it is ignored, so a script may log as it goes.
 
 ```json
-{"status": "warn", "summary": "2 of 3 images behind", "detail": ["csw-desenv: 8.0.46b2, 8.0.46b3 released"]}
+{"status": "warn", "summary": "1 of 3 images behind", "detail": ["app: 1.2.0 installed, 1.3.0 released"]}
 ```
 
 | field | |
@@ -101,8 +101,9 @@ A script is started in the checks file's folder, with:
 | `CONSISTERM_IRIS_INSTANCE`, `CONSISTERM_IRIS_NAMESPACE` | where ObjectScript runs |
 | `DOCTOR_<NAME>` | every `<var>` |
 
-`examples/doctor/lib/doctor.py` has a `result(status, summary, detail)` that prints the line and
-exits, and a `run([...])` that runs a command without a console window.
+A small helper module shared by an organisation's Python checks - a `result(status, summary,
+detail)` that prints the line and exits, and a `run([...])` that runs a command without a console
+window - keeps each check to a few lines; the self-test pack's scripts show the shape.
 
 ### ObjectScript
 
@@ -112,7 +113,7 @@ operating system's user in. The built-in **IRIS** check finds that out first, an
 check waits on it.
 
 ```xml
-<run kind="objectscript" namespace="%SYS">$$Check^CSWDOCTOR("{{comp}}")</run>
+<run kind="objectscript" namespace="%SYS">$$Check^ORGDOCTOR("{{namespace}}")</run>
 ```
 
 The instance is the `<run>`'s `instance`, else the file's `instance` variable, else the default
@@ -122,7 +123,7 @@ session's, else the first one installed. The namespace is the `<run>`'s, else th
 ## Fixes
 
 **Fix** opens a tab running the fix, so everything it prints is seen and anything it asks (a
-password to `consistem_install`, a confirmation) can be answered there. A fix never runs hidden. When
+password to an installer, a confirmation) can be answered there. A fix never runs hidden. When
 it has finished, **Verify** runs the `<after>` checks again (and whatever depends on them) and says
 whether the fix did what it promised.
 
@@ -149,7 +150,7 @@ the fixes run from the top of the list down, each verified before the next.
 
 [`examples/doctor-selftest/`](../examples/doctor-selftest/) is a checks file that exercises every
 runtime doing what real checks and fixes do: folders and files created, copied, moved, renamed and
-deleted; one line of a `consistem.env`-like file edited; a `git pull` bringing a clone up to date;
+deleted; one line of a settings file edited; a `git pull` bringing a clone up to date;
 and whether the check runs elevated. One PowerShell check warns when it is not, so its fix -
 `elevated_fix.ps1`, which asks Windows for an administrator through the UAC prompt - can be tried.
 Everything happens in a temporary folder that is removed afterwards; the ObjectScript checks use

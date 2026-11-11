@@ -904,7 +904,7 @@ impl Default for Settings {
             // On for a new install: one row instead of two is the better
             // first impression on a laptop screen. A settings file always
             // writes this field, so an existing install keeps what it had.
-            tabs_in_title_bar: true,
+            tabs_in_title_bar: false,
             tab_width: TabWidth::default(),
             tab_close_side: TabCloseSide::default(),
             bar_position: BarPosition::default(),

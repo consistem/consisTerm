@@ -67,7 +67,8 @@ pub(crate) fn settings_with(
 /// developer's machine - set, not run: a film must not start a process.
 pub(crate) fn settings_doctor(look: &Look) -> Scene {
     use crate::features::doctor::spec::Status::*;
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/doctor/doctor.xml");
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("examples/doctor-selftest/doctor.xml");
     let mut settings = look.settings.clone();
     settings.doctor_path = path.clone();
     let mut themes = look.themes.clone();
@@ -88,21 +89,46 @@ pub(crate) fn settings_doctor(look: &Look) -> Scene {
                 ),
                 ("runtime.powershell", Ok, "PowerShell 5.1.26100.9711", ""),
                 ("runtime.iris", Ok, "IRIS for Windows (x86-64) 2025.1.3", ""),
-                ("docker.daemon", Ok, "Docker 29.6.2", ""),
-                ("docker.network", Ok, "csw_default existe", ""),
-                ("docker.containers", Ok, "Os 3 serviços estão rodando", ""),
                 (
-                    "docker.images",
-                    Warn,
-                    "2 de 3 desatualizadas: csw-calcserpro, csw-desenv",
-                    "csw-calcserpro: 1.0.134b1, a última liberada é 1.0.144b1
-csw-desenv: 8.0.46b2, a última liberada é 8.0.46b3",
+                    "py.files",
+                    Ok,
+                    "pastas, cópia, mover, renomear, editar e apagar",
+                    "",
                 ),
-                ("iris.comp", Error, "COMP não existe", ""),
-                ("iris.desenv", Ok, "DESENV existe", ""),
+                ("py.git", Ok, "clone atualizado: 2 commits", ""),
+                ("py.privileges", Ok, "usuário comum", ""),
+                (
+                    "sh.files",
+                    Ok,
+                    "pastas, cópia, mover, renomear, editar e apagar",
+                    "",
+                ),
+                ("sh.git", Ok, "clone atualizado: 2 commits", ""),
+                ("sh.privileges", Ok, "usuário comum", ""),
+                (
+                    "ps.files",
+                    Ok,
+                    "pastas, cópia, mover, renomear, editar e apagar",
+                    "",
+                ),
+                ("ps.git", Ok, "clone atualizado: 2 commits", ""),
+                ("ps.privileges", Ok, "usuário comum", ""),
+                (
+                    "ps.elevation",
+                    Warn,
+                    "sem privilégios de administrador",
+                    "A correção pede um administrador pelo UAC.",
+                ),
+                (
+                    "cos.files",
+                    Ok,
+                    "pasta, stream, rename, global privada e texto editado",
+                    "",
+                ),
+                ("cos.privileges", Error, "sem %Developer", ""),
             ],
         ),
-        doctor_page: crate::ui::settings_view::doctor::DoctorPageState::opened(&["docker.images"]),
+        doctor_page: crate::ui::settings_view::doctor::DoctorPageState::opened(&["ps.elevation"]),
         ..crate::ui::panels::PanelState::default()
     };
     let mut placement = crate::ui::detach::Placement::default();
@@ -612,7 +638,7 @@ pub(crate) fn all(look: &Look) -> Vec<Scene> {
             look,
             "main-tabs-in-title",
             |s| s.tabs_in_title_bar = true,
-            Some("Connected to COMP80"),
+            Some("Connected to USER"),
         ),
         main_window(
             look,
@@ -717,7 +743,7 @@ fn film_every_scene() {
 
 /// What a session looks like in the main window's scenes: the prompt, a
 /// command and its answer, as in the screenshots this skin work began from.
-const SESSION: &str = "N\u{f3}: CCSDESDSK095, Configura\u{e7}\u{e3}o: CONSISTEM\n\nCOMP80>w \"Duplica a partir daqui\"\nDuplica a partir daqui\nCOMP80>\n\nCOMP80>w \"ultima linha\"\nultima linha\nCOMP80>";
+const SESSION: &str = "N\u{f3}: CCSDESDSK095, Configura\u{e7}\u{e3}o: EXEMPLO\n\nUSER>w \"Duplica a partir daqui\"\nDuplica a partir daqui\nUSER>\n\nUSER>w \"ultima linha\"\nultima linha\nUSER>";
 
 /// The main window with a tab tiled three ways - an IRIS session on the left,
 /// two shells stacked on the right - and coloured tabs beside it.
@@ -741,7 +767,7 @@ pub(crate) fn main_tiled(look: &Look, renaming: bool) -> Scene {
             look.prelude(ctx);
             let app = app.get_or_insert_with(|| {
                 let mut app = crate::app::App::for_snapshot(ctx, settings.clone(), themes.clone());
-                app.add_snapshot_tab("CONSISTEM | COMP80", SESSION);
+                app.add_snapshot_tab("EXEMPLO | USER", SESSION);
                 app.add_snapshot_tab("PowerShell", "PS C:\\work> npm run dev\nready on :3000");
                 app.add_snapshot_tab("cmd", "C:\\work>");
                 app.add_snapshot_tab("RDB76-TR", "USER>");
@@ -792,7 +818,7 @@ pub(crate) fn main_window(
             look.prelude(ctx);
             let app = app.get_or_insert_with(|| {
                 let mut app = crate::app::App::for_snapshot(ctx, settings.clone(), themes.clone());
-                app.add_snapshot_tab("CONSISTEM | COMP80", SESSION);
+                app.add_snapshot_tab("EXEMPLO | USER", SESSION);
                 app.add_snapshot_tab("RDB76-TR", "USER>");
                 if let Some(status) = status {
                     app.snapshot_status(status);

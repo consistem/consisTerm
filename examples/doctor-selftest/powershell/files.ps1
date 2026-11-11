@@ -13,22 +13,22 @@ try {
     $deep = New-Item -ItemType Directory -Path (Join-Path $root 'a\b\c') -Force
     Step 'criar pastas aninhadas' (Test-Path $deep)
 
-    $env = Join-Path $deep 'consistem.env'
-    [System.IO.File]::WriteAllText($env, "COMPOSE_PROJECT_NAME=csw`nCSW_DESENV_VERSION=8.0.46b2`nTZ=America/Sao_Paulo`n")
+    $env = Join-Path $deep 'settings.env'
+    [System.IO.File]::WriteAllText($env, "APP_NAME=example`nAPP_VERSION=8.0.46b2`nTZ=America/Sao_Paulo`n")
     Step 'gravar arquivo' ((Get-Item $env).Length -gt 0)
 
-    Copy-Item $env (Join-Path $root 'consistem.env.bak')
-    Step 'copiar arquivo' (Test-Path (Join-Path $root 'consistem.env.bak'))
+    Copy-Item $env (Join-Path $root 'settings.env.bak')
+    Step 'copiar arquivo' (Test-Path (Join-Path $root 'settings.env.bak'))
 
     $moved = New-Item -ItemType Directory -Path (Join-Path $root 'moved') -Force
     Move-Item $env $moved
-    $env = Join-Path $moved 'consistem.env'
-    Step 'mover arquivo' ((Test-Path $env) -and -not (Test-Path (Join-Path $deep 'consistem.env')))
+    $env = Join-Path $moved 'settings.env'
+    Step 'mover arquivo' ((Test-Path $env) -and -not (Test-Path (Join-Path $deep 'settings.env')))
 
-    $text = [System.IO.File]::ReadAllText($env) -replace '(?m)^CSW_DESENV_VERSION=.*$', 'CSW_DESENV_VERSION=8.0.46b3'
+    $text = [System.IO.File]::ReadAllText($env) -replace '(?m)^APP_VERSION=.*$', 'APP_VERSION=8.0.46b3'
     [System.IO.File]::WriteAllText($env, $text)
     $after = [System.IO.File]::ReadAllText($env)
-    Step 'editar uma linha específica' (($after -match '(?m)^CSW_DESENV_VERSION=8\.0\.46b3$') -and ($after -match 'TZ=America/Sao_Paulo'))
+    Step 'editar uma linha específica' (($after -match '(?m)^APP_VERSION=8\.0\.46b3$') -and ($after -match 'TZ=America/Sao_Paulo'))
 
     Rename-Item $moved 'renamed'
     Step 'renomear pasta' (Test-Path (Join-Path $root 'renamed'))

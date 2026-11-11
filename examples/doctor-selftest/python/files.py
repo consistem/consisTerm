@@ -21,28 +21,28 @@ try:
     os.makedirs(deep)
     step("criar pastas aninhadas", os.path.isdir(deep))
 
-    env = os.path.join(deep, "consistem.env")
+    env = os.path.join(deep, "settings.env")
     with open(env, "w", encoding="utf-8", newline="\n") as f:
-        f.write("COMPOSE_PROJECT_NAME=csw\nCSW_DESENV_VERSION=8.0.46b2\nTZ=America/Sao_Paulo\n")
+        f.write("APP_NAME=example\nAPP_VERSION=8.0.46b2\nTZ=America/Sao_Paulo\n")
     step("gravar arquivo", os.path.getsize(env) > 0)
 
-    copy = os.path.join(root, "consistem.env.bak")
+    copy = os.path.join(root, "settings.env.bak")
     shutil.copyfile(env, copy)
     step("copiar arquivo", os.path.isfile(copy))
 
-    moved = os.path.join(root, "moved", "consistem.env")
+    moved = os.path.join(root, "moved", "settings.env")
     os.makedirs(os.path.dirname(moved))
     shutil.move(env, moved)
     step("mover arquivo", os.path.isfile(moved) and not os.path.exists(env))
 
     text = open(moved, encoding="utf-8").read()
-    edited, n = re.subn(r"^CSW_DESENV_VERSION=.*$", "CSW_DESENV_VERSION=8.0.46b3", text, flags=re.M)
+    edited, n = re.subn(r"^APP_VERSION=.*$", "APP_VERSION=8.0.46b3", text, flags=re.M)
     with open(moved, "w", encoding="utf-8", newline="\n") as f:
         f.write(edited)
     after = open(moved, encoding="utf-8").read()
     step(
         "editar uma linha específica",
-        n == 1 and "CSW_DESENV_VERSION=8.0.46b3" in after and "TZ=America/Sao_Paulo" in after,
+        n == 1 and "APP_VERSION=8.0.46b3" in after and "TZ=America/Sao_Paulo" in after,
     )
 
     os.rename(os.path.join(root, "moved"), os.path.join(root, "renamed"))

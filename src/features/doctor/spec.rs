@@ -740,7 +740,7 @@ mod tests {
               <run kind="shell" os="linux macos">docker/running.sh</run>
               <expect status="ok skip"/>
               <after check="docker.running" status="ok"/>
-              <fix title="Start" kind="shell" confirm="false">fixes/consistem.sh start</fix>
+              <fix title="Start" kind="shell" confirm="false">fixes/start.sh</fix>
             </check>
           </group>
         </doctor>"#;
