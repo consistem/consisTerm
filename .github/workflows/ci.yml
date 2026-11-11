@@ -36,9 +36,12 @@ jobs:
       # eframe needs the windowing/clipboard stack, and keyring needs
       # libsecret, neither of which the runner image ships.
       - name: Install Linux dependencies
+        # The Azure mirror has stalled for an hour mid-download (v0.2.1's first
+        # run); apt is told to time out and retry, and the step to give up.
+        timeout-minutes: 10
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y \
             libgtk-3-dev libxkbcommon-dev libwayland-dev \
             libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
             libxkbcommon-x11-dev libssl-dev libsecret-1-dev
