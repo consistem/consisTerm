@@ -55,7 +55,9 @@ pub fn ico_bytes(image: &RgbaImage) -> image::ImageResult<Vec<u8>> {
 /// The name an icon is written under: from its contents, so a new picture -
 /// a file of the user's changed in place included - is a new name. The shell
 /// caches icons by path, and would go on showing the old picture at an old
-/// name.
+/// name. Only the Windows side writes one; elsewhere it would be dead code,
+/// which `-D warnings` refuses.
+#[cfg(any(windows, test))]
 fn ico_name(bytes: &[u8]) -> String {
     use std::hash::{Hash, Hasher};
     let mut hasher = std::collections::hash_map::DefaultHasher::new();

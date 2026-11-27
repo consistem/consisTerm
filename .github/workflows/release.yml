@@ -72,8 +72,12 @@ jobs:
         os: [windows-latest, ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      # Pinned, not `stable`: Rust 1.100 no longer compiles objc2 0.4 (pulled in
+      # by eframe's winit on macOS), and its clippy flags loops 1.99 passed.
+      # Move it on together with the local toolchain, once eframe is upgraded.
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: 1.99.1
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
         with:
@@ -124,7 +128,9 @@ jobs:
             libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
             libxkbcommon-x11-dev libssl-dev libsecret-1-dev libdbus-1-dev \
             desktop-file-utils file
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.99.1
       - uses: Swatinem/rust-cache@v2
         with:
           key: release-linux-x86_64
@@ -160,8 +166,9 @@ jobs:
       CONSISTERM_VERSION: ${{ needs.version.outputs.version }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: 1.99.1
           targets: aarch64-apple-darwin, x86_64-apple-darwin
       - uses: Swatinem/rust-cache@v2
         with:
@@ -197,7 +204,9 @@ jobs:
       CONSISTERM_VERSION: ${{ needs.version.outputs.version }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.99.1
       - uses: Swatinem/rust-cache@v2
         with:
           key: release-windows-x64

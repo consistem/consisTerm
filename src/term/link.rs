@@ -297,9 +297,9 @@ mod tests {
         let cols = 100;
         let rows = 3 * REACH / cols;
         let mut grid = Grid::new(cols, rows, 0);
-        for r in 0..rows {
-            grid.screen[r].set_text(&"a".repeat(cols));
-            grid.screen[r].wrapped = r + 1 < rows;
+        for (r, line) in grid.screen.iter_mut().take(rows).enumerate() {
+            line.set_text(&"a".repeat(cols));
+            line.wrapped = r + 1 < rows;
         }
         let middle = rows / 2;
         grid.screen[middle].set_text(&format!("{:<1$}", " http://x.io/ ", cols));

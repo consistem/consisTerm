@@ -521,7 +521,7 @@ fn stretched(k: &Kit, rect: Rect, b: &Bitmap, vertical: bool) -> Shape {
     let r = prim::snap_rect(rect, k.ppp);
     let mut mesh = Mesh::default();
     let count = if vertical { b.w } else { b.h };
-    for i in 0..count {
+    for (i, &px) in b.px.iter().take(count).enumerate() {
         let last = i + 1 == count;
         let part = if vertical {
             let a = r.left() + i as f32 * u;
@@ -541,7 +541,7 @@ fn stretched(k: &Kit, rect: Rect, b: &Bitmap, vertical: bool) -> Shape {
             Rect::from_min_max(pos2(r.left(), a), pos2(r.right(), z))
         };
         if part.is_positive() {
-            quad(&mut mesh, part, argb(b.px[i]));
+            quad(&mut mesh, part, argb(px));
         }
     }
     Shape::mesh(mesh)

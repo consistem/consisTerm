@@ -542,12 +542,12 @@ fn paint_thumbnail(
     // Along the foot of the terminal, wherever the bar has left it.
     let strip = 4.0;
     let width = body.width() / 8.0;
-    for slot in 0..8 {
+    for (slot, &colour) in theme.ansi.iter().take(8).enumerate() {
         let cell = Rect::from_min_size(
             pos2(body.left() + slot as f32 * width, body.bottom() - strip),
             vec2(width + 0.5, strip),
         );
-        body_painter.rect_filled(cell, 0.0, theme.ansi[slot]);
+        body_painter.rect_filled(cell, 0.0, colour);
     }
     painter.rect_stroke(
         rect.shrink(0.5),

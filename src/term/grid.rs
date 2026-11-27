@@ -538,8 +538,8 @@ impl Grid {
                 }
             }
             1 => {
-                for r in 0..row {
-                    self.screen[r] = Row::new();
+                for line in self.screen.iter_mut().take(row) {
+                    *line = Row::new();
                 }
                 self.erase_row_range(row, 0, col + 1);
             }
