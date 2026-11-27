@@ -8,16 +8,15 @@
 -->
 ## Novidades
 
-- **Diagnóstico:** uma nova página no topo das Configurações verifica o ambiente
-  (namespaces do IRIS, contêineres e versões das imagens do Docker, e o que mais
-  a sua empresa definir) e mostra cada item com uma luz de status. As
-  verificações vêm de um arquivo XML da empresa, distribuído como as macros, com
-  scripts em Python, PowerShell, shell ou ObjectScript. Quando uma verificação
-  sabe corrigir o problema, o botão **Corrigir** roda a correção numa aba do
-  terminal, à vista, e **Conferir** diz se ela funcionou.
-- **Abas na barra de título da janela:** ao ligar a opção, uma animação mostra
-  que a janela pode ser arrastada segurando os botões da barra (fechar,
-  minimizar...).
+- **Ícone da barra de tarefas:** nas Configurações dá para escolher o ícone do
+  consisTerm entre os que vêm com o programa (Original, Branco, Neon, Água,
+  Natal, Metal) ou um arquivo seu (PNG, ICO, GIF ou BMP). Ele aparece na barra de
+  tarefas, na troca de janelas e na página Sobre, e o atalho fixado na barra de
+  tarefas acompanha a escolha.
+- **Proteção de tela com imagem:** um novo tipo de proteção de tela preenche a
+  janela com uma imagem PNG ou GIF animado à sua escolha.
+- **Diagnóstico removido:** a página de verificações do ambiente, lançada na
+  0.2.1, saiu do programa.
 
 ## Instalação
 

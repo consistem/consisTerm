@@ -669,6 +669,7 @@ impl App {
                 App::apply_style(ctx, &self.theme(), &self.settings);
                 self.apply_font(ctx);
                 self.apply_quake();
+                self.apply_icon(ctx);
                 crate::ui::desktop::set_pinned(self.settings.pin_to_desktop);
                 self.history.set_persist(
                     &config::command_history_path(),
@@ -709,7 +710,6 @@ impl App {
                 self.screensaver = Some(crate::ui::screensaver_view::Running::new(config));
             }
             UiRequest::OpenSettings(route) => self.panels.open_settings(route),
-            UiRequest::OpenTab(profile) => self.open_tab(*profile),
             UiRequest::SendUsageReport(to) => self.send_usage_report(ctx, to),
             UiRequest::StopAskingUsageReport => {
                 self.settings.ask_usage_report = false;

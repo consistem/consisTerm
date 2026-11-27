@@ -102,12 +102,6 @@ jobs:
       # The plugin host is behind a feature flag, so it would otherwise rot.
       - name: Test with plugins
         run: cargo test --features plugins --lib --tests
-      # The Doctor's attacks on each runtime start real interpreters, so they
-      # are ignored in the everyday suite; a release runs them once, where
-      # Python, PowerShell and Git Bash are all installed.
-      - name: Test the Doctor against every runtime
-        if: runner.os == 'Windows'
-        run: cargo test --lib adversarial_kinds -- --ignored
 
   linux:
     name: Linux x86_64

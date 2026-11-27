@@ -44,7 +44,7 @@
 use crate::ui::tip::Tip;
 use std::sync::OnceLock;
 
-use egui::{Color32, Context, Key, KeyboardShortcut, Modifiers, PointerButton, Ui};
+use egui::{Color32, Context, Key, KeyboardShortcut, Modifiers, PointerButton, Ui, Vec2};
 
 use crate::config::profile::{LogMode, Remote};
 use crate::config::servers::{Server, ServerList, Target};
@@ -56,7 +56,6 @@ use crate::ui::icons::Symbol;
 use crate::ui::panels::{PanelState, UiRequest};
 use crate::ui::prefs::{self, Card, Row};
 
-pub mod doctor;
 pub mod macros;
 pub mod screensaver;
 pub mod themes;
@@ -73,9 +72,6 @@ const HIGHLIGHT_SECS: f64 = 1.6;
 /// The categories down the sidebar, in the order they run.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum Category {
-    /// First in the list, as Clawd has it: the page to look at when
-    /// something in the environment is off.
-    Doctor,
     #[default]
     General,
     Appearance,
@@ -91,8 +87,7 @@ pub enum Category {
 }
 
 impl Category {
-    pub const ALL: [Category; 12] = [
-        Category::Doctor,
+    pub const ALL: [Category; 11] = [
         Category::General,
         Category::Appearance,
         Category::Themes,
@@ -109,7 +104,6 @@ impl Category {
     /// The category's name, untranslated.
     pub fn label(self) -> &'static str {
         match self {
-            Category::Doctor => "Doctor",
             Category::General => "General",
             Category::Appearance => "Appearance",
             Category::Themes => "Themes",
@@ -126,7 +120,6 @@ impl Category {
 
     fn symbol(self) -> Symbol {
         match self {
-            Category::Doctor => Symbol::Pulse,
             Category::General => Symbol::Gear,
             Category::Appearance => Symbol::Contrast,
             Category::Themes => Symbol::Swatch,
@@ -147,7 +140,6 @@ impl Category {
     fn tile(self) -> egui::Color32 {
         let rgb = egui::Color32::from_rgb;
         match self {
-            Category::Doctor => rgb(0xff, 0x3b, 0x30),
             Category::General => rgb(0x8e, 0x8e, 0x93),
             Category::Appearance => rgb(0x00, 0x7a, 0xff),
             Category::Themes => rgb(0xaf, 0x52, 0xde),
@@ -743,8 +735,8 @@ pub fn settings_dialog(
     macros::forget_stale_selection(&mut c);
     screensaver::collect_picked_image(ctx, &mut c);
     macros::collect_picked_org_file(ctx, &mut c);
-    doctor::collect_picked_file(ctx, &mut c);
     collect_picked_log_dir(ctx, &mut c);
+    collect_picked_app_icon(ctx, &mut c);
     crate::ui::detach::shell(
         ctx,
         "nit-settings",
@@ -834,7 +826,6 @@ fn window(ui: &mut Ui, c: &mut Ctx<'_>) {
             label: tr(category.label()),
             symbol: category.symbol(),
             tile: category.tile(),
-            light: (*category == Category::Doctor).then(|| doctor::light(&c.state.doctor)),
         })
         .collect();
     let searching = !c.state.settings_search.trim().is_empty();
@@ -975,7 +966,6 @@ fn pages() -> &'static [Page] {
 
 fn build_pages() -> Vec<Page> {
     let mut pages = vec![
-        page(Category::Doctor, doctor::sections()).with_top(doctor::top),
         page(Category::General, general()),
         page(Category::Appearance, appearance()),
     ];
@@ -1141,6 +1131,21 @@ fn appearance() -> Vec<Section> {
             ],
         ),
         section(
+            "Icon",
+            vec![
+                Item::control("app_icon", "Taskbar icon", app_icon)
+                    .sub("Also shown on the About page.")
+                    .keys(&[
+                        "icon", "logo", "taskbar", "icone", "barra de tarefas", "neon", "water", "agua",
+                        "christmas", "natal", "metal", "white", "branco", "image", "imagem",
+                    ]),
+                Item::rows("app_icon_file", "File", app_icon_file)
+                    .when(|c| c.settings.app_icon == crate::config::AppIcon::Custom)
+                    .keys(&["icon", "icone", "image", "imagem", "png", "ico", "browse", "arquivo", "procurar"]),
+            ],
+        )
+        .footer("A shortcut pinned to the taskbar follows the choice too. Windows sometimes keeps showing the old icon for a while, until it redraws the taskbar."),
+        section(
             "Interface",
             vec![
                 Item::control("ui_scale", "Interface scale", ui_scale)
@@ -1200,6 +1205,86 @@ fn font(ui: &mut Ui, c: &mut Ctx<'_>) {
         }
     });
     c.changed |= changed;
+}
+
+/// The bundled icons side by side, and a way to a file of one's own.
+fn app_icon(ui: &mut Ui, c: &mut Ctx<'_>) {
+    use crate::config::AppIcon;
+    let side = 30.0;
+    // A row's control is laid out from its right edge, so the last drawn is
+    // the leftmost: backwards, the default comes first as it is read.
+    for icon in AppIcon::ALL.into_iter().rev() {
+        let selected = c.settings.app_icon == icon;
+        let Some(thumb) = crate::ui::app_icon::thumbnail(ui.ctx(), icon) else {
+            if ui.selectable_label(selected, tr(icon.label())).clicked() && !selected {
+                c.settings.app_icon = icon;
+                c.changed = true;
+            }
+            continue;
+        };
+        let (rect, response) = ui.allocate_exact_size(Vec2::splat(side), egui::Sense::click());
+        let visuals = ui.style().interact_selectable(&response, selected);
+        if selected || response.hovered() {
+            ui.painter()
+                .rect(rect, 6.0, visuals.weak_bg_fill, visuals.bg_stroke);
+        }
+        ui.painter().image(
+            thumb.id(),
+            rect.shrink(3.0),
+            crate::ui::app_icon::full_uv(),
+            Color32::WHITE,
+        );
+        if response.tip(tr(icon.label())).clicked() && !selected {
+            c.settings.app_icon = icon;
+            c.changed = true;
+        }
+    }
+}
+
+/// The picture the custom icon is, typed or browsed for, and why it is not
+/// the one showing when it is not.
+fn app_icon_file(card: &mut Card<'_>, c: &mut Ctx<'_>) {
+    let problem = crate::ui::app_icon::problem(&card.ui().ctx().clone(), c.settings);
+    let picking = &mut c.state.picking_app_icon;
+    let path = &mut c.settings.app_icon_file;
+    let mut changed = false;
+    card.row(Row::new(tr("File")).subtitle(problem.as_deref()), |ui| {
+        if crate::ui::file_dialog::AVAILABLE
+            && ui
+                .add_enabled(picking.is_none(), prefs::button_widget(tr("Browse...")))
+                .clicked()
+        {
+            *picking = Some(crate::ui::file_dialog::pick(
+                ui.ctx(),
+                tr("Choose a picture"),
+                crate::ui::file_dialog::Kind {
+                    name: tr("Images"),
+                    patterns: "*.png;*.ico;*.gif;*.bmp",
+                },
+                path,
+            ));
+        }
+        let typed = !path.trim().is_empty();
+        let edit = egui::TextEdit::singleline(path)
+            .desired_width(220.0)
+            .hint_text(tr("A PNG, ICO, GIF or BMP file"));
+        let edit = if problem.is_some() && typed {
+            edit.text_color(crate::ui::panels::warning(ui))
+        } else {
+            edit
+        };
+        changed |= ui.add(edit).changed();
+    });
+    c.changed |= changed;
+}
+
+/// The answer of the icon's file dialog, whatever page is on screen when it
+/// comes.
+fn collect_picked_app_icon(ctx: &egui::Context, c: &mut Ctx<'_>) {
+    if let Some(picked) = crate::ui::file_dialog::collect(ctx, &mut c.state.picking_app_icon) {
+        c.settings.app_icon_file = picked;
+        c.changed = true;
+    }
 }
 
 fn font_size(ui: &mut Ui, c: &mut Ctx<'_>) {
@@ -2338,7 +2423,7 @@ fn about() -> Vec<Section> {
 fn about_header(ui: &mut Ui, c: &mut Ctx<'_>) {
     ui.vertical_centered(|ui| {
         ui.add_space(16.0);
-        crate::ui::logo::show(ui, 168.0);
+        crate::ui::app_icon::show(ui, 168.0, c.settings);
         ui.add_space(4.0);
         ui.label(egui::RichText::new(crate::APP_NAME).size(26.0).strong());
         ui.label(tr("A terminal for InterSystems IRIS, made for the people who live in it."));

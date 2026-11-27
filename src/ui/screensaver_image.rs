@@ -1,5 +1,6 @@
-//! The picture a floating-logo screen saver can show instead of the XP logo:
-//! a PNG, or a GIF that keeps its own frame timing.
+//! The picture a floating-logo screen saver can show instead of the XP logo,
+//! or the one a picture saver fills the window with: a PNG, or a GIF that
+//! keeps its own frame timing.
 //!
 //! Decoded once and kept as textures, keyed by the path and the file's
 //! modification time, so a file saved over while the saver runs is picked up
@@ -14,10 +15,14 @@ use egui::{ColorImage, Context, Id, TextureHandle, TextureOptions, Vec2};
 
 use crate::i18n::{tr, tr1};
 
-/// Larger than this on either side is scaled down on load. A saver never
-/// needs more, and a long GIF at full size is all of its frames times
-/// width times height times four bytes of video memory.
-const MAX_SIDE: u32 = 1024;
+/// Larger than this on either side is scaled down on load, for a logo. A
+/// saver never needs more, and a long GIF at full size is all of its frames
+/// times width times height times four bytes of video memory.
+pub const LOGO_SIDE: u32 = 1024;
+
+/// The same for a picture that fills the window: enough not to look soft on
+/// a large screen, where a logo's limit stretched twice over would.
+pub const FILL_SIDE: u32 = 2048;
 
 /// How much of an animation is kept: frames past two minutes of play are
 /// dropped, and it loops on those it kept. Measured in time rather than in
@@ -95,7 +100,9 @@ pub fn frame_delay(stated: Duration) -> Duration {
 
 /// Decodes a PNG or a GIF. Anything else is refused by name: it may well be
 /// an image, but it is not what the setting promises to show.
-pub fn decode(bytes: &[u8]) -> Result<Vec<Frame>, String> {
+///
+/// Either side longer than `max_side` is scaled down to it.
+pub fn decode(bytes: &[u8], max_side: u32) -> Result<Vec<Frame>, String> {
     use image::AnimationDecoder;
 
     let format =
@@ -115,7 +122,7 @@ pub fn decode(bytes: &[u8]) -> Result<Vec<Frame>, String> {
             for frame in decoder.into_frames() {
                 let frame = frame.map_err(broken)?;
                 let delay = frame_delay(Duration::from(frame.delay()));
-                let rgba = shrunk(frame.into_buffer());
+                let rgba = shrunk(frame.into_buffer(), max_side);
                 bytes += rgba.as_raw().len();
                 if !frames.is_empty() && (played >= MAX_PLAY || bytes > MAX_BYTES) {
                     break;
@@ -135,7 +142,7 @@ pub fn decode(bytes: &[u8]) -> Result<Vec<Frame>, String> {
         .map(|(rgba, delay)| {
             // A GIF's frames were shrunk as they were read, so the budget
             // above counted what is kept; this is a PNG's one frame.
-            let rgba = shrunk(rgba);
+            let rgba = shrunk(rgba, max_side);
             let size = [rgba.width() as usize, rgba.height() as usize];
             Frame {
                 image: ColorImage::from_rgba_unmultiplied(size, rgba.as_raw()),
@@ -145,12 +152,12 @@ pub fn decode(bytes: &[u8]) -> Result<Vec<Frame>, String> {
         .collect())
 }
 
-fn shrunk(rgba: image::RgbaImage) -> image::RgbaImage {
+fn shrunk(rgba: image::RgbaImage, max_side: u32) -> image::RgbaImage {
     let (w, h) = rgba.dimensions();
-    if w <= MAX_SIDE && h <= MAX_SIDE {
+    if w <= max_side && h <= max_side {
         return rgba;
     }
-    let scale = MAX_SIDE as f32 / w.max(h) as f32;
+    let scale = max_side as f32 / w.max(h) as f32;
     let (nw, nh) = (
         ((w as f32 * scale).round() as u32).max(1),
         ((h as f32 * scale).round() as u32).max(1),
@@ -159,10 +166,10 @@ fn shrunk(rgba: image::RgbaImage) -> image::RgbaImage {
 }
 
 /// Reads and decodes the file at `path`.
-pub fn load(path: &Path) -> Result<Vec<Frame>, String> {
+pub fn load(path: &Path, max_side: u32) -> Result<Vec<Frame>, String> {
     let bytes = std::fs::read(path)
         .map_err(|e| tr1("The image could not be opened: {}", &e.to_string()))?;
-    decode(&bytes)
+    decode(&bytes, max_side)
 }
 
 /// Whether `path` names a file the saver would take, without decoding it -
@@ -175,6 +182,7 @@ pub fn looks_like_picture(path: &str) -> bool {
 #[derive(Default)]
 struct Cache {
     path: PathBuf,
+    max_side: u32,
     modified: Option<SystemTime>,
     checked: Option<Instant>,
     picture: Option<Result<Arc<Picture>, String>>,
@@ -184,12 +192,12 @@ fn modified(path: &Path) -> Option<SystemTime> {
     std::fs::metadata(path).and_then(|m| m.modified()).ok()
 }
 
-/// The picture at `path`, loaded on first use and again when the file
-/// changes; the reason it would not load otherwise.
+/// The picture at `path`, at most `max_side` on a side, loaded on first use
+/// and again when the file changes; the reason it would not load otherwise.
 ///
 /// Only the last path asked for is kept: there is one saver, and keeping the
 /// textures of every file ever tried would keep their video memory too.
-pub fn picture(ctx: &Context, path: &str) -> Result<Arc<Picture>, String> {
+pub fn picture(ctx: &Context, path: &str, max_side: u32) -> Result<Arc<Picture>, String> {
     let cache = ctx.data_mut(|d| {
         d.get_temp_mut_or_insert_with(Id::new("nit-screensaver-picture"), || {
             Arc::new(Mutex::new(Cache::default()))
@@ -201,15 +209,18 @@ pub fn picture(ctx: &Context, path: &str) -> Result<Arc<Picture>, String> {
     };
     let path = PathBuf::from(path.trim());
     let now = Instant::now();
-    let due = cache.path != path
+    let other = cache.path != path || cache.max_side != max_side;
+    let due = other
         || cache
             .checked
             .is_none_or(|at| now.duration_since(at) >= RECHECK);
     if due {
         let stamp = modified(&path);
-        if cache.path != path || cache.modified != stamp || cache.picture.is_none() {
-            cache.picture = Some(load(&path).map(|frames| Arc::new(upload(ctx, &path, frames))));
+        if other || cache.modified != stamp || cache.picture.is_none() {
+            cache.picture =
+                Some(load(&path, max_side).map(|frames| Arc::new(upload(ctx, &path, frames))));
             cache.path = path;
+            cache.max_side = max_side;
             cache.modified = stamp;
         }
         cache.checked = Some(now);
@@ -289,11 +300,14 @@ mod tests {
 
     #[test]
     fn a_png_is_one_still_frame_and_a_huge_one_is_scaled_down() {
-        let frames = decode(&encoded_png(4, 3)).unwrap();
+        let frames = decode(&encoded_png(4, 3), LOGO_SIDE).unwrap();
         assert_eq!(frames.len(), 1);
         assert_eq!(frames[0].image.size, [4, 3]);
-        let frames = decode(&encoded_png(3000, 1500)).unwrap();
+        let frames = decode(&encoded_png(3000, 1500), LOGO_SIDE).unwrap();
         assert_eq!(frames[0].image.size, [1024, 512]);
+        // A picture filling the window is let keep more of itself.
+        let frames = decode(&encoded_png(3000, 1500), FILL_SIDE).unwrap();
+        assert_eq!(frames[0].image.size, [2048, 1024]);
     }
 
     #[test]
@@ -313,7 +327,7 @@ mod tests {
                 encoder.encode_frame(frame).unwrap();
             }
         }
-        let frames = decode(&bytes).unwrap();
+        let frames = decode(&bytes, LOGO_SIDE).unwrap();
         let delays: Vec<Duration> = frames.iter().map(|f| f.delay).collect();
         assert_eq!(delays, vec![ms(70), ms(250)]);
     }
@@ -335,30 +349,30 @@ mod tests {
                     .unwrap();
             }
         }
-        let frames = decode(&bytes).unwrap();
+        let frames = decode(&bytes, LOGO_SIDE).unwrap();
         let played: Duration = frames.iter().map(|f| f.delay).sum();
         assert_eq!(played, MAX_PLAY);
     }
 
     #[test]
     fn a_file_that_is_not_a_png_or_gif_is_refused_with_a_reason() {
-        assert!(decode(b"definitely not an image").is_err());
+        assert!(decode(b"definitely not an image", LOGO_SIDE).is_err());
         // A real image, but not one of the two kinds promised.
         let mut bmp = Vec::new();
         image::RgbaImage::new(1, 1)
             .write_to(&mut std::io::Cursor::new(&mut bmp), image::ImageFormat::Bmp)
             .unwrap();
-        assert!(decode(&bmp).is_err());
+        assert!(decode(&bmp, LOGO_SIDE).is_err());
         // Cut off halfway through.
         let png = encoded_png(8, 8);
-        assert!(decode(&png[..png.len() / 2]).is_err());
+        assert!(decode(&png[..png.len() / 2], LOGO_SIDE).is_err());
     }
 
     #[test]
     fn a_missing_file_is_an_error_not_a_panic() {
         let gone = std::env::temp_dir().join("nit-screensaver-test-no-such-file.png");
         let ctx = Context::default();
-        let err = picture(&ctx, &gone.display().to_string()).err();
+        let err = picture(&ctx, &gone.display().to_string(), LOGO_SIDE).err();
         assert!(err.is_some_and(|e| !e.is_empty()));
     }
 

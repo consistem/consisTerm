@@ -216,21 +216,6 @@ pub fn bundled_org_macros() -> Option<PathBuf> {
     Some(exe.parent()?.join(ORG_MACROS_FILE))
 }
 
-/// What the Doctor's checks file is called when it is shipped beside the
-/// program.
-pub const DOCTOR_FILE: &str = "org-doctor.xml";
-
-/// Where the Doctor's checks are looked for when Settings names no file:
-/// beside the executable, for the same reason as [`bundled_org_macros`].
-pub fn bundled_doctor() -> Option<PathBuf> {
-    let exe = crate::features::update::running_file().ok()?;
-    Some(exe.parent()?.join(DOCTOR_FILE))
-}
-
-fn path_is_empty(path: &Path) -> bool {
-    path.as_os_str().is_empty()
-}
-
 /// Commands typed at an IRIS prompt, one per line, oldest first.
 pub fn command_history_path() -> PathBuf {
     config_dir().join("history.txt")
@@ -421,6 +406,52 @@ impl TabWidth {
     }
 }
 
+/// The picture the window goes by: on the taskbar, in the window switcher,
+/// and on the About page.
+///
+/// The executable keeps its own, built into it; a shortcut pinned to the
+/// taskbar is pointed at the chosen one instead (see `ui::taskbar_pin`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AppIcon {
+    /// The glowing ring the app shipped with, the one built into the
+    /// executable.
+    #[default]
+    Original,
+    /// The logo drawn as a white line.
+    White,
+    Neon,
+    Water,
+    Christmas,
+    Metal,
+    /// A file of the user's, in [`Settings::app_icon_file`].
+    Custom,
+}
+
+impl AppIcon {
+    pub const ALL: [AppIcon; 7] = [
+        AppIcon::Original,
+        AppIcon::White,
+        AppIcon::Neon,
+        AppIcon::Water,
+        AppIcon::Christmas,
+        AppIcon::Metal,
+        AppIcon::Custom,
+    ];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            AppIcon::White => "White",
+            AppIcon::Neon => "Neon",
+            AppIcon::Water => "Water",
+            AppIcon::Christmas => "Christmas",
+            AppIcon::Metal => "Metal",
+            AppIcon::Original => "Original",
+            AppIcon::Custom => "Custom image",
+        }
+    }
+}
+
 /// Which end of a tab its close button sits at.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -591,6 +622,10 @@ pub struct Settings {
     /// invisible until hovered. Reported as missing scrollbars often enough to
     /// be worth a switch of its own.
     pub show_scrollbars: bool,
+    /// The icon on the taskbar and the About page.
+    pub app_icon: AppIcon,
+    /// The picture [`AppIcon::Custom`] shows: a PNG, ICO, GIF or BMP.
+    pub app_icon_file: String,
     /// Monospace family the terminal draws with. Empty means egui's bundled
     /// font. Takes precedence over the active theme's `font_family`, which
     /// stays as that theme's suggestion.
@@ -709,10 +744,6 @@ pub struct Settings {
     /// Never written to: it is shared, so the app treats it as read-only and
     /// keeps personal edits in [`personal_macros_path`].
     pub org_macros_path: PathBuf,
-    /// The Doctor's checks file. Empty means the one shipped beside the
-    /// program, as for the organisation's macros - see [`bundled_doctor`].
-    #[serde(skip_serializing_if = "path_is_empty")]
-    pub doctor_path: PathBuf,
     /// Chord that opens Settings on the macros, e.g. `Ctrl+Shift+M`. `None`
     /// means they are only reached through the settings window. Named for the
     /// manager window it used to open, so a settings file that set it keeps it.
@@ -865,6 +896,8 @@ impl Default for Settings {
             theme: "IRIS Dark".into(),
             font_size: 14.0,
             show_scrollbars: true,
+            app_icon: AppIcon::default(),
+            app_icon_file: String::new(),
             font_family: String::new(),
             cursor_style: CursorStyle::default(),
             cursor_blink: false,
@@ -892,7 +925,6 @@ impl Default for Settings {
             default_log_mode: LogMode::Off,
             log_retention_days: 30,
             org_macros_path: PathBuf::new(),
-            doctor_path: PathBuf::new(),
             // Nothing by default: a shortcut the user did not ask for is one
             // that shadows whatever they were using it for.
             macro_manager_shortcut: None,
@@ -1012,15 +1044,6 @@ impl Settings {
             return Some(self.org_macros_path.clone());
         }
         bundled_org_macros().filter(|path| path.is_file())
-    }
-
-    /// The Doctor's checks file: the one configured, or else the one shipped
-    /// beside the program.
-    pub fn doctor_file(&self) -> Option<PathBuf> {
-        if !self.doctor_path.as_os_str().is_empty() {
-            return Some(self.doctor_path.clone());
-        }
-        bundled_doctor().filter(|path| path.is_file())
     }
 
     /// Terminal size a new window opens at, in characters.

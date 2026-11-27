@@ -18,6 +18,11 @@ use crate::ui::shading::darken;
 /// How often a scene that is moving asks to be drawn.
 const MOVING: Duration = Duration::from_millis(33);
 
+/// How long a picture that does not move waits to be drawn again. Not
+/// `Duration::MAX`, though nothing on it changes: the frame loop hands this
+/// to egui, and eframe adds it to the time now, which `MAX` overflows.
+const STILL: Duration = Duration::from_secs(60);
+
 /// A saver and the time it was last stepped, which is what its `dt` comes
 /// from.
 pub struct SaverView {
@@ -95,6 +100,7 @@ impl SaverView {
         match self.saver.kind {
             Kind::None => Duration::MAX,
             Kind::FloatingLogo => self.paint_floating(&painter, rect, config, dt),
+            Kind::Picture => self.paint_picture(&painter, rect, config, dt),
             Kind::Matrix => {
                 let cell = matrix_cell(rect);
                 let grid = (
@@ -136,6 +142,46 @@ impl SaverView {
         }
     }
 
+    /// The picture over the whole of `rect`, or - with no file, or one that
+    /// will not load - the XP logo floating, as the floating logo falls back
+    /// to: a black screen would look like the saver had broken.
+    fn paint_picture(
+        &mut self,
+        painter: &Painter,
+        rect: Rect,
+        config: &Config,
+        dt: f32,
+    ) -> Duration {
+        let path = config.picture.trim();
+        let picture = (!path.is_empty())
+            .then(|| screensaver_image::picture(painter.ctx(), path, screensaver_image::FILL_SIDE));
+        match picture {
+            Some(Ok(picture)) => {
+                self.image_problem = None;
+                let (texture, change) = picture.frame_at(self.born.elapsed());
+                painter.image(
+                    texture.id(),
+                    rect,
+                    cover_uv(picture.size, rect.size()),
+                    Color32::WHITE,
+                );
+                change.unwrap_or(STILL)
+            }
+            failed => {
+                let fallback = Config {
+                    logo: LogoContent::WindowsXp,
+                    ..config.clone()
+                };
+                let next = self.paint_floating(painter, rect, &fallback, dt);
+                self.image_problem = match failed {
+                    Some(Err(why)) => Some(why),
+                    _ => None,
+                };
+                next
+            }
+        }
+    }
+
     fn paint_floating(
         &mut self,
         painter: &Painter,
@@ -146,8 +192,13 @@ impl SaverView {
         let scale = config.logo_scale.clamp(0.25, 4.0);
         let h = (rect.height() * 0.16).clamp(18.0, 120.0) * scale;
 
-        let picture = (config.logo_shown() == LogoContent::CustomImage)
-            .then(|| screensaver_image::picture(painter.ctx(), &config.logo_image));
+        let picture = (config.logo_shown() == LogoContent::CustomImage).then(|| {
+            screensaver_image::picture(
+                painter.ctx(),
+                &config.logo_image,
+                screensaver_image::LOGO_SIDE,
+            )
+        });
         self.image_problem = match &picture {
             Some(Err(why)) => Some(why.clone()),
             _ => None,
@@ -228,6 +279,20 @@ impl SaverView {
 
 fn srgb([r, g, b]: [u8; 3]) -> Color32 {
     Color32::from_rgb(r, g, b)
+}
+
+/// The part of a picture of `image` to stretch over an area of `area` so it
+/// fills it without being distorted: the whole of its shorter way, and the
+/// middle of the longer one, the rest cut off evenly at both ends - what a
+/// desktop wallpaper calls Fill.
+fn cover_uv(image: Vec2, area: Vec2) -> Rect {
+    let full = Rect::from_min_max(Pos2::ZERO, Pos2::new(1.0, 1.0));
+    if image.x <= 0.0 || image.y <= 0.0 || area.x <= 0.0 || area.y <= 0.0 {
+        return full;
+    }
+    let scale = (area.x / image.x).max(area.y / image.y);
+    let shown = Vec2::new(area.x / (image.x * scale), area.y / (image.y * scale));
+    Rect::from_center_size(Pos2::new(0.5, 0.5), shown).intersect(full)
 }
 
 /// How far a logo of `logo` can travel inside `rect`.
@@ -420,6 +485,100 @@ mod tests {
             floating_content(&wanting(LogoContent::WindowsXpPirated), None),
             LogoContent::WindowsXpPirated
         );
+    }
+
+    fn close(a: Rect, b: Rect) -> bool {
+        (a.min - b.min).length() < 1e-4 && (a.max - b.max).length() < 1e-4
+    }
+
+    #[test]
+    fn a_filling_picture_is_cut_down_its_longer_way_and_never_stretched() {
+        let whole = Rect::from_min_max(Pos2::ZERO, Pos2::new(1.0, 1.0));
+        // The same shape as the window: all of it.
+        assert!(close(
+            cover_uv(Vec2::new(160.0, 90.0), Vec2::new(1920.0, 1080.0)),
+            whole
+        ));
+        // A square on a wide window: its full width, the middle half of its height.
+        let uv = cover_uv(Vec2::new(100.0, 100.0), Vec2::new(200.0, 100.0));
+        assert!(
+            close(
+                uv,
+                Rect::from_min_max(Pos2::new(0.0, 0.25), Pos2::new(1.0, 0.75))
+            ),
+            "{uv:?}"
+        );
+        // A wide picture on a tall window: its full height, the middle of its width.
+        let uv = cover_uv(Vec2::new(400.0, 100.0), Vec2::new(100.0, 100.0));
+        assert!(
+            close(
+                uv,
+                Rect::from_min_max(Pos2::new(0.375, 0.0), Pos2::new(0.625, 1.0))
+            ),
+            "{uv:?}"
+        );
+        // Whatever is cut, what is shown has the window's own shape.
+        let (image, area) = (Vec2::new(640.0, 480.0), Vec2::new(1366.0, 768.0));
+        let uv = cover_uv(image, area);
+        let shown = uv.size() * image;
+        assert!((shown.x / shown.y - area.x / area.y).abs() < 1e-3);
+        // Nothing to measure is the whole picture, not a division by zero.
+        assert!(close(cover_uv(Vec2::ZERO, area), whole));
+        assert!(close(cover_uv(image, Vec2::ZERO), whole));
+    }
+
+    /// With no file, or one that will not load, the picture saver floats the
+    /// XP logo, and says why when there is a why.
+    #[test]
+    fn a_picture_that_cannot_be_shown_leaves_the_xp_logo_floating() {
+        let ctx = Context::default();
+        let gone = std::env::temp_dir().join("nit-screensaver-test-missing-fill.png");
+        for (path, problem) in [(String::new(), false), (gone.display().to_string(), true)] {
+            let config = Config {
+                kind: Kind::Picture,
+                picture: path,
+                ..Config::default()
+            };
+            let mut view = SaverView::new(Kind::Picture);
+            let _ = ctx.run(egui::RawInput::default(), |ctx| {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    let rect = Rect::from_min_size(Pos2::ZERO, Vec2::new(320.0, 200.0));
+                    view.paint(ui.painter(), rect, &config);
+                });
+            });
+            assert_eq!(view.image_problem().is_some(), problem);
+            assert!(matches!(view.saver.scene, Some(Scene::FloatingLogo(_))));
+        }
+    }
+
+    /// A picture that loads covers the window and, a still, asks for frames
+    /// only now and then.
+    #[test]
+    fn a_still_picture_fills_the_window_and_sleeps() {
+        let file = std::env::temp_dir().join(format!(
+            "nit-screensaver-test-fill-{}.png",
+            std::process::id()
+        ));
+        image::RgbaImage::from_pixel(8, 4, image::Rgba([0, 120, 255, 255]))
+            .save(&file)
+            .unwrap();
+        let config = Config {
+            kind: Kind::Picture,
+            picture: file.display().to_string(),
+            ..Config::default()
+        };
+        let ctx = Context::default();
+        let mut view = SaverView::new(Kind::Picture);
+        let mut next = Duration::ZERO;
+        let _ = ctx.run(egui::RawInput::default(), |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                let rect = Rect::from_min_size(Pos2::ZERO, Vec2::new(320.0, 200.0));
+                next = view.paint(ui.painter(), rect, &config);
+            });
+        });
+        let _ = std::fs::remove_file(&file);
+        assert_eq!(view.image_problem(), None);
+        assert_eq!(next, STILL);
     }
 
     /// End to end, through the cache: a file that does not exist leaves the

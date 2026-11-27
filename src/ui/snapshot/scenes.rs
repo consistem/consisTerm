@@ -63,99 +63,6 @@ pub(crate) fn settings_with(
     }
 }
 
-/// The Doctor page on the example checks, with the results they came to on a
-/// developer's machine - set, not run: a film must not start a process.
-pub(crate) fn settings_doctor(look: &Look) -> Scene {
-    use crate::features::doctor::spec::Status::*;
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("examples/doctor-selftest/doctor.xml");
-    let mut settings = look.settings.clone();
-    settings.doctor_path = path.clone();
-    let mut themes = look.themes.clone();
-    let mut groups = Vec::new();
-    let mut state = crate::ui::panels::PanelState {
-        show_settings: true,
-        settings_route: Route::page(Category::Doctor),
-        font_families: Some(Vec::new()),
-        doctor: crate::features::doctor::Doctor::showing(
-            &path,
-            &[
-                ("runtime.python", Ok, "Python 3.13.12", ""),
-                (
-                    "runtime.shell",
-                    Ok,
-                    "GNU bash, version 5.2.37(1)-release",
-                    "",
-                ),
-                ("runtime.powershell", Ok, "PowerShell 5.1.26100.9711", ""),
-                ("runtime.iris", Ok, "IRIS for Windows (x86-64) 2025.1.3", ""),
-                (
-                    "py.files",
-                    Ok,
-                    "pastas, cópia, mover, renomear, editar e apagar",
-                    "",
-                ),
-                ("py.git", Ok, "clone atualizado: 2 commits", ""),
-                ("py.privileges", Ok, "usuário comum", ""),
-                (
-                    "sh.files",
-                    Ok,
-                    "pastas, cópia, mover, renomear, editar e apagar",
-                    "",
-                ),
-                ("sh.git", Ok, "clone atualizado: 2 commits", ""),
-                ("sh.privileges", Ok, "usuário comum", ""),
-                (
-                    "ps.files",
-                    Ok,
-                    "pastas, cópia, mover, renomear, editar e apagar",
-                    "",
-                ),
-                ("ps.git", Ok, "clone atualizado: 2 commits", ""),
-                ("ps.privileges", Ok, "usuário comum", ""),
-                (
-                    "ps.elevation",
-                    Warn,
-                    "sem privilégios de administrador",
-                    "A correção pede um administrador pelo UAC.",
-                ),
-                (
-                    "cos.files",
-                    Ok,
-                    "pasta, stream, rename, global privada e texto editado",
-                    "",
-                ),
-                ("cos.privileges", Error, "sem %Developer", ""),
-            ],
-        ),
-        doctor_page: crate::ui::settings_view::doctor::DoctorPageState::opened(&["ps.elevation"]),
-        ..crate::ui::panels::PanelState::default()
-    };
-    let mut placement = crate::ui::detach::Placement::default();
-    let buttons = look.theme.window_buttons;
-    let look = look.clone();
-    Scene {
-        name: "settings-doctor",
-        stage: Stage::new(Vec2::new(900.0, 900.0)).focus(Focus::Windows),
-        cues: Vec::new(),
-        keep: Keep::Window,
-        draw: Box::new(move |ctx: &Context| {
-            look.prelude(ctx);
-            let _ = crate::ui::settings_view::settings_dialog(
-                ctx,
-                &mut settings,
-                &mut themes,
-                &mut groups,
-                &mut state,
-                &["IRIS".to_owned()],
-                &crate::config::servers::ServerList::default(),
-                &mut placement,
-                &buttons,
-            );
-        }),
-    }
-}
-
 /// Settings with a search typed into its field - the field with the
 /// keyboard in it, and the results.
 pub(crate) fn settings_search(look: &Look) -> Scene {
@@ -662,7 +569,6 @@ pub(crate) fn all(look: &Look) -> Vec<Scene> {
         settings_with(look, "settings-themes-bar-left", Category::Themes, |s| {
             s.bar_position = crate::config::BarPosition::Left;
         }),
-        settings_doctor(look),
         settings(look, "settings-windows", Category::Windows),
         settings_with(look, "settings-windows-bar-below", Category::Windows, |s| {
             s.bar_position = crate::config::BarPosition::Bottom;

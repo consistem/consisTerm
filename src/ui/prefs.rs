@@ -296,10 +296,6 @@ pub struct SidebarItem<'a> {
     pub symbol: Symbol,
     /// The tile behind the symbol.
     pub tile: Color32,
-    /// A status light drawn at the right of the entry: its colour, and
-    /// whether it is lit. The Doctor's, which says how things stand from the
-    /// sidebar without the page being opened.
-    pub light: Option<(Color32, bool)>,
 }
 
 /// What the sidebar was asked for.
@@ -491,17 +487,6 @@ fn sidebar_entry(
     );
     painter.rect_filled(tile, Rounding::same(5.0), item.tile);
     icons::symbol(painter, tile.shrink(3.0), item.symbol, Color32::WHITE);
-    // The status light at the right end of the entry, the icon left as it is.
-    if let Some((colour, lit)) = item.light {
-        crate::ui::shading::status_light(
-            painter,
-            pos2(rect.right() - 14.0, rect.center().y),
-            TILE * 0.32,
-            colour,
-            lit,
-            ui.visuals().dark_mode,
-        );
-    }
 
     let colour = if selected {
         palette.on_accent
@@ -556,16 +541,6 @@ fn skinned_sidebar_entry(
         vec2(14.0, 14.0),
     );
     icons::symbol(painter, glyph, item.symbol, ink);
-    if let Some((colour, lit)) = item.light {
-        crate::ui::shading::status_light(
-            painter,
-            pos2(rect.right() - 12.0, rect.center().y),
-            5.0,
-            colour,
-            lit,
-            ui.visuals().dark_mode,
-        );
-    }
     let font = TextStyle::Body.resolve(ui.style());
     let galley = painter.layout_no_wrap(item.label.to_owned(), font, ink);
     let pos = pos2(

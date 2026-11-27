@@ -80,6 +80,19 @@ impl App {
         }
     }
 
+    /// Gives the window the icon chosen in Settings, when it is not the one
+    /// it already has.
+    pub(super) fn apply_icon(&mut self, ctx: &Context) {
+        let wanted = crate::ui::app_icon::key(&self.settings);
+        if self.icon == wanted {
+            return;
+        }
+        self.icon = wanted;
+        let icon = crate::ui::app_icon::window_icon(&self.settings);
+        ctx.send_viewport_cmd(egui::ViewportCommand::Icon(Some(std::sync::Arc::new(icon))));
+        crate::ui::taskbar_pin::follow(&self.settings);
+    }
+
     /// How the terminal should be drawn, from the current settings.
     pub(super) fn render_opts(&self) -> RenderOpts {
         RenderOpts {

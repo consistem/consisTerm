@@ -110,6 +110,27 @@ impl App {
         }
     }
 
+    /// Closes every pane whose shell has exited of its own accord.
+    ///
+    /// A script run in a tab - "press Enter to close this tab" - ends by
+    /// exiting, and a shell that has exited has nothing left to show but its
+    /// last screen, which the closed-tab list keeps anyway. Not an IRIS
+    /// session: one that ends is more often a halted process or a dropped
+    /// connection than a finished job, and its tab is where Reconnect is.
+    /// Nor a shell that never started, whose tab is where the error is said.
+    pub(super) fn close_finished_shells(&mut self) {
+        // One at a time, looked for afresh: closing a pane renumbers the rest
+        // of its tab, and closing a tab the tabs after it.
+        while let Some(at) = self.tabs.iter().enumerate().find_map(|(tab, t)| {
+            t.sessions().position(shell_finished).map(|pane| At {
+                tab,
+                pane: Pane(pane),
+            })
+        }) {
+            self.close_pane(at);
+        }
+    }
+
     /// Closes one pane, and nothing else.
     ///
     /// On a tab that is not split there is only the one session, so this is
@@ -235,9 +256,9 @@ impl App {
     /// Text Editor do - all of it but `reserve`, which in the title bar is
     /// the space the window is dragged by and must not be taken.
     ///
-    /// A tab dragged is reordered or tiled, never the window moved, title bar
-    /// or not. In a column the tabs are reordered up and down, and scrolled
-    /// the same way.
+    /// A tab dragged is reordered or tiled, title bar or not, and moves the
+    /// window only once it is taken out of the window altogether. In a column
+    /// the tabs are reordered up and down, and scrolled the same way.
     fn tab_strip_in(&mut self, ui: &mut egui::Ui, reserve: f32, strip: Strip) {
         let vertical = strip == Strip::Column;
         let mut to_close = None;
@@ -429,10 +450,10 @@ impl App {
                     // The tab being moved is the one shown, the way it is
                     // everywhere else tabs are dragged: what is under the strip
                     // should be the session the user has hold of.
-                    // Never the window being moved, even in the title bar: a
+                    // Not the window being moved, even in the title bar: a
                     // tab taken hold of is being reordered or tiled, and the
                     // bar's empty part - which `reserve` keeps - is what moves
-                    // the window.
+                    // the window. Until the tab leaves the window: see below.
                     if response.drag_started() {
                         to_activate = Some(index);
                         drag_began = Some(index);
@@ -619,6 +640,18 @@ impl App {
                 held: None,
                 sprung: false,
             });
+        }
+        // Taken right out of the window, the tab takes the window with it.
+        // Only out of it: along the strip it still reorders and into the
+        // terminal it still docks, so the gestures that were there keep
+        // working, and the window moves only where nothing else could be meant.
+        if dragging.is_some() && tab_left_window(ui.ctx()) {
+            lift_window_by_tab(ui.ctx());
+            self.tab_drag = None;
+            dragging = None;
+            to_move = None;
+            into_tab = None;
+            over_terminal = false;
         }
         // Let go over the middle of another tab: the dragged one joins it,
         // beside the pane that has the keyboard there, and that tab is shown.
@@ -1499,6 +1532,61 @@ fn dock_onto(spans: &[(f32, f32)], from: usize, x: f32) -> Option<usize> {
     })
 }
 
+/// A shell session whose program exited by itself - see
+/// [`App::close_finished_shells`].
+fn shell_finished(session: &Tab) -> bool {
+    session.profile.is_shell() && session.ended && session.error.is_none()
+}
+
+/// Whether the pointer holding a tab has gone out of the window.
+///
+/// A pointer egui has lost counts as out: Windows keeps reporting a held
+/// button's pointer past the window's edge, but elsewhere it is simply gone
+/// once it crosses it.
+fn tab_left_window(ctx: &egui::Context) -> bool {
+    pointer_outside(ctx.screen_rect(), ctx.input(|i| i.pointer.latest_pos()))
+}
+
+fn pointer_outside(screen: egui::Rect, pointer: Option<egui::Pos2>) -> bool {
+    pointer.is_none_or(|pointer| !screen.contains(pointer))
+}
+
+/// Hands the drag of a tab over to the system, as a drag of the window.
+///
+/// The window is first put back under the pointer where the tab was taken
+/// hold of: the system keeps whatever distance there is between the two when
+/// its drag begins, and by now the pointer is past the window's edge, so the
+/// window would otherwise trail along behind it, out of reach. Not while
+/// maximized, where the system's own drag restores the window under the
+/// pointer itself.
+///
+/// egui is told the drag is over, because the system's drag swallows the
+/// release that would have told it: left dragging, the tab would go on
+/// reordering under a pointer that came back with no button held.
+fn lift_window_by_tab(ctx: &egui::Context) {
+    let (press, pointer, outer, maximized) = ctx.input(|i| {
+        (
+            i.pointer.press_origin(),
+            i.pointer.latest_pos(),
+            i.viewport().outer_rect,
+            i.viewport().maximized.unwrap_or(false),
+        )
+    });
+    if let (Some(press), Some(pointer), Some(outer), false) = (press, pointer, outer, maximized) {
+        ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition(lifted_to(
+            outer.min, press, pointer,
+        )));
+    }
+    ctx.send_viewport_cmd(egui::ViewportCommand::StartDrag);
+    ctx.stop_dragging();
+}
+
+/// Where the window goes so the point of it pressed at `press` is under the
+/// pointer, now at `pointer`, both in the window's own points.
+fn lifted_to(outer: egui::Pos2, press: egui::Pos2, pointer: egui::Pos2) -> egui::Pos2 {
+    outer + (pointer - press)
+}
+
 /// Where the tab at `index` is after the one at `from` has moved to `to`.
 fn moved_index(index: usize, from: usize, to: usize) -> usize {
     if index == from {
@@ -2058,6 +2146,65 @@ mod tests {
     fn the_pointer_over_the_dragged_tab_itself_moves_nothing() {
         assert_eq!(drop_slot(&SPANS, 1, 60.0), None);
         assert_eq!(drop_slot(&SPANS, 1, 240.0), None);
+    }
+
+    /// Makes a session a shell, as one from the Shells menu is.
+    fn make_shell(session: &mut Tab) {
+        session.profile.shell = Some(crate::config::profile::ShellCommand {
+            program: "cmd.exe".into(),
+            args: Vec::new(),
+            cwd: None,
+        });
+    }
+
+    #[test]
+    fn a_shell_that_exits_closes_its_pane_and_an_iris_session_that_ends_stays() {
+        let mut app = app_of(&["iris", "script", "broken", "left", "right"]);
+        // An IRIS session that ended: kept, for its Reconnect.
+        app.tabs[0].ended = true;
+        // A script that ran in a shell and finished.
+        make_shell(&mut app.tabs[1]);
+        app.tabs[1].ended = true;
+        // A shell that never started: kept, to say why.
+        make_shell(&mut app.tabs[2]);
+        app.tabs[2].ended = true;
+        app.tabs[2].error = Some("no such program".into());
+        // A split tab whose second pane is a finished shell: only that pane goes.
+        dock(&mut app, 4, 3, Toward::Right);
+        app.tabs[3].for_each_session_mut(|session| {
+            if session.profile.name == "right" {
+                make_shell(session);
+                session.ended = true;
+            }
+        });
+
+        app.close_finished_shells();
+
+        assert_eq!(strip(&app), [vec!["iris"], vec!["broken"], vec!["left"]]);
+    }
+
+    #[test]
+    fn a_tab_moves_the_window_only_once_it_is_out_of_the_window() {
+        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(800.0, 600.0));
+        // Along the strip and down into the terminal: still the tab's drag.
+        assert!(!pointer_outside(screen, Some(egui::pos2(790.0, 10.0))));
+        assert!(!pointer_outside(screen, Some(egui::pos2(400.0, 500.0))));
+        // Above the window, past either side, or lost altogether.
+        assert!(pointer_outside(screen, Some(egui::pos2(400.0, -3.0))));
+        assert!(pointer_outside(screen, Some(egui::pos2(-1.0, 10.0))));
+        assert!(pointer_outside(screen, Some(egui::pos2(805.0, 10.0))));
+        assert!(pointer_outside(screen, None));
+    }
+
+    #[test]
+    fn a_window_lifted_by_a_tab_puts_the_tab_back_under_the_pointer() {
+        let outer = egui::pos2(100.0, 50.0);
+        let press = egui::pos2(200.0, 12.0);
+        let pointer = egui::pos2(230.0, -20.0);
+        let moved = lifted_to(outer, press, pointer);
+        // The point pressed, in screen terms, is now where the pointer is.
+        assert_eq!(moved + press.to_vec2(), outer + pointer.to_vec2());
+        assert_eq!(moved, egui::pos2(130.0, 18.0));
     }
 
     /// Every index is carried along: the moved tab goes to its new place, the

@@ -25,10 +25,18 @@ pub enum Kind {
     /// The bouncing DVD logo - which, as everyone who ever watched one knows,
     /// never quite hits the corner.
     Dvd,
+    /// [`Config::picture`], a PNG or a GIF, filling the whole window.
+    Picture,
 }
 
 impl Kind {
-    pub const ALL: [Kind; 4] = [Kind::None, Kind::FloatingLogo, Kind::Matrix, Kind::Dvd];
+    pub const ALL: [Kind; 5] = [
+        Kind::None,
+        Kind::FloatingLogo,
+        Kind::Matrix,
+        Kind::Dvd,
+        Kind::Picture,
+    ];
 
     /// English, for `tr`.
     pub fn label(self) -> &'static str {
@@ -37,6 +45,7 @@ impl Kind {
             Kind::FloatingLogo => "Floating logo",
             Kind::Matrix => "Matrix",
             Kind::Dvd => "DVD idle",
+            Kind::Picture => "Picture filling the window",
         }
     }
 }
@@ -127,6 +136,10 @@ pub struct Config {
     /// sRGB of the glyph at the head of each column.
     pub matrix_head: [u8; 3],
     pub matrix_background: [u8; 3],
+    /// The PNG or GIF [`Kind::Picture`] fills the window with. Its own rather
+    /// than [`Config::logo_image`]: a picture chosen to cover the screen is
+    /// rarely the one that would float about on it.
+    pub picture: String,
 }
 
 /// The rain as the film had it, which is what a settings file from before the
@@ -151,6 +164,7 @@ impl Default for Config {
             matrix_rain: MATRIX_RAIN,
             matrix_head: MATRIX_HEAD,
             matrix_background: MATRIX_BACKGROUND,
+            picture: String::new(),
         }
     }
 }
@@ -490,9 +504,13 @@ impl Saver {
         let mut rng = Rng::new(seed);
         let scene = match kind {
             Kind::None => None,
-            Kind::FloatingLogo => Some(Scene::FloatingLogo(FloatingLogo::new(&mut rng))),
             Kind::Matrix => Some(Scene::Matrix(Matrix::new())),
             Kind::Dvd => Some(Scene::Dvd(Dvd::new(&mut rng))),
+            // The floating logo is what a picture that cannot be shown falls
+            // back to, so it is there ready to be.
+            Kind::FloatingLogo | Kind::Picture => {
+                Some(Scene::FloatingLogo(FloatingLogo::new(&mut rng)))
+            }
         };
         Saver { kind, scene, rng }
     }

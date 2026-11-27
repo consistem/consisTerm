@@ -24,24 +24,6 @@ pub const APP_NAME: &str = "consisTerm";
 /// otherwise shows with a generic one.
 pub const APP_ID: &str = "br.com.consistem.consisterm";
 
-/// The window's own icon - what the taskbar shows. Cut close to the ring, not
-/// the `.ico`'s large image, whose glow left the ring smaller than every icon
-/// beside it.
-fn load_icon() -> egui::IconData {
-    let image = image::load_from_memory(include_bytes!("../assets/icon-window.png"))
-        .expect("Falha ao carregar a imagem do ícone")
-        .into_rgba8();
-
-    let (width, height) = image.dimensions();
-    let rgba = image.into_raw();
-
-    egui::IconData {
-        rgba,
-        width,
-        height,
-    }
-}
-
 /// Inner window size, in egui points, that should hold a terminal of
 /// `cols` x `rows` characters.
 ///
@@ -128,8 +110,9 @@ pub fn run() -> eframe::Result<()> {
         // outside them has to be the desktop, not the black eframe clears to.
         .with_transparent(true)
         .with_resizable(true)
-        // Define o ícone da janela e barra de tarefas aqui:
-        .with_icon(Arc::new(load_icon()));
+        // What the taskbar shows: the one chosen in Settings, not the one
+        // built into the executable.
+        .with_icon(Arc::new(ui::app_icon::window_icon(&settings)));
     if let Some(position) = position {
         viewport = viewport.with_position(position);
     }

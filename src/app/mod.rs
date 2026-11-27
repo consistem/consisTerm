@@ -130,6 +130,9 @@ pub struct App {
     /// The drop-down terminal as last registered, so a change to an unrelated
     /// setting does not take the hotkey away and back.
     quake: Option<crate::ui::quake::Quake>,
+    /// The icon the window was last given, so it is decoded and handed over
+    /// again only when the choice changes.
+    icon: (crate::config::AppIcon, String),
     /// Commands typed at an IRIS prompt, shared by every tab so a new one opens
     /// knowing what was run in the last.
     history: History,
@@ -369,6 +372,8 @@ impl App {
             queued: Vec::new(),
             pinch: 1.0,
             quake: None,
+            // The window was opened with this one; see `lib::run`.
+            icon: crate::ui::app_icon::key(&settings),
             history,
             vocabulary,
             settings,
@@ -423,6 +428,9 @@ impl App {
         App::apply_style(&cc.egui_ctx, &app.theme(), &app.settings);
         app.apply_font(&cc.egui_ctx);
         app.apply_quake();
+        // A pin made since the icon was last chosen still has the
+        // executable's own.
+        crate::ui::taskbar_pin::follow(&app.settings);
 
         // Straight into the instance. Anyone with something to change has
         // Settings; everyone else was only ever going to press Connect. Unless
@@ -466,6 +474,7 @@ impl App {
             queued: Vec::new(),
             pinch: 1.0,
             quake: None,
+            icon: Default::default(),
             history: History::default(),
             vocabulary: Vocabulary::default(),
             settings,

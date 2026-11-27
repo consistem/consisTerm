@@ -42,8 +42,10 @@ const VALUE_HIDDEN: &[&str] = &[
     "proxy_user",
     "log_dir",
     "org_macros_path",
+    "app_icon_file",
     "screensaver.logo_text",
     "screensaver.logo_image",
+    "screensaver.picture",
     "screensaver.dvd_text",
 ];
 

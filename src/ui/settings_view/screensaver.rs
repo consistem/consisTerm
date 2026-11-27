@@ -34,6 +34,27 @@ pub struct SaverPageState {
     /// a thread of its own: modal on this one, it would stop every session's
     /// output being drained for as long as it stayed up.
     picking: Option<Receiver<Option<String>>>,
+    /// Which of the two pictures the dialog in `picking` is choosing.
+    picking_for: ImageFor,
+}
+
+/// The two pictures a saver can be given, each kept in a setting of its own.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum ImageFor {
+    /// The floating logo's custom image.
+    #[default]
+    Logo,
+    /// The picture that fills the window.
+    Fill,
+}
+
+impl ImageFor {
+    fn path(self, config: &mut Config) -> &mut String {
+        match self {
+            ImageFor::Logo => &mut config.logo_image,
+            ImageFor::Fill => &mut config.picture,
+        }
+    }
 }
 
 pub(super) fn page() -> Page {
@@ -60,19 +81,37 @@ fn is_matrix(c: &Ctx<'_>) -> bool {
     config(c).kind == Kind::Matrix
 }
 
+fn is_picture(c: &Ctx<'_>) -> bool {
+    config(c).kind == Kind::Picture
+}
+
 fn sections() -> Vec<Section> {
     vec![
         untitled(vec![
             Item::control("screensaver", "Screen saver", kind)
                 .sub("What covers the window after a while without a key or a mouse movement.")
                 .keys(&[
-                    "idle", "saver", "protecao", "ocioso", "matrix", "dvd", "logo",
+                    "idle",
+                    "saver",
+                    "protecao",
+                    "ocioso",
+                    "matrix",
+                    "dvd",
+                    "logo",
+                    "picture",
+                    "image",
+                    "gif",
+                    "imagem",
+                    "wallpaper",
+                    "fundo",
                 ]),
             Item::control("saver_wait", "Start after", wait)
                 .when(some)
                 .keys(&["wait", "minutes", "idle", "esperar", "minutos", "ocioso"]),
+            // A picture keeps its own pace: a GIF's frames say how long each
+            // stays up.
             Item::control("saver_speed", "Speed", speed)
-                .when(some)
+                .when(|c| some(c) && !is_picture(c))
                 .keys(&["velocidade", "fast", "slow", "rapido", "lento"]),
         ])
         .footer("Any key or mouse movement ends it. The key that does is not sent to the session."),
@@ -93,11 +132,31 @@ fn sections() -> Vec<Section> {
                 Item::rows("saver_logo_text", "Text", logo_text)
                     .when(|c| is_logo(c) && config(c).logo == LogoContent::CustomText)
                     .keys(&["logo", "texto", "colour", "color", "cor"]),
-                Item::rows("saver_logo_image", "File", logo_image)
-                    .when(|c| is_logo(c) && config(c).logo == LogoContent::CustomImage)
-                    .keys(&[
-                        "image", "picture", "gif", "png", "browse", "imagem", "arquivo", "procurar",
-                    ]),
+                Item::rows("saver_logo_image", "File", |card, c| {
+                    image_file(card, c, ImageFor::Logo)
+                })
+                .when(|c| is_logo(c) && config(c).logo == LogoContent::CustomImage)
+                .keys(&[
+                    "image", "picture", "gif", "png", "browse", "imagem", "arquivo", "procurar",
+                ]),
+                Item::rows("saver_picture", "File", |card, c| {
+                    image_file(card, c, ImageFor::Fill)
+                })
+                .when(is_picture)
+                .keys(&[
+                    "image",
+                    "picture",
+                    "gif",
+                    "png",
+                    "browse",
+                    "fill",
+                    "wallpaper",
+                    "imagem",
+                    "arquivo",
+                    "procurar",
+                    "preencher",
+                    "fundo",
+                ]),
                 Item::control("saver_logo_size", "Size", logo_size)
                     .when(is_logo)
                     .keys(&["logo", "scale", "tamanho", "escala"]),
@@ -207,16 +266,17 @@ fn logo_text(card: &mut Card<'_>, c: &mut Ctx<'_>) {
     c.changed |= changed;
 }
 
-/// The picture that floats, typed or browsed for, and why it is not the one
-/// showing when it is not.
-fn logo_image(card: &mut Card<'_>, c: &mut Ctx<'_>) {
+/// The picture that floats, or the one that fills the window, typed or
+/// browsed for, and why it is not the one showing when it is not. Either
+/// way what shows instead is the XP logo, floating.
+fn image_file(card: &mut Card<'_>, c: &mut Ctx<'_>, which: ImageFor) {
     let image_problem = c
         .state
         .screensaver
         .preview
         .as_ref()
         .and_then(|v| v.image_problem().map(str::to_owned));
-    let path = c.settings.screensaver.logo_image.trim().to_owned();
+    let path = which.path(&mut c.settings.screensaver).trim().to_owned();
     let warning = if path.is_empty() {
         None
     } else if !crate::ui::screensaver_image::looks_like_picture(&path) {
@@ -234,26 +294,30 @@ fn logo_image(card: &mut Card<'_>, c: &mut Ctx<'_>) {
         }
         None => None,
     };
-    let picking = &mut c.state.screensaver.picking;
-    let saver = &mut c.settings.screensaver;
+    let page = &mut c.state.screensaver;
+    let path = which.path(&mut c.settings.screensaver);
     let mut changed = false;
     card.row(Row::new(tr("File")).subtitle(note.as_deref()), |ui| {
         if file_dialog::AVAILABLE
             && ui
-                .add_enabled(picking.is_none(), prefs::button_widget(tr("Browse...")))
+                .add_enabled(
+                    page.picking.is_none(),
+                    prefs::button_widget(tr("Browse...")),
+                )
                 .clicked()
         {
-            *picking = Some(file_dialog::pick(
+            page.picking_for = which;
+            page.picking = Some(file_dialog::pick(
                 ui.ctx(),
                 tr("Choose a picture"),
                 file_dialog::Kind {
                     name: tr("Images"),
                     patterns: "*.png;*.gif",
                 },
-                &saver.logo_image,
+                path,
             ));
         }
-        let edit = egui::TextEdit::singleline(&mut saver.logo_image)
+        let edit = egui::TextEdit::singleline(path)
             .desired_width(220.0)
             .hint_text(tr("A PNG or GIF file"));
         let edit = if warning.is_some() {
@@ -391,7 +455,10 @@ fn monitor_top(ui: &mut Ui, c: &mut Ctx<'_>) {
 /// screen when it comes.
 pub(super) fn collect_picked_image(ctx: &Context, c: &mut Ctx<'_>) {
     if let Some(path) = file_dialog::collect(ctx, &mut c.state.screensaver.picking) {
-        c.settings.screensaver.logo_image = path;
+        *c.state
+            .screensaver
+            .picking_for
+            .path(&mut c.settings.screensaver) = path;
         c.changed = true;
     }
 }

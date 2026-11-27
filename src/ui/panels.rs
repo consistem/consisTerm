@@ -90,8 +90,6 @@ pub enum UiRequest {
     /// Write the transcripts to this folder from now on, and offer to take
     /// the ones already written along.
     ChangeLogDir(std::path::PathBuf),
-    /// Open a tab on this profile - a Doctor's fix, running in view.
-    OpenTab(Box<crate::config::profile::Profile>),
 }
 
 /// State the panels own between frames.
@@ -138,15 +136,13 @@ pub struct PanelState {
     /// window is open.
     pub(crate) font_families: Option<Vec<String>>,
     /// The folder dialog choosing a new logs folder, while it is open.
+    /// The file dialog choosing a picture for the window's icon, while open.
+    pub(crate) picking_app_icon: Option<std::sync::mpsc::Receiver<Option<String>>>,
     pub(crate) picking_log_dir: Option<std::sync::mpsc::Receiver<Option<String>>>,
     /// A change of logs folder that found files to take along: the question,
     /// then the move. Drawn in Settings while it is open, where the folder
     /// was chosen, and in the main window otherwise.
     pub log_move: Option<crate::ui::log_move_view::LogMove>,
-    /// The Doctor: its checks, their latest results, a run in progress.
-    pub doctor: crate::features::doctor::Doctor,
-    /// What the Doctor page shows open, and the fix it is asking about.
-    pub doctor_page: crate::ui::settings_view::doctor::DoctorPageState,
 }
 
 impl PanelState {

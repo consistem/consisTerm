@@ -21,6 +21,7 @@
 //! - [`snake_view`] draws the easter egg's board, in a tab that holds no
 //!   session at all.
 
+pub mod app_icon;
 pub mod chrome;
 pub mod completion;
 pub mod desktop;
@@ -49,6 +50,7 @@ pub mod snake_view;
 #[cfg(test)]
 pub(crate) mod snapshot;
 pub mod tab_colour;
+pub mod taskbar_pin;
 pub mod terminal_view;
 pub mod tip;
 pub mod tray;
